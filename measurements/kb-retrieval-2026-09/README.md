@@ -521,8 +521,25 @@ share moved by zero.
 | 08 | shipments, **0** entries on the subject | 10 | 3 |
 | 09 | discounts, **11** entries on the subject | 3 + 1 flow | **9** |
 
-**A run on covered ground confirms; a run on fresh ground writes.** Nobody designed that and no
-brief asks for it -- run 09 was told, as every run is, that recording nothing is a legitimate
+**A run on covered ground confirms; a run on fresh ground writes.** Twelve runs, and the separation
+is clean once the signal is read as a RATIO rather than as counts:
+
+| ground | runs | captures / confirmations |
+|---|---|---|
+| covered | 05, 09, 12 | 0.8, **0.4**, 1.0 |
+| fresh | 01, 02, 03, 04, 06, 07, 08, 10, 11 | 2.0 … 8.0 |
+
+No overlap: the highest covered ratio is 1.0 and the lowest fresh one is 2.0. Run 12 is the third
+covered-ground point and the second on promotions specifically, which is now the densest subject in
+the corpus.
+
+It also refuted the prediction that carried it, which was written as absolute counts -- "4 or fewer
+captures, 5 or more confirmations". Run 12 wrote five and confirmed five. The confirmations half
+held, the captures half did not, and the finding survives because what carries it is the ratio, not
+either number alone. A prediction specified on the wrong quantity fails for a reason that says
+nothing about the thing it was testing.
+
+Nobody designed the behaviour and no brief asks for it -- run 09 was told, as every run is, that recording nothing is a legitimate
 outcome, and it spent its writes on confirmations because the facts were already there.
 
 That is a self-limiting mechanism, and it is fatal to the extrapolation this section was built on.
