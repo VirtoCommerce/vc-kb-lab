@@ -21,11 +21,15 @@ import { join } from 'node:path';
 
 import { parseEntry } from './frontmatter.mjs';
 import { normalizeAnchor, namespaceOf, LOOKS_LIKE_A_MENU_PATH } from './anchors.mjs';
-import { DERIVED_ENTRIES, CAPTURED_DIR } from './planes.mjs';
+import { DERIVED_ENTRIES, CAPTURED_DIR, FLOWS_DIR } from './planes.mjs';
 
 // planes.mjs and not capture.mjs: this module must not depend on the door at all, which is what
 // the import cycle above was about.
-const PLANE_DIRS = [[DERIVED_ENTRIES, 'derived-first'], [CAPTURED_DIR, 'experiential']];
+// The flow plane is HERE but not in `ask`, and the difference is the point. Arrival is by
+// COORDINATE -- an agent standing on /cart -- and a flow anchored on /cart is the most useful thing
+// the base can hand it at that moment. Retrieval is by WORDS, and by words a procedure drowns
+// facts. Separating the two questions is what lets a flow arrive without competing.
+const PLANE_DIRS = [[DERIVED_ENTRIES, 'derived-first'], [CAPTURED_DIR, 'experiential'], [FLOWS_DIR, 'flow']];
 
 /**
  * Map of normalized coordinate -> the entries that name it.

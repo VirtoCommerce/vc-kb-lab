@@ -20,19 +20,24 @@ the deployment the corpus was projected from. Before this, 54 of 54 evidence row
 carried a deployment name and no version. On any other deployment nothing is stamped and the writer
 is told to pass `--platform-version`; the entry is written either way.
 
-Nothing else in the retrieval path changed. `relevanceFloor`, `SEARCH_OPTIONS` and `INDEX_OPTIONS`
-are as they were for runs 06 and 07.
+`kb how <question>` is new, and `kb capture --flow` writes to the plane it reads. Nothing else in
+the retrieval path changed: `relevanceFloor`, `SEARCH_OPTIONS` and `INDEX_OPTIONS` are as they were
+for runs 06 and 07, and `kb ask` returns byte-identical results to run 07's on all 34 replay rows.
 
 ## Base
 
 `vc-knowledge` — **590 derived + 40 captured active** (2 retired), pin `c2f9c438eba4cd95`,
 platform `3.1007.26`, deployment `vcptcore_stable`.
 
-**Changed since run 07:** one entry, `KB-C51ACC81`, written on 2026-09-14 from run 07's archived
-tool log rather than from a fresh observation — its body says so. It is anchored on `/cart`,
-`/search` and `/account/orders`, and it is the first captured entry in this base anchored on
-storefront routes: before it, the only route anchors anywhere on the experiential plane were two on
-`/company/members`. `kb validate` is green.
+**Changed since run 07:** the base gained a third plane, `flows/`, holding one entry —
+`KB-AFB2D3C5`, a procedure distilled on 2026-09-14 from run 07's archived tool log rather than from
+a fresh observation; its body says so. It is anchored on `/cart`, `/search` and `/account/orders`,
+and it is the first entry in this base anchored on storefront routes at all: before it the only
+route anchors anywhere were two on `/company/members`.
+
+It is served by `kb how`, never by `kb ask`, and it arrives on its own from the coordinate hook.
+`KB-C51ACC81` is the same procedure written into the experiential plane the day before and retired
+there; its body records why. `kb validate` is green.
 
 Run 07's six entries are in the base and describe the order's own fields. The task page says not to
 re-derive them.

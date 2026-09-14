@@ -125,6 +125,11 @@ short: `deliver "<question>"` answers a question about the platform from it or s
 `capture` puts something into it. Anything you ask through `deliver` lands in the CSV as a row for
 you to close at step 3, and on the base's own books until something is written back about it.
 
+It answers two KINDS of question with two verbs, and neither can reach the other's corpus:
+`deliver` answers what is TRUE, and `how "<what you are trying to get done>"` answers what to DO,
+in order. `capture --flow` records a procedure, with `--subject` stating the GOAL rather than the
+actions.
+
 Two things about it that are true whether or not you use it. It rarely misses — across three
 previous runs it was asked 23 questions and missed none — and missing is not the same as answering:
 one of those runs was served a generated type table for a question that needed something else, and

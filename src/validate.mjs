@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { parseEntry, FIELD_ORDER } from './frontmatter.mjs';
 import { mintId } from './canonical.mjs';
 import { normalizeAnchor, namespaceOf, LOOKS_LIKE_A_MENU_PATH, LOOKS_LIKE_A_LOCAL_PATH } from './anchors.mjs';
-import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, fingerprint, buildCapturedArtifacts } from './capture.mjs';
+import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, fingerprint, buildCapturedArtifacts } from './capture.mjs';
 import { DERIVED_ENTRIES, DERIVED_INDEX, DERIVED_CATALOG } from './planes.mjs';
 
 const REQUIRED = ['id', 'subject', 'plane', 'question', 'status', 'refutableBy'];
@@ -65,7 +65,9 @@ function oneIsASegmentOfTheOther(a, b) {
   return joined.endsWith(key) || joined.startsWith(key);
 }
 const REFUTABLE_BY = ['derivation', 'anchor', 'observation', 'artifact', 'practice'];
-const PLANES = ['derived-first', 'experiential', 'normative'];
+// `flow` joins the closed vocabulary. `normative` has been in it since the schema was written and
+// has never held an entry; `flow` arrives with a measurement behind it rather than a plan.
+const PLANES = ['derived-first', 'experiential', 'normative', 'flow'];
 const STATUSES = ['active', 'retired'];
 
 function readPlane(base, dir) {
@@ -90,8 +92,10 @@ export function validate(base) {
 
   const derivedFiles = readPlane(base, DERIVED_ENTRIES);
   const capturedFiles = readPlane(base, CAPTURED_DIR);
+  const flowFiles = readPlane(base, FLOWS_DIR);
 
   const byId = new Map();
+  const statusById = new Map();
   const bySubject = new Map();
   const derivedIds = new Set();
   const activeCapturedIds = new Set();
@@ -102,8 +106,10 @@ export function validate(base) {
   const anchorsByEntry = new Map();
   const supersededPointers = [];
 
-  for (const { file, rel, abs } of [...derivedFiles, ...capturedFiles]) {
+  for (const { file, rel, abs } of [...derivedFiles, ...capturedFiles, ...flowFiles]) {
     const experientialFile = rel.startsWith(`${CAPTURED_DIR}/`);
+    const flowFile = rel.startsWith(`${FLOWS_DIR}/`);
+    const writtenFile = experientialFile || flowFile;
     let parsed;
     try {
       parsed = parseEntry(readFileSync(abs, 'utf8'), rel);
@@ -140,7 +146,8 @@ export function validate(base) {
     // A directory is not a plane. Which plane an entry is on is stated in the entry, and the two
     // must agree, or the extractor's wipe and the capture door disagree about who owns a file.
     if (experientialFile && d.plane !== 'experiential') note(`${rel}: lives in ${CAPTURED_DIR}/ but declares plane "${d.plane}"`);
-    if (!experientialFile && d.plane === 'experiential') note(`${rel}: declares the experiential plane but lives where the extractor wipes`);
+    if (flowFile && d.plane !== 'flow') note(`${rel}: lives in ${FLOWS_DIR}/ but declares plane "${d.plane}"`);
+    if (!writtenFile && (d.plane === 'experiential' || d.plane === 'flow')) note(`${rel}: declares a written plane but lives where the extractor wipes`);
 
     // An entry that names no anchor cannot be reached by a coordinate, which is how BOTH planes
     // find things: regeneration diffs the derived plane, consolidation groups the experiential one.
@@ -155,7 +162,7 @@ export function validate(base) {
     for (const anchor of d.anchors ?? []) {
       const key = normalizeAnchor(anchor?.coordinate);
       if (!key) continue;
-      if (d.plane === 'experiential') {
+      if (d.plane === 'experiential' || d.plane === 'flow') {
         if (!anchorsByEntry.has(rel)) anchorsByEntry.set(rel, { id: d.id, anchors: [] });
         anchorsByEntry.get(rel).anchors.push({ raw: String(anchor.coordinate), key });
       } else derivedCoordinates.add(key);
@@ -163,7 +170,7 @@ export function validate(base) {
     if (!(d.evidence?.length > 0)) note(`${rel}: carries no evidence`);
     if ('costIfMissing' in d) note(`${rel}: costIfMissing must be asked or omitted, never defaulted`);
 
-    if (d.plane === 'experiential') {
+    if (d.plane === 'experiential' || d.plane === 'flow') {
       // Scope is what decides whether two records are one fact. An entry without it claims to hold
       // everywhere, which is almost never what was observed and is exactly the shape that makes a
       // wrong merge possible.
@@ -188,10 +195,15 @@ export function validate(base) {
       if (d.refutableBy === 'derivation') note(`${rel}: refutableBy "derivation" cannot refute an observed fact`);
       if (d.supersededBy) supersededPointers.push([rel, d.supersededBy]);
       if (d.status === 'active' && d.supersededBy) note(`${rel}: is active and yet names supersededBy ${d.supersededBy}`);
-      allCapturedIds.add(d.id);
-      if (d.status === 'active') {
-        activeCapturedIds.add(d.id);
-        activeExperiential.push({ rel, data: d });
+      // Both written planes reach here, because evidence, supersededBy, scope axes and the identity
+      // rule apply to a procedure exactly as to a fact. The id SETS below do not: they exist to
+      // check the captured store's own index and catalog, and a flow is correctly absent from both.
+      // Widening them was the first thing the flow tests caught -- the gate demanded that
+      // captured-index.json carry an entry that lives in flows/.
+      if (d.status === 'active') activeExperiential.push({ rel, data: d });
+      if (d.plane === 'experiential') {
+        allCapturedIds.add(d.id);
+        if (d.status === 'active') activeCapturedIds.add(d.id);
       }
     } else {
       derivedIds.add(d.id);
@@ -199,6 +211,7 @@ export function validate(base) {
 
     if (byId.has(d.id)) note(`${rel}: id ${d.id} is also used by ${byId.get(d.id)}`);
     byId.set(d.id, rel);
+    statusById.set(d.id, d.status);
     if (bySubject.has(d.subject)) note(`${rel}: subject ${d.subject} is also used by ${bySubject.get(d.subject)}`);
     bySubject.set(d.subject, rel);
   }
@@ -359,5 +372,43 @@ export function validate(base) {
     note(`${CAPTURED_CATALOG} is missing while captured entries exist`);
   }
 
-  return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, problems, notices };
+  // The flow plane gets the SAME artifact checks, written as a loop over one store rather than as a
+  // second copy of the forty lines above. A gate that covers two of three written stores is how a
+  // plane grows for a month without anything comparing it to its own entries.
+  if (flowFiles.length) {
+    const flowIds = new Set(flowFiles.map((f) => f.file.replace(/\.md$/, '')));
+    const built = buildCapturedArtifacts(base, 'flow');
+    const indexPath = join(base, FLOWS_INDEX);
+    const catalogPath = join(base, FLOWS_CATALOG);
+    if (!existsSync(indexPath)) note(`${FLOWS_INDEX} is missing while flows exist`);
+    else if (readFileSync(indexPath, 'utf8') !== built.index) {
+      note(`${FLOWS_INDEX} is not what the flows on disk build — it is stale; run \`kb reindex\``);
+    }
+    if (!existsSync(catalogPath)) note(`${FLOWS_CATALOG} is missing while flows exist`);
+    else {
+      const text = readFileSync(catalogPath, 'utf8');
+      if (text !== built.catalog) note(`${FLOWS_CATALOG} is not what the flows on disk build — it is stale; run \`kb reindex\``);
+      for (const id of flowIds) if (!text.includes(id)) note(`${FLOWS_CATALOG} does not list ${id}`);
+    }
+
+    // A step may cite another flow, which is the whole reason a flow is worth splitting: the
+    // checkout half of "place an order" is the same procedure as the checkout half of everything
+    // else. A citation that resolves to nothing reads exactly like one that resolves, which is the
+    // defect three anchors sat in this corpus with for a day.
+    for (const { rel, abs } of flowFiles) {
+      const body = readFileSync(abs, 'utf8');
+      // Any citation, not only a well-formed id: a malformed one reads exactly as reached as a
+      // valid one, and a pattern that admits only <NS>-<hex> cannot see @kb(KB-NOTHERE) at all.
+      for (const [, cited] of body.matchAll(/@kb\(([^)\s]+)\)/g)) {
+        if (!byId.has(cited)) note(`${rel}: cites @kb(${cited}), which is not an entry in this base`);
+        else if (statusById.get(cited) === 'retired') {
+          notice(`${rel} cites @kb(${cited}), which is retired — the step it stands for may no longer work`);
+        }
+      }
+    }
+  } else if (existsSync(join(base, FLOWS_INDEX))) {
+    note(`${FLOWS_INDEX} exists while ${FLOWS_DIR}/ holds no flows`);
+  }
+
+  return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, flows: flowFiles.length, problems, notices };
 }

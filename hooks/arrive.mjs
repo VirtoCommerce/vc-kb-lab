@@ -52,10 +52,17 @@ function main() {
   }
   if (!hits.length) return;
 
+  // A flow arrives by COORDINATE even though it is unreachable by WORDS from `ask` -- the two
+  // questions are separated on purpose, and standing on /cart is the moment a procedure anchored
+  // there is worth most. It is labelled as what it is, and pointed at the verb that can serve it:
+  // telling a reader to run `kb deliver` on a flow is a remedy that refuses in turn, which is the
+  // dead end this project has already fixed twice.
+  const LABEL = { experiential: 'written by an agent', flow: 'a procedure — `kb how`' };
   const lines = [
     'The knowledge base holds entries anchored on a coordinate you just touched:',
-    ...hits.map((h) => `  @kb(${h.id})  ${h.subject}  [${h.plane === 'experiential' ? 'written by an agent' : 'derived from the contract'}]  — anchored on ${h.coordinate}`),
-    'Read one with `node bin/kb.mjs deliver "<your question>"`, or open its file directly.',
+    ...hits.map((h) => `  @kb(${h.id})  ${h.subject}  [${LABEL[h.plane] ?? 'derived from the contract'}]  — anchored on ${h.coordinate}`),
+    'Read one with `node bin/kb.mjs deliver "<your question>"` — or `kb how "<what you are trying to do>"`',
+    'for a procedure, which `deliver` deliberately cannot reach. You can also open the file directly.',
     // Said here rather than left implicit: an experiential entry is one agent's belief until a
     // second agent says otherwise, and confirming is the step every run so far has skipped.
     ...(hits.some((h) => h.plane === 'experiential')

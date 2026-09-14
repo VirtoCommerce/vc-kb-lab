@@ -34,9 +34,14 @@ const PROMPTED = `**2. Ask the base before you look elsewhere.** When you need t
 node bin/kb.mjs deliver "the question, in the words you would actually ask it"
 \`\`\`
 
-It answers from two planes, or says \`KB MISS\`. Either way the row is now in the CSV, and the
-question is now on the base's own books until something is written back about it. Then go and find
-out by whatever means the task needs.
+It answers from the derived and experiential planes, or says \`KB MISS\`. Either way the row is now
+in the CSV, and the question is now on the base's own books until something is written back about
+it. Then go and find out by whatever means the task needs.
+
+**A procedure is a different question and a different verb.** \`deliver\` answers what is TRUE and
+cannot reach a flow; \`how "<what you are trying to get done>"\` answers what to DO, in order, and
+returns procedures only. Ask it before working out a sequence of steps yourself, and if you do work
+one out, \`capture --flow\` records it -- \`--subject\` states the GOAL you reached, not the actions.
 
 Expect an answer rather than a MISS: across three runs the base was asked 23 questions and missed
 none of them. That is not the same as being answered. Run 02 asked how a discount is rounded, was
@@ -47,6 +52,11 @@ const UNPROMPTED = `**2. There is a knowledge base in this repository.** \`node 
 short: \`deliver "<question>"\` answers a question about the platform from it or says \`KB MISS\`, and
 \`capture\` puts something into it. Anything you ask through \`deliver\` lands in the CSV as a row for
 you to close at step 3, and on the base's own books until something is written back about it.
+
+It answers two KINDS of question with two verbs, and neither can reach the other's corpus:
+\`deliver\` answers what is TRUE, and \`how "<what you are trying to get done>"\` answers what to DO,
+in order. \`capture --flow\` records a procedure, with \`--subject\` stating the GOAL rather than the
+actions.
 
 Two things about it that are true whether or not you use it. It rarely misses — across three
 previous runs it was asked 23 questions and missed none — and missing is not the same as answering:

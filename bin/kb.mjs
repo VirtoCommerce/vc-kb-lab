@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { extract, Skipped } from '../src/extract.mjs';
-import { ask, renderAnswer } from '../src/resolve.mjs';
+import { ask, how, flowsMatching, renderAnswer } from '../src/resolve.mjs';
 import { deliver } from '../src/deliver.mjs';
 import { parseEntry } from '../src/frontmatter.mjs';
 import { validate } from '../src/validate.mjs';
@@ -56,11 +56,15 @@ const USAGE = `kb — the knowledge base tool
 
 The six verbs (ADR §13.3). Everything else on this page serves them.
 
-  kb ask         "<question>"                 resolve across both planes, returning the §9.5 contract
+  kb ask         "<question>"                 what is TRUE: the derived and experiential planes
+  kb how         "<question>"                 what to DO: the flow plane, and nothing else
   kb deliver     "<question>" [--json]        the consumer form: a citable block, or an explicit MISS
   kb capture     --subject … --question … --claim … --anchor … --scope … --deployment …
                                               record something learned by doing
                                               — kb capture --help: what belongs in each
+                                              — add --flow to record a PROCEDURE instead of a fact:
+                                                --subject becomes the goal and alone decides identity,
+                                                --claim becomes the steps. Served by kb how only.
   kb consolidate [--merge <id>,<id>]          group entries by shared coordinate; merge a named group
   kb dispute     <id> --deployment … --note … record an observation that contradicts an entry
   kb retire      <id> --reason …              withdraw an entry; the id stays, the entry leaves the index
@@ -74,7 +78,7 @@ Supporting:
   kb extract     [--env <name>]               regenerate the derived plane from a deployment
   kb check       [--env <name>]               regenerate in memory and byte-compare
   kb validate                                 gate the corpus on disk; needs no deployment
-  kb reindex                                  rebuild the captured index and catalog from the entries on disk
+  kb reindex                                  rebuild the captured AND flow indexes and catalogs from disk
   kb stat                                     what the corpus currently holds
   kb demand      [drop <key> --reason …]      questions asked with nothing written back, and
                                               observations served that nobody has confirmed
@@ -108,6 +112,7 @@ function args(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') out.json = true;
+    else if (a === '--flow') out.flow = true;
     else if (a === '--merge') out.merge = String(argv[++i]).split(/[,\s]+/).filter(Boolean);
     else if (FLAGS[a]) {
       const key = FLAGS[a];
@@ -265,7 +270,7 @@ async function main() {
       printNotices((m) => console.error(m));
       return { code: 1, outcome: { detail: { ok: false, problems: r.problems.length, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
     }
-    console.log(`VALIDATE OK — ${r.entries} derived, ${r.captured} captured, at ${base}`);
+    console.log(`VALIDATE OK — ${r.entries} derived, ${r.captured} captured, ${r.flows ?? 0} flow(s), at ${base}`);
     printNotices((m) => console.log(m));
     return { code: 0, outcome: { detail: { ok: true, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
   }
@@ -278,6 +283,19 @@ async function main() {
     }
     const res = ask(base, q, { limit: a.limit ?? 3 });
     console.log(a.json ? JSON.stringify(res, null, 2) : renderAnswer(res));
+    // A POINTER, never a merged result. `ask` and `how` read disjoint corpora on purpose, so the
+    // only thing that may cross is a sentence saying the other one has something -- shown when this
+    // plane came up empty, where a reader is about to go and find out the hard way.
+    if (res.miss && !res.degraded && !a.json) {
+      const flows = flowsMatching(base, q);
+      if (flows.length) {
+        console.log('');
+        console.log(`The FLOW plane holds ${flows.length} procedure${flows.length === 1 ? '' : 's'} matching this. Facts and procedures`);
+        console.log('are searched separately, so ask for one with the verb that serves it:');
+        for (const f of flows.slice(0, 3)) console.log(`  @kb(${f.id})  ${f.subject}`);
+        console.log(`  kb how "${q}"`);
+      }
+    }
     noteLoop(base, q, res.miss && !res.degraded, servedOf(res.results));
     return {
       code: res.miss ? (res.degraded ? 3 : 1) : 0,
@@ -287,6 +305,32 @@ async function main() {
         degraded: Boolean(res.degraded),
         served: servedOf(res.results),
         detail: { limit: a.limit ?? 3 },
+      },
+    };
+  }
+
+  // `kb how` is `kb ask` for procedures, and it exists because a separate INDEX was measured not to
+  // be enough: derived and captured already have separate indexes and still compete, since `ask`
+  // merges both by raw score. Two verbs over disjoint corpora is what actually removes the
+  // competition -- see planes.mjs for the 18-of-34 measurement that bought this.
+  if (cmd === 'how') {
+    const q = a._.join(' ').trim();
+    if (!q) {
+      console.error('kb how needs a question — what are you trying to get done?');
+      console.error('It searches procedures only. For a fact about the platform, use `kb ask`.');
+      return 2;
+    }
+    const res = how(base, q, { limit: a.limit ?? 2 });
+    console.log(a.json ? JSON.stringify(res, null, 2) : renderAnswer(res));
+    noteLoop(base, q, res.miss && !res.degraded, servedOf(res.results));
+    return {
+      code: res.miss ? (res.degraded ? 3 : 1) : 0,
+      outcome: {
+        question: q,
+        miss: res.miss,
+        degraded: Boolean(res.degraded),
+        served: servedOf(res.results),
+        detail: { limit: a.limit ?? 2, plane: 'flow' },
       },
     };
   }
@@ -357,16 +401,16 @@ async function main() {
     try {
       const r = capture(base, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
-        anchors: a.anchor, appliesTo: a.scope,
+        anchors: a.anchor, appliesTo: a.scope, flow: a.flow,
         deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at,
       });
-      console.log(`CAPTURED ${r.id}`);
+      console.log(`${a.flow ? 'FLOW ' : ''}CAPTURED ${r.id}`);
       for (const d of closeQuestions(base, { question: a.question, id: r.id })) {
         console.log(`  closed      : an open question asked ${d.asked} time(s) — "${d.question}"`);
       }
       console.log(`  path        : ${r.path}`);
       console.log(`  fingerprint : ${r.fingerprint}  (coordinates + scope; the claim's wording is deliberately not in it)`);
-      console.log(`  captured    : ${r.artifacts.active} active, ${r.artifacts.retired} retired`);
+      console.log(`  ${a.flow ? 'flows       ' : 'captured    '}: ${r.artifacts.active} active, ${r.artifacts.retired} retired`);
       printStamp(r.stamp);
       // The derived plane already describes some of these coordinates. Shown after the write, not
       // before it: the observation is recorded either way, and what the writer does next -- confirm
@@ -551,7 +595,11 @@ async function main() {
   if (cmd === 'reindex') {
     const r = rebuildCapturedArtifacts(base);
     console.log(`REINDEXED — ${r.active} active, ${r.retired} retired, from the entries on disk`);
-    return { code: 0, outcome: { detail: { active: r.active, retired: r.retired } } };
+    // Both written planes, because a verb that rebuilds "the index" and silently means one of two
+    // is how the other one goes stale with the gate telling you to run exactly this.
+    const f = rebuildCapturedArtifacts(base, 'flow');
+    console.log(`             ${f.active} active flow(s), ${f.retired} retired`);
+    return { code: 0, outcome: { detail: { active: r.active, retired: r.retired, flows: f.active } } };
   }
 
   if (cmd === 'stat') {

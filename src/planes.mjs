@@ -28,6 +28,42 @@ export const CAPTURED_DIR = 'captured';
 export const CAPTURED_INDEX = 'captured-index.json';
 export const CAPTURED_CATALOG = 'captured-catalog.md';
 
+//   flows/              the procedural plane. One .md per goal somebody can reach.
+//
+// WHY A THIRD PLANE AND NOT A FIELD ON THE SECOND. Measured on 2026-09-14, and it cost an hour
+// rather than the week the design would have cost. One flow entry -- a route sequence for placing
+// an order -- was written into the experiential plane as an ordinary capture. It cleared the
+// relevance floor on 18 of 34 replay rows, took rank 1 on "which endpoint lists the payment methods
+// a store has enabled" and on a question about how the storefront xAPI scopes an order query, and
+// had to be retired the same day.
+//
+// It is NOT a size effect, which was assumed and then checked: at 142 distinct terms it has fewer
+// than two of the facts that disturb 6 rows each. A long fact accumulates SPECIFIC terms --
+// OrderConfigurationItemType, sectionId. A procedure accumulates the generic nouns of a journey --
+// cart, order, payment, product, search, Admin -- so it is a plausible answer to most questions
+// asked in ordinary words. `dedupeTokens` removes the bias from REPEATED terms and is structurally
+// inapplicable to a document whose problem is DISTINCT ones.
+//
+// A separate directory alone would not have fixed it: derived and captured already have separate
+// indexes and still compete, because `ask` merges both by raw score. What removes the competition
+// is a separate QUESTION -- `kb how` searches this plane and nothing else, and `kb ask` searches
+// the other two and never this one. The plane exists so that the question can.
+export const FLOWS_DIR = 'flows';
+export const FLOWS_INDEX = 'flows-index.json';
+export const FLOWS_CATALOG = 'flows-catalog.md';
+
+// Which store a written entry lives in, keyed by its own `plane` field, so nothing has to be told
+// twice. `plane` in this base has always named WHICH STORE AND WHICH GATE rather than where the
+// knowledge came from -- the derived plane is defined by being regenerated and byte-compared, the
+// experiential by being written through the door. A flow is written through the same door, stored
+// separately, indexed separately, and identified by a different rule. That is a plane by this
+// base's own definition, and it is not the `kind` field that was measured out: `kind` proposed to
+// label facts that sit in one store, and this decides which store a thing is in.
+export const WRITTEN_STORES = {
+  experiential: { dir: CAPTURED_DIR, index: CAPTURED_INDEX, catalog: CAPTURED_CATALOG },
+  flow: { dir: FLOWS_DIR, index: FLOWS_INDEX, catalog: FLOWS_CATALOG },
+};
+
 // Everything the extractor writes, and therefore everything it is responsible for removing. The
 // captured plane is deliberately absent: it is written by agents rather than regenerated, so a
 // byte-compare against a regeneration would be meaningless and `kb extract` must never wipe it.

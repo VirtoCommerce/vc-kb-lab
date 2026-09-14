@@ -15,7 +15,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadIndex, tokenize, SEARCH_OPTIONS } from './index-build.mjs';
 import { parseEntry } from './frontmatter.mjs';
-import { CAPTURED_DIR, CAPTURED_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin } from './capture.mjs';
+import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin } from './capture.mjs';
 import { DERIVED_INDEX } from './planes.mjs';
 
 // Function words carry no evidence that a result is about the question. Without excluding them,
@@ -85,10 +85,11 @@ function loadPlane(base, file, { requiredWhen }) {
   }
 }
 
-const capturedHasEntries = (base) => {
-  const dir = join(base, CAPTURED_DIR);
-  return existsSync(dir) && readdirSync(dir).some((f) => f.endsWith('.md'));
+const storeHasEntries = (base, dir) => {
+  const abs = join(base, dir);
+  return existsSync(abs) && readdirSync(abs).some((f) => f.endsWith('.md'));
 };
+const capturedHasEntries = (base) => storeHasEntries(base, CAPTURED_DIR);
 
 export function openBase(base) {
   const derivedPath = join(base, DERIVED_INDEX);
@@ -103,7 +104,15 @@ export function openBase(base) {
   }
   const captured = loadPlane(base, CAPTURED_INDEX, { requiredWhen: () => capturedHasEntries(base) });
   if (captured.degraded) return { degraded: captured.degraded };
+  // The flow index is deliberately NOT opened here. `ask` must not be able to reach it even by
+  // accident: that is the whole of the separation, and a field on this object is how it would leak.
   return { derived, captured: captured.index, pin: readPin(base) };
+}
+
+export function openFlows(base) {
+  const flows = loadPlane(base, FLOWS_INDEX, { requiredWhen: () => storeHasEntries(base, FLOWS_DIR) });
+  if (flows.degraded) return { degraded: flows.degraded };
+  return { flows: flows.index, pin: readPin(base) };
 }
 
 // Trust on the experiential plane is a COUNT and an AXIS LIST, and nothing else. ADR §6.2's
@@ -141,7 +150,10 @@ function experientialTrust(data) {
 function answerFor(base, hit, reference = null) {
   const abs = join(base, hit.path);
   const { data, body } = parseEntry(readFileSync(abs, 'utf8'), hit.path);
-  const experiential = data.plane === 'experiential';
+  // A flow is written through the same door and earns trust the same way -- one observation until
+  // somebody walks it again -- so everything below that says "experiential" means "written by an
+  // agent rather than projected", and a flow is that too.
+  const experiential = data.plane === 'experiential' || data.plane === 'flow';
 
   const confirming = (data.evidence ?? []).filter((e) => !e.contradicts && e.at).map((e) => e.at).sort();
   const disputes = (data.evidence ?? []).filter((e) => e.contradicts);
@@ -192,6 +204,77 @@ function answerFor(base, hit, reference = null) {
     score: hit.score,
     protocol: PROTOCOL,
   };
+}
+
+/**
+ * `kb how` -- the procedural plane, and NOTHING else.
+ *
+ * This is the whole mechanism, and it is a separate question rather than a separate ranking. A
+ * third index on its own would not have worked: derived and captured already have separate indexes
+ * and still compete, because `ask` concatenates both and sorts by raw score. What removes the
+ * competition is that these two verbs read disjoint corpora -- `ask` never sees a flow and `how`
+ * never sees a fact.
+ *
+ * Measured on 2026-09-14, which is why this exists at all: one flow written into the experiential
+ * plane as an ordinary capture cleared the relevance floor on 18 of 34 replay rows and led two of
+ * them, against 6-7 for four comparably long facts. The cause is that a procedure is ABOUT the
+ * generic nouns of a journey, so no threshold and no cap reaches it -- only not being in the same
+ * list does.
+ *
+ * The floor is the same one `ask` uses. A procedural question is still a question, and nothing
+ * measured says it should be easier to match.
+ */
+export function how(base, question, { limit = 2 } = {}) {
+  const opened = openFlows(base);
+  if (opened.degraded) {
+    return { miss: true, question, searched: ['flow'], results: [], degraded: opened.degraded };
+  }
+  const queryTerms = new Set(
+    tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
+  );
+  const raw = opened.flows ? opened.flows.search(question, SEARCH_OPTIONS) : [];
+  const floor = relevanceFloor(queryTerms);
+  const hits = raw
+    .filter((h) => contentMatches(h, queryTerms).length >= floor)
+    .sort((a, b) => b.score - a.score);
+
+  if (!hits.length) {
+    return {
+      miss: true,
+      question,
+      searched: ['flow'],
+      results: [],
+      degraded: null,
+      note: opened.flows
+        ? `No flow matches ${floor} content term${floor === 1 ? '' : 's'} of this question. ` +
+          'If you work one out, record it with `kb capture --flow` so the next run walks it instead of finding it.'
+        : 'This base holds no flows yet. Record one with `kb capture --flow`.',
+    };
+  }
+  return {
+    miss: false,
+    question,
+    searched: ['flow'],
+    pin: opened.pin?.pin ?? null,
+    results: hits.slice(0, limit).map((h) => answerFor(base, h, opened.pin?.deployment ?? null)),
+    degraded: null,
+  };
+}
+
+// Whether the flow plane holds anything matching, WITHOUT serving it. `ask` uses this to point at
+// `kb how` when it has nothing -- a pointer rather than a merged result, because merging is the
+// thing this design exists to avoid.
+export function flowsMatching(base, question) {
+  const opened = openFlows(base);
+  if (opened.degraded || !opened.flows) return [];
+  const queryTerms = new Set(
+    tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
+  );
+  const floor = relevanceFloor(queryTerms);
+  return opened.flows.search(question, SEARCH_OPTIONS)
+    .filter((h) => contentMatches(h, queryTerms).length >= floor)
+    .sort((a, b) => b.score - a.score)
+    .map((h) => ({ id: h.id, subject: h.subject }));
 }
 
 export function ask(base, question, { limit = 3 } = {}) {

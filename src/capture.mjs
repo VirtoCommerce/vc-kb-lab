@@ -27,7 +27,7 @@ import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { hash, mintId } from './canonical.mjs';
 import { buildIndex } from './index-build.mjs';
 import { derivedFacts, unreachableAnchors } from './coordinates.mjs';
-import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG } from './planes.mjs';
+import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, WRITTEN_STORES } from './planes.mjs';
 // Re-exported: normalizeAnchor is half of the identity rule and callers have always found it
 // here. Its home moved to break an import cycle, not its meaning.
 export { normalizeAnchor } from './anchors.mjs';
@@ -35,13 +35,29 @@ import { normalizeAnchor, LOOKS_LIKE_A_LOCAL_PATH, MSYS_REMEDY } from './anchors
 
 // Re-exported: callers have always found these here, and their home moved to planes.mjs so that
 // both planes are named in one place rather than as literals scattered across six modules.
-export { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG } from './planes.mjs';
+export { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, WRITTEN_STORES } from './planes.mjs';
 
 // The identity of a fact. Anchors say what it is about; scope says who or where it holds for.
 // The claim is deliberately absent -- see the header.
-export function fingerprint({ anchors, appliesTo }) {
-  const coordinates = [...new Set((anchors ?? []).map((a) => normalizeAnchor(a.coordinate)).filter(Boolean))].sort();
+//
+// A FLOW IS IDENTIFIED BY ITS GOAL INSTEAD, and the reason is that anchors do not work for one:
+// "place an order" and "cancel an order" both touch /cart and /account/orders, so an anchor rule
+// would call two different procedures one procedure and refuse the second. What makes two flows the
+// same flow is that they reach the same end state for the same principal on the same surface.
+//
+// THIS IS UNMEASURED, and it is the opposite trade from the fact rule, deliberately. The dedup
+// measurement that put wording out of the fact fingerprint was about CLAIMS, and says nothing about
+// goals; two writers will phrase one goal differently and the base will hold that flow twice. That
+// failure is visible and `consolidate` can fix it. The other failure -- refusing a legitimate
+// second flow because it shares a route with the first -- is invisible, and the writer works around
+// it by inventing an anchor, which is how a guess enters a corpus. Duplicate-but-visible beats
+// refuse-legitimate until somebody measures it.
+export function fingerprint({ subject, anchors, appliesTo, plane }) {
   const scope = [...new Set((appliesTo ?? []).map((s) => `${s.axis}=${s.value}`))].sort();
+  if (plane === 'flow') {
+    return hash({ goal: String(subject ?? '').trim().toLowerCase().replace(/\s+/g, ' '), scope }, 16);
+  }
+  const coordinates = [...new Set((anchors ?? []).map((a) => normalizeAnchor(a.coordinate)).filter(Boolean))].sort();
   return hash({ coordinates, scope }, 16);
 }
 
@@ -66,28 +82,39 @@ export function observedOn(data) {
 
 // --- reading the captured corpus --------------------------------------------------------------
 
-export function capturedDir(base) {
-  return join(base, CAPTURED_DIR);
+export const storeOf = (plane) => WRITTEN_STORES[plane] ?? WRITTEN_STORES.experiential;
+
+export function capturedDir(base, plane = 'experiential') {
+  return join(base, storeOf(plane).dir);
 }
 
-export function readCaptured(base) {
-  const dir = capturedDir(base);
+export function readStore(base, plane = 'experiential') {
+  const { dir: rel } = storeOf(plane);
+  const dir = join(base, rel);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((f) => f.endsWith('.md'))
     .sort()
     .map((f) => {
-      const rel = `${CAPTURED_DIR}/${f}`;
-      const { data, body } = parseEntry(readFileSync(join(dir, f), 'utf8'), rel);
-      return { file: f, rel, data, body };
+      const path = `${rel}/${f}`;
+      const { data, body } = parseEntry(readFileSync(join(dir, f), 'utf8'), path);
+      return { file: f, rel: path, data, body };
     });
+}
+
+export function readCaptured(base) {
+  return readStore(base, 'experiential');
+}
+
+export function readFlows(base) {
+  return readStore(base, 'flow');
 }
 
 // ACTIVE FIRST. A retired entry keeps its fingerprint -- ids are eternal and so are the files --
 // so a scan in file order can answer a live collision with a withdrawn entry, and every remedy the
 // refusal then offers is aimed at something nothing serves.
-export function findByFingerprint(base, fp) {
-  const matches = readCaptured(base).filter((e) => fingerprint(e.data) === fp);
+export function findByFingerprint(base, fp, plane = 'experiential') {
+  const matches = readStore(base, plane).filter((e) => fingerprint(e.data) === fp);
   return matches.find((e) => e.data.status === 'active') ?? matches[0] ?? null;
 }
 
@@ -106,11 +133,18 @@ export function survivorOf(base, entry) {
   return at ?? null;
 }
 
+// An id names exactly one entry in the whole base -- it is minted from the subject and `validate`
+// checks uniqueness -- so this looks in every written store rather than being told which. That is
+// what lets `confirm`, `dispute`, `retire` and `reanchor` work on a flow without gaining a flag.
 export function loadEntry(base, id) {
-  const abs = join(capturedDir(base), `${id}.md`);
-  if (!existsSync(abs)) return null;
-  const { data, body } = parseEntry(readFileSync(abs, 'utf8'), `${CAPTURED_DIR}/${id}.md`);
-  return { file: `${id}.md`, rel: `${CAPTURED_DIR}/${id}.md`, data, body, abs };
+  for (const plane of Object.keys(WRITTEN_STORES)) {
+    const { dir } = storeOf(plane);
+    const abs = join(base, dir, `${id}.md`);
+    if (!existsSync(abs)) continue;
+    const { data, body } = parseEntry(readFileSync(abs, 'utf8'), `${dir}/${id}.md`);
+    return { file: `${id}.md`, rel: `${dir}/${id}.md`, data, body, abs };
+  }
+  return null;
 }
 
 // --- writing ----------------------------------------------------------------------------------
@@ -119,8 +153,10 @@ export function renderCaptured(data, body) {
   return `${stringifyFrontmatter(data)}\n${body.startsWith('\n') ? '' : '\n'}${body}${body.endsWith('\n') ? '' : '\n'}`;
 }
 
+// The entry's own `plane` decides its store, so nothing has to be told twice and a write can never
+// land in the wrong half of the base.
 function writeEntry(base, data, body) {
-  const dir = capturedDir(base);
+  const dir = join(base, storeOf(data.plane).dir);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, `${data.id}.md`), renderCaptured(data, body));
 }
@@ -132,8 +168,8 @@ function writeEntry(base, data, body) {
 // `kb check` does for the derived plane. Without that split, `validate` can only check that the
 // index MENTIONS the right ids -- and an index built from an older version of a body mentions
 // exactly the right ids while serving text that is no longer in the corpus.
-export function buildCapturedArtifacts(base) {
-  const all = readCaptured(base);
+export function buildCapturedArtifacts(base, plane = 'experiential') {
+  const all = readStore(base, plane);
   const live = all.filter((e) => e.data.status === 'active');
   const docs = live.map((e) => ({
     id: e.data.id,
@@ -144,18 +180,35 @@ export function buildCapturedArtifacts(base) {
   }));
   const index = JSON.stringify(buildIndex(docs), null, 2) + '\n';
 
-  const lines = [
-    '# Captured',
-    '',
-    `Written by agents through \`kb capture\`, not generated. ${live.length} active entr${live.length === 1 ? 'y' : 'ies'}` +
-      `${all.length - live.length ? `, ${all.length - live.length} retired` : ''}.`,
-    '',
-    'The confirmation count, the disputed flag and the versions each fact has been seen on are read',
-    'out of `evidence[]`. Nothing here declares them.',
-    '',
-    '| id | subject | confirmations | disputed | scope |',
-    '|---|---|---|---|---|',
-  ];
+  const flow = plane === 'flow';
+  const lines = flow
+    ? [
+      '# Flows',
+      '',
+      `Procedures written through \`kb capture --flow\` and served by \`kb how\`, never by \`kb ask\`. ` +
+        `${live.length} active flow${live.length === 1 ? '' : 's'}` +
+        `${all.length - live.length ? `, ${all.length - live.length} retired` : ''}.`,
+      '',
+      'A flow is identified by its GOAL and its scope, not by the coordinates it touches: "place an',
+      'order" and "cancel an order" travel the same routes and are not the same procedure. It is',
+      'searched from its own index, because a procedure names the generic nouns of a whole journey',
+      'and would otherwise be a plausible answer to most questions asked in ordinary words.',
+      '',
+      '| id | goal | confirmations | disputed | scope |',
+      '|---|---|---|---|---|',
+    ]
+    : [
+      '# Captured',
+      '',
+      `Written by agents through \`kb capture\`, not generated. ${live.length} active entr${live.length === 1 ? 'y' : 'ies'}` +
+        `${all.length - live.length ? `, ${all.length - live.length} retired` : ''}.`,
+      '',
+      'The confirmation count, the disputed flag and the versions each fact has been seen on are read',
+      'out of `evidence[]`. Nothing here declares them.',
+      '',
+      '| id | subject | confirmations | disputed | scope |',
+      '|---|---|---|---|---|',
+    ];
   for (const e of all.sort((a, b) => a.data.id.localeCompare(b.data.id))) {
     const scope = (e.data.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`).join(' ') || '—';
     lines.push(
@@ -167,10 +220,11 @@ export function buildCapturedArtifacts(base) {
   return { index, catalog: lines.join('\n'), active: live.length, retired: all.length - live.length };
 }
 
-export function rebuildCapturedArtifacts(base) {
-  const built = buildCapturedArtifacts(base);
-  writeFileSync(join(base, CAPTURED_INDEX), built.index);
-  writeFileSync(join(base, CAPTURED_CATALOG), built.catalog);
+export function rebuildCapturedArtifacts(base, plane = 'experiential') {
+  const built = buildCapturedArtifacts(base, plane);
+  const store = storeOf(plane);
+  writeFileSync(join(base, store.index), built.index);
+  writeFileSync(join(base, store.catalog), built.catalog);
   return { active: built.active, retired: built.retired };
 }
 
@@ -395,6 +449,10 @@ export function evidenceRow({ deployment, pin, platformVersion, by, at, contradi
 // fact is never written on the strength of an exemption that hid a genuine collision with a third
 // entry.
 export function capture(base, input, { now = () => new Date().toISOString(), ignoreId = null } = {}) {
+  // One door, two written planes. A flow takes the same seven inputs and means two of them slightly
+  // differently -- `subject` is the goal, and it alone decides identity -- so it goes through every
+  // refusal here rather than round a second door that would drift from this one.
+  const plane = input.flow ? 'flow' : 'experiential';
   const missing = Object.keys(REQUIRED_INPUT).filter((k) => {
     const v = input[k];
     return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
@@ -438,8 +496,8 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     }
   }
 
-  const fp = fingerprint({ anchors, appliesTo });
-  let existing = findByFingerprint(base, fp);
+  const fp = fingerprint({ subject: input.subject, anchors, appliesTo, plane });
+  let existing = findByFingerprint(base, fp, plane);
   if (existing && ignoreId && existing.data.id === ignoreId) existing = null;
   if (existing && existing.data.status !== 'active') {
     // The fingerprint belongs to a WITHDRAWN entry. Two different situations, and answering both
@@ -470,7 +528,8 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     // The base already holds a fact about these coordinates under this scope. Whether this capture
     // agrees with it is not something the text can be asked -- so the writer is.
     throw new CaptureRefused(
-      `capture refused: ${existing.data.id} already holds a fact about these coordinates under this scope.\n` +
+      `capture refused: ${existing.data.id} already ${plane === 'flow'
+        ? 'reaches this goal at this scope' : 'holds a fact about these coordinates under this scope'}.\n` +
         `  existing subject : ${existing.data.subject}\n` +
         `  existing question: ${existing.data.question}\n` +
         `  confirmations    : ${confirmationsOf(existing.data)}${isDisputed(existing.data) ? `, disputed (${disputesOf(existing.data)})` : ''}\n` +
@@ -498,7 +557,7 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
   const data = {
     id,
     subject: input.subject,
-    plane: 'experiential',
+    plane,
     question: input.question,
     status: 'active',
     refutableBy: input.refutableBy,
@@ -514,14 +573,14 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
   };
   const body = `\n${String(input.claim).trim()}\n`;
   writeEntry(base, data, body);
-  const artifacts = rebuildCapturedArtifacts(base);
+  const artifacts = rebuildCapturedArtifacts(base, data.plane);
   // What the DERIVED plane already says about these same coordinates. Computed on every capture and
   // never acted on: an observation contradicting a generated contract is often the most valuable
   // thing in the corpus, and only the writer can tell that from a misreading. See coordinates.mjs.
   return {
     id,
     fingerprint: fp,
-    path: `${CAPTURED_DIR}/${id}.md`,
+    path: `${storeOf(plane).dir}/${id}.md`,
     artifacts,
     stamp,
     derived: derivedFacts(base, anchors),
@@ -554,7 +613,7 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
     at: input.at ?? now(),
   })];
   writeEntry(base, entry.data, entry.body);
-  rebuildCapturedArtifacts(base);
+  rebuildCapturedArtifacts(base, entry.data.plane);
   return { id, confirmations: confirmationsOf(entry.data), observedOn: observedOn(entry.data), stamp };
 }
 
@@ -592,7 +651,7 @@ export function dispute(base, id, input, { now = () => new Date().toISOString() 
   })];
   const body = `${entry.body.replace(/\s+$/, '')}\n\n**Disputed.** ${input.note} — observed on \`${input.deployment}\`.\n`;
   writeEntry(base, entry.data, body);
-  rebuildCapturedArtifacts(base);
+  rebuildCapturedArtifacts(base, entry.data.plane);
   return { id, disputes: disputesOf(entry.data), confirmations: confirmationsOf(entry.data), stamp };
 }
 
@@ -608,7 +667,7 @@ export function retire(base, id, { reason, supersededBy } = {}) {
   const pointer = supersededBy ? ` Superseded by ${supersededBy}.` : '';
   const body = `${entry.body.replace(/\s+$/, '')}\n\n**Retired.** ${reason}${pointer}\n`;
   writeEntry(base, entry.data, body);
-  const artifacts = rebuildCapturedArtifacts(base);
+  const artifacts = rebuildCapturedArtifacts(base, entry.data.plane);
   return { id, artifacts };
 }
 
@@ -687,7 +746,7 @@ export function reanchor(base, id, { was, now: to, reason } = {}) {
   entry.data.anchors = next;
   const body = `${entry.body.replace(/\s+$/, '')}\n\n**Anchor corrected.** \`${was}\` → \`${to}\` — ${reason}\n`;
   writeEntry(base, entry.data, body);
-  const artifacts = rebuildCapturedArtifacts(base);
+  const artifacts = rebuildCapturedArtifacts(base, entry.data.plane);
   return { id, was, now: to, fingerprint: fp, artifacts };
 }
 
@@ -742,5 +801,5 @@ export function supersede(base, oldId, input, opts = {}) {
       { wrote: written.id },
     );
   }
-  return { ...written, superseded: oldId, artifacts: rebuildCapturedArtifacts(base) };
+  return { ...written, superseded: oldId, artifacts: rebuildCapturedArtifacts(base, old.data.plane) };
 }
