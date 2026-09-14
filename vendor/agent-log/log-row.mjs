@@ -442,7 +442,18 @@ function cmdCheck(args) {
   let prevCalls = 0;
   for (const r of records) {
     const calls = Number(r.calls);
-    /* A claimed external lookup at an unchanged call count was never performed. */
+    /* A claimed external lookup at an unchanged call count was never performed.
+     *
+     * ONE FALSE POSITIVE IS KNOWN, found by run 10 and diagnosed by it: two `kb deliver` calls
+     * chained with `&&` inside one Bash invocation are ONE tool call, so the counter does not move
+     * between the two rows they produce and the second reads as a method never performed. Both were
+     * in the kb log, both really happened.
+     *
+     * Left as it is, deliberately. The check exists to catch a row claiming a lookup that never
+     * occurred, which is the failure that quietly inflates every coverage number computed later;
+     * relaxing it to accommodate shell chaining would cost that. The run noticed, said so on the
+     * row, and the note is the right place for it -- this is a heuristic and it is allowed to be
+     * wrong out loud. */
     if (NEEDS_A_CALL.includes(r.backed_by)) {
       if (r.warn === "NO-HOOK-LOG") {
         problems.push("row " + r.row + ": backed_by=" + r.backed_by + " but no ground-truth log was attached (warn=NO-HOOK-LOG)");

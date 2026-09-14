@@ -409,6 +409,7 @@ The **trend**, because it is monotone and nobody has been watching it:
 | after run 07 | 590 | **39** | **12 of 30 rows** |
 | after run 08 | 590 | **47** | **13 of 30 rows** |
 | after run 09 | 590 | **49** | **13 of 30 rows** |
+| after run 10 | 590 | **54** | **14 of 30 rows** |
 
 If it holds, the derived plane becomes unreachable for any question phrased in ordinary storefront
 words, and it will happen without a single change to the code. The next run's rows say whether it
@@ -499,6 +500,56 @@ wrote an hour earlier, that the reason to act had gone with the forecast. It had
 reason it always was, and it is now five rows old.
 
 One honest caveat, unchanged: four points in the write-rate table, one run on one subject.
+
+### Run 10 was sent at this, and the displacement cost nothing
+
+Run 10 worked coupons on the CART. It could not do that without asking r1.2's question in some
+wording, and it was not told any of this. The pre-registered prediction was that it would take the
+cart's shape from the DEPLOYMENT -- introspection or a response body -- and not notice why.
+
+**It took it from the base.** Asked "what fields does a cart discount carry" at limit 2, it was
+served `KB-FF7E4D5B`, which is order-scoped, and `gql-type-carttype` -- the very entry r1.2's
+`want` records as missing. Its own row says the near miss in one line: *"an order-scoped entry
+served for a cart-scoped question"*. It used the cart table, and then confirmed the CART-scoped
+entry rather than the one that had led.
+
+So r1.2's `want`-missing is a property of **the replay row's wording**, not of the corpus. The row
+asks "how does the storefront cart show an applied promotion discount in GraphQL?" -- a phrasing no
+run has ever used. On a phrasing a run did use, the entry is served.
+
+| instance | what happened to it |
+|---|---|
+| r1.2, first time | fixed by the floor |
+| r6.1 | self-healed when the run wrote its own |
+| r2.5 | **benign** — run 09, sent at it, answered without the displaced entry |
+| r1.2, second time | **benign** — run 10, sent at it, was served the displaced entry |
+| r7.6 | stands. An unmet `want`, never tested by a run sent at it |
+
+Two of the five were tested by a run sent to test them and **both evaporated**. One stands untested.
+That is not a finding in the shape I have been writing it: what looked like a corpus-level pathology
+is, so far, a replay harness measuring wordings nobody asks.
+
+What survives is narrower and still worth watching: **the entry that leads is often not the one a
+run uses**, which is now true on four rows, and a two-slot list is thin enough that a near miss at
+rank 1 costs the second slot. Runs read the list, notice, and pick correctly. The replay harness
+reads rank 1 and cannot.
+
+## Re-taken again after run 10, and what that one swallows
+
+Seven new entries, one LOST and seven MOVED.
+
+`r1.2` is LOST **again**, displaced this time by run 10's own coupon entries, with
+`gql-type-carttype` out of the two-slot list for the third time. It is left as a `want` miss and
+NOT tuned away, and the section above says why that is now a weaker finding than it reads: the run
+sent at this row was served that entry on its own wording, in the same session, and used it.
+
+The seven MOVED rows are seven documents entering a corpus of 644. Noise, absorbed.
+
+**What is not absorbed** is the pattern the last two runs have made visible: on `r1.2`, `r2.5`,
+`r2.7` and `r2.8` the entry that leads is not the entry a run used. Runs read the whole list and
+pick; this harness reads rank 1. That is a limit of the instrument, written here rather than
+corrected, because correcting it means deciding by reading which served entry "counts" -- the exact
+move that produced the wrong anchor on r2.5.
 
 ## The baseline was re-taken again after run 09, and this is what it swallows
 

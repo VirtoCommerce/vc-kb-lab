@@ -1,6 +1,6 @@
 {
   "base": "C:/_VIRTO/vc-knowledge",
-  "at": "2026-09-14T09:09:43.211Z",
+  "at": "2026-09-14T11:33:33.992Z",
   "rows": [
     {
       "row": "r1.1",
@@ -27,8 +27,8 @@
       "limit": 2,
       "question": "how does the storefront cart show an applied promotion discount in GraphQL?",
       "served": [
-        "KB-D992AF44",
-        "KB-358A70CB"
+        "KB-E7790BF6",
+        "KB-8264632C"
       ],
       "miss": false
     },
@@ -196,8 +196,8 @@
       "question": "how do I create a percentage discount promotion in the marketing module",
       "served": [
         "KB-C0B7076C",
-        "KB-35A09C64",
-        "KB-FF7E4D5B"
+        "KB-FF7E4D5B",
+        "KB-35A09C64"
       ],
       "miss": false
     },
@@ -213,7 +213,7 @@
       "served": [
         "KB-FF7E4D5B",
         "KB-AB35BCDC",
-        "KB-996BDF08"
+        "KB-A3CE7FBA"
       ],
       "miss": false
     },
@@ -243,9 +243,9 @@
       "limit": 3,
       "question": "DiscountType fields on the cart",
       "served": [
-        "KB-D4A064A5",
         "KB-C495274F",
-        "KB-D61E2FFA"
+        "KB-D4A064A5",
+        "KB-C1024558"
       ],
       "miss": false
     },
@@ -260,8 +260,8 @@
       "question": "where does a cart-level promotion reward land on the cart and how is it rounded",
       "served": [
         "KB-996BDF08",
-        "KB-FF7E4D5B",
-        "KB-D4A064A5"
+        "KB-E7790BF6",
+        "KB-FF7E4D5B"
       ],
       "miss": false
     },
@@ -355,7 +355,7 @@
       "served": [
         "KB-4A8606CA",
         "KB-B769C7B1",
-        "KB-BAEBCDA7"
+        "KB-0B6067F8"
       ],
       "miss": false
     },
@@ -401,8 +401,8 @@
       "limit": 3,
       "question": "What arguments does Query.wishlists take and what does its scope argument do?",
       "served": [
-        "KB-89E15DD5",
         "KB-EAA7BA2F",
+        "KB-89E15DD5",
         "KB-5B7569EF"
       ],
       "miss": false
@@ -417,8 +417,8 @@
       "limit": 3,
       "question": "Does Query.sharedWishlist require the caller to be signed in, and what can the holder of a sharingKey do with the list?",
       "served": [
-        "KB-8F43AA9F",
         "KB-7A12CF52",
+        "KB-8F43AA9F",
         "KB-6824BC2B"
       ],
       "miss": false

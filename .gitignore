@@ -28,15 +28,34 @@ MEASUREMENT-archive/
 .claude/settings.local.json
 *.local.json
 
-# Per-run scratch. Run 07 created .scratch-run07/ for response bodies pulled off a live deployment;
-# those are unredacted platform responses and belong nowhere near a commit.
+# THE REPOSITORY ROOT IS DENIED BY DEFAULT, and this is the third rule written for this problem.
 #
-# THE RULE ABOVE DID NOT COVER THE VERY NEXT RUN. Run 08 wrote order-67.json -- a GraphQL response
-# body -- into the repository ROOT, where no scratch pattern reaches it, because nothing had ever
-# told a run where scratch goes. A rule written for the shape of the last failure catches the last
-# failure. So the brief now names .scratch/ and this covers it, and the loose shapes runs have
-# actually produced are named too.
-.scratch*/
-*-[0-9][0-9].json
-response-*.json
-r[0-9]*.json
+#   run 07  wrote response bodies into .scratch-run07/        -> I ignored .scratch-*/
+#   run 08  wrote order-67.json into the ROOT                 -> I widened the patterns and put
+#                                                                ".scratch/" in both briefs
+#   run 10  wrote run10-cart-baseline.json and a 100 KB
+#           screenshot of the promotions grid into the ROOT   -> neither pattern reached either,
+#                                                                and the brief did not stop it
+#
+# Twice I wrote a rule shaped like the last failure, and twice the next run picked a different
+# shape. A run will name a file something nobody predicted; that is not a thing to enumerate. So
+# the root is a whitelist -- everything at the top level is ignored and the handful of real files
+# are named back in. A new tracked file at the root now needs one line here, which is a cost worth
+# paying once a month against unredacted deployment data reaching a public repository.
+#
+# Subdirectories are untouched: this denies "/*" only, and re-including a directory re-includes
+# what is under it.
+/*
+!/.gitignore
+!/.env.example
+!/.mcp.json
+!/README.md
+!/package.json
+!/.claude/
+!/bin/
+!/docs/
+!/hooks/
+!/measurements/
+!/src/
+!/test/
+!/vendor/
