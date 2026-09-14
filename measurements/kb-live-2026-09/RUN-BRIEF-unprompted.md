@@ -37,6 +37,9 @@ consulted the base in their first three minutes and then worked for an hour and 
 opening it once.
 
 ## Where you are
+**Scratch files go in `.scratch/`.** Response bodies you pull off the deployment are unredacted
+platform data; that directory is gitignored and the repository root is not.
+
 
 Start in `C:/_VIRTO/vc-kb-lab`. The deployment is `vcptcore_stable` — the environment layers are
 in `.env.*`, and the credentials are in `.env.local`, which is never committed and never pasted

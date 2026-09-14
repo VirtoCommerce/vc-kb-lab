@@ -30,6 +30,9 @@ consulted the base in their first three minutes and then worked for an hour and 
 opening it once.
 
 ## Where you are
+**Scratch files go in `.scratch/`.** Response bodies you pull off the deployment are unredacted
+platform data; that directory is gitignored and the repository root is not.
+
 
 Start in `C:/_VIRTO/vc-kb-lab`. The deployment is `vcptcore_stable` — the environment layers are
 in `.env.*`, and the credentials are in `.env.local`, which is never committed and never pasted
@@ -127,6 +130,7 @@ it. Then go and find out by whatever means the task needs.
 cannot reach a flow; `how "<what you are trying to get done>"` answers what to DO, in order, and
 returns procedures only. Ask it before working out a sequence of steps yourself, and if you do work
 one out, `capture --flow` records it -- `--subject` states the GOAL you reached, not the actions.
+
 
 Expect an answer rather than a MISS: across three runs the base was asked 23 questions and missed
 none of them. That is not the same as being answered. Run 02 asked how a discount is rounded, was

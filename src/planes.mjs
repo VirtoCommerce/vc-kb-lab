@@ -48,6 +48,24 @@ export const CAPTURED_CATALOG = 'captured-catalog.md';
 // indexes and still compete, because `ask` merges both by raw score. What removes the competition
 // is a separate QUESTION -- `kb how` searches this plane and nothing else, and `kb ask` searches
 // the other two and never this one. The plane exists so that the question can.
+// OPEN, FOUND BY RUN 08 ON THE PLANE'S FIRST DAY: there is no way to AMEND a flow. Run 08 walked
+// KB-AFB2D3C5, confirmed it, and reported two gaps in its steps -- no shipping-address selection,
+// and only one of the store's two delivery options named. It could not record either:
+//
+//   dispute   is for a claim contradicted by an observation. An omission contradicts nothing, and
+//             the run was right not to reach for it.
+//   supersede mints the id from the subject, and a flow's subject IS its goal -- which by
+//             definition does not change when a STEP is fixed. Tested: it refuses with
+//             "id ... is already held by a DIFFERENT fact. Change the subject."
+//
+// So the choices were to lose the improvement or to fragment one procedure into two goals, and the
+// run chose to lose it: one gap survived as an ordinary captured fact (KB-6AA0D7FB, the two
+// delivery options), the other exists only in a run report nobody will read again.
+//
+// This is the `reanchor` argument one level along. An anchor is an address rather than a claim, so
+// correcting it must not destroy the id; a flow's STEPS are not its identity either, its goal is,
+// so amending them should not destroy the id. NOT BUILT: one run, two gaps, and this base's own
+// rule is that a mechanism waits for the measurement that needs it.
 export const FLOWS_DIR = 'flows';
 export const FLOWS_INDEX = 'flows-index.json';
 export const FLOWS_CATALOG = 'flows-catalog.md';

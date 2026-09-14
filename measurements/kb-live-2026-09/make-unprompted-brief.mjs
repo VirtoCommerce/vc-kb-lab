@@ -43,6 +43,7 @@ cannot reach a flow; \`how "<what you are trying to get done>"\` answers what to
 returns procedures only. Ask it before working out a sequence of steps yourself, and if you do work
 one out, \`capture --flow\` records it -- \`--subject\` states the GOAL you reached, not the actions.
 
+
 Expect an answer rather than a MISS: across three runs the base was asked 23 questions and missed
 none of them. That is not the same as being answered. Run 02 asked how a discount is rounded, was
 served the derived \`DiscountType\` table, and had to go and read an entry off disk that said what it

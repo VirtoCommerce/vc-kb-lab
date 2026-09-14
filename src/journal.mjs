@@ -41,7 +41,14 @@ const LOG_ROW = fileURLToPath(new URL('../vendor/agent-log/log-row.mjs', import.
 
 // The verbs that CONSULT. Only these produce a question row: the CSV's columns ask what the
 // answer was and whether it held, and a `capture` has no answer -- it IS one.
-const CONSULTATIONS = new Set(['ask', 'deliver']);
+//
+// `how` was missing here for exactly one run, and that run is the reason it is not. Run 08 asked it
+// at tool call 9, got the whole order-placement procedure, and reached a placed order in 15 calls
+// from /cart where run 07 took 78. That consultation -- the single most load-bearing one any run
+// has made -- left NO row in the question log, which is the record the whole measurement reads to
+// answer what the base contributed. A verb added to the tool and not to the instrument measures the
+// base as if the verb did not exist.
+const CONSULTATIONS = new Set(['ask', 'deliver', 'how']);
 
 // Opt-in on VC_MEASURE_OUT alone, and NOT on the toolkit's own `<project>/MEASUREMENT` fallback.
 // `kb` runs in checkouts that are not measuring anything; an instrument that switches itself on

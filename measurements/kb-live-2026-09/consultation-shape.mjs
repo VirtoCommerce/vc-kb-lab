@@ -40,7 +40,11 @@ const HERE = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = join(HERE, '../..');
 
 const IS_KB = /bin[/\\]kb\.mjs/;
-const IS_CONSULT = /bin[/\\]kb\.mjs\s+(?:deliver|ask)\b/;
+// `how` joins them from run 08, which is the run that proved why. Its single `how` call bought the
+// biggest measured saving of the whole experiment -- 15 calls from /cart to a placed order against
+// run 07's 78 -- and without this it counts as a run that asked the base nothing at all before
+// working. Runs 01-07 made no `how` calls, so their numbers below are unchanged by this.
+const IS_CONSULT = /bin[/\\]kb\.mjs\s+(?:deliver|ask|how)\b/;
 
 // The authoring session writes into the same directory and its log must never be counted as a run.
 const FOREIGN = /c842f27b|authoring/;
