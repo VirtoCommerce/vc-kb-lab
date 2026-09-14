@@ -302,6 +302,11 @@ async function main() {
         console.log(`  kb how "${q}"`);
       }
     }
+    // PROBING THE LIVE BASE FROM HERE WRITES. The loop is wired in the CLI rather than in ask()
+    // precisely so the replay harness can call the library without depositing 34 questions -- and
+    // the same escape is the one to use when checking something by hand. I have now recorded two of
+    // my own probes as somebody's unmet demand, in two consecutive sessions, the second an hour
+    // after writing the commit about the first. Use `node -e` against the library, or --base a copy.
     noteLoop(base, q, res.miss && !res.degraded, servedOf(res.results));
     return {
       code: res.miss ? (res.degraded ? 3 : 1) : 0,
