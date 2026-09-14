@@ -46,8 +46,9 @@ scored 0.00. Coordinates raise the candidate; scope decides.
 earlier measurement rows. Then all of them were cleared. An independent review put it plainly: *"the
 base answers 20 of 26"* means *"the seeder's corpus agrees with the seeder's reading of the seeder's
 runs 20 of 26 times"*, and no amount of analysis separates those — only a different writer does.
-The seeded corpus was tagged and kept as a shadow corpus to compare against, and the plane started
-again at zero.
+The seeded corpus was tagged as a shadow corpus to compare against, and the plane started again at
+zero. **Those tags — `seed-w0.5` and `seed-w0.5-corrected` — did not survive the history rewrite.**
+They exist only in the full-history bundle kept outside this repository; nothing here resolves them.
 
 **Days 2–4 — seven live runs.** Each an agent given a brief, a task, and a live deployment; each
 writing back what it learned. Promotions, order discounts, organization roles, member state,
