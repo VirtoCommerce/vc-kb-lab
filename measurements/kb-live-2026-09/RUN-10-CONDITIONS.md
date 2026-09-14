@@ -41,8 +41,14 @@ Both briefs describe it. `KB-AFB2D3C5` carries three amendments written with it.
 `kb ask`/`deliver` search the derived and experiential planes; `kb how` searches flows and neither
 can reach the other. `kb capture --flow` writes a procedure, `kb amend` corrects one of its steps.
 
-Six demand rows are open, all inherited: one about checkout, five about configurable products and
-cart variations, which this store has none of.
+**Two** demand rows are open, both inherited from run 07 and both about configurable products,
+which this store has none of.
+
+Five more were open an hour ago and were closed as what they were: smoke tests of `kb how`, typed
+against the live base while the flow plane was being built. `ask` and `how` WRITE -- they append to
+the demand loop -- so probing the live base with them leaves rows that read like coverage somebody
+wanted and did not get. Named here because the number is a condition of this run and the reason it
+moved should not have to be reconstructed.
 
 Scratch files belong in `.scratch/`, which is gitignored.
 
