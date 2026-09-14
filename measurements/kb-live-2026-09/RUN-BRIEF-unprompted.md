@@ -40,6 +40,12 @@ opening it once.
 **Scratch files go in `.scratch/`.** Response bodies you pull off the deployment are unredacted
 platform data; that directory is gitignored and the repository root is not.
 
+**If a flow you walked is right but INCOMPLETE, `kb amend <id> --step N --note "…"`.** That is not
+a dispute — a dispute is for a claim an observation contradicts, and a missing step contradicts
+nothing. Amending keeps the flow's goal and id, writes no evidence row, and does not count as
+agreement: if the rest of it held, `kb confirm` separately. Two runs before you found gaps in a
+flow, had no verb for it, and put them in a report instead.
+
 
 Start in `C:/_VIRTO/vc-kb-lab`. The deployment is `vcptcore_stable` — the environment layers are
 in `.env.*`, and the credentials are in `.env.local`, which is never committed and never pasted

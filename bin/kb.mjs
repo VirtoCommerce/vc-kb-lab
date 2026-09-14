@@ -10,7 +10,7 @@ import { parseEntry } from '../src/frontmatter.mjs';
 import { validate } from '../src/validate.mjs';
 import {
   capture, supersede, confirm, dispute, retire,
-  reanchor, CaptureRefused, rebuildCapturedArtifacts,
+  reanchor, amend, CaptureRefused, rebuildCapturedArtifacts,
   readCaptured, confirmationsOf, disputesOf, isDisputed, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
 } from '../src/capture.mjs';
 import { consolidate, renderConsolidation, MergeRefused } from '../src/consolidate.mjs';
@@ -71,6 +71,10 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
   kb supersede   <id> --reason … --subject …  replace an entry you now know better than, in one act
   kb reanchor    <id> --was … --now … --reason …  correct a coordinate an entry is filed under,
                                               leaving the claim, the id and the evidence untouched
+  kb amend       <id> --step … --note …       correct ONE STEP of a flow, keeping its goal and id.
+                                              Flows only: a fact's claim IS the entry, so use
+                                              dispute or supersede for one. Writes no evidence row —
+                                              amending is not agreeing; confirm separately if it held.
 
 Supporting:
 
@@ -104,6 +108,8 @@ const FLAGS = {
   // reanchor. `--now` is the corrected coordinate and never a timestamp: nothing in this CLI takes
   // a clock reading, and the pair reads as a sentence at the point of use -- was X, now Y.
   '--was': 'was', '--now': 'now',
+  // amend. `--step` names which step of a flow the correction belongs to.
+  '--step': 'step',
   '--phase': 'phase', '--class': 'class',
 };
 
@@ -568,6 +574,34 @@ async function main() {
     } catch (e) {
       if (e instanceof CaptureRefused) {
         return { code: refused(e), outcome: { refused: { reason: e.message, collidesWith: e.clash ?? null } } };
+      }
+      throw e;
+    }
+  }
+
+  if (cmd === 'amend') {
+    const id = a._[0];
+    if (!id) {
+      console.error('kb amend needs the id of a flow, --step and --note');
+      return 2;
+    }
+    try {
+      const r = amend(base, id, {
+        step: a.step, note: a.note,
+        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at,
+      });
+      console.log(`AMENDED ${r.id}  step ${r.step}`);
+      console.log(`  flows       : ${r.artifacts.active} active, ${r.artifacts.retired} retired`);
+      printStamp(r.stamp);
+      console.log('  The goal, the id and the fingerprint are untouched — anything citing this flow still resolves.');
+      // Said here because the alternative is a writer who amends and assumes they have also
+      // confirmed. They have not, on purpose: amending is partly disagreeing, and no evidence row
+      // was written. Somebody who walked the rest of it successfully should say so separately.
+      console.log('  NO evidence row was written. If the rest of the procedure held, `kb confirm` says so.');
+      return { code: 0, outcome: { wrote: { id: r.id, amended: { step: String(r.step) } } } };
+    } catch (e) {
+      if (e instanceof CaptureRefused) {
+        return { code: refused(e), outcome: { refused: { reason: e.message, collidesWith: null } } };
       }
       throw e;
     }

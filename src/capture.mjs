@@ -730,8 +730,12 @@ export function reanchor(base, id, { was, now: to, reason } = {}) {
   // carrying it forward would claim this entry had been checked against the new one.
   const next = anchors.map((a, i) => (i === hit ? { coordinate: to } : a));
 
-  const fp = fingerprint({ anchors: next, appliesTo: entry.data.appliesTo });
-  let clash = findByFingerprint(base, fp);
+  // The plane goes in, and for a flow that makes this whole check a no-op -- correctly. A flow is
+  // identified by its goal, so moving an anchor cannot collide it with anything, and computing the
+  // anchor fingerprint here would have compared a flow against facts on a rule that does not apply
+  // to it. Latent from the day the flow plane shipped; no flow has been reanchored yet.
+  const fp = fingerprint({ subject: entry.data.subject, anchors: next, appliesTo: entry.data.appliesTo, plane: entry.data.plane });
+  let clash = findByFingerprint(base, fp, entry.data.plane);
   if (clash && clash.data.id === id) clash = null;
   if (clash && clash.data.status !== 'active') clash = survivorOf(base, clash);
   if (clash) {
@@ -748,6 +752,99 @@ export function reanchor(base, id, { was, now: to, reason } = {}) {
   writeEntry(base, entry.data, body);
   const artifacts = rebuildCapturedArtifacts(base, entry.data.plane);
   return { id, was, now: to, fingerprint: fp, artifacts };
+}
+
+/**
+ * Correct or complete ONE STEP of a flow, keeping the goal, the id and the fingerprint.
+ *
+ * WHY THIS IS A VERB, and it is the `reanchor` argument one level along. An anchor is an address
+ * rather than a claim, so correcting one must not destroy the id others cite. A flow's STEPS are
+ * not its identity either -- its GOAL is -- so fixing a step must not destroy it either. Before
+ * this, it did: `supersede` mints the id from the subject, and a flow's subject is the one thing
+ * that does not change when step 4 turns out to be incomplete.
+ *
+ * MEASURED, not anticipated. Two consecutive runs walked KB-AFB2D3C5, found gaps, and could record
+ * neither:
+ *
+ *   run 08  step 4 omits selecting a shipping address (its own account had a default, so it did
+ *           not bite) and names one of the store's two delivery options
+ *   run 09  the step that says this storefront has no `/checkout` route -- `/checkout/completed`
+ *           exists as the post-placement landing page
+ *
+ * `dispute` was wrong for all three: it is for a claim an observation contradicts, and an omission
+ * contradicts nothing. Both runs confirmed the flow and put the gap in a report instead, which is
+ * where knowledge goes to be archived and never read. One gap survived only because its author
+ * filed it separately as an ordinary fact.
+ *
+ * IT WRITES NO EVIDENCE ROW, and that is deliberate. `confirmationsOf` counts rows as independent
+ * observations that AGREE with the entry, and somebody amending it partly did not. Run 09 confirmed
+ * this flow and would have amended it in the same breath; one walk would then have counted twice.
+ * So the amendment carries its own stamp where it is written, `kb confirm` stays the separate and
+ * honest act for "I walked it and it held", and the count keeps meaning exactly what it meant.
+ *
+ * FLOWS ONLY. On a fact the claim IS the entry: text that is wrong is `dispute`, text that is
+ * superseded is `supersede`, and appending to a claim would make its evidence rows attest to
+ * sentences their observers never saw. A flow is the one thing here that is improved without
+ * becoming a different thing.
+ */
+export function amend(base, id, input = {}) {
+  const { step, note, at, by } = input;
+  const entry = loadEntry(base, id);
+  if (!entry) throw new CaptureRefused(`no entry ${id}`);
+  if (entry.data.plane !== 'flow') {
+    throw new CaptureRefused(
+      `amend refused: ${id} is on the ${entry.data.plane} plane, and amend is for flows only.\n`
+      + '  A fact\'s claim IS the entry. If an observation contradicts it, `kb dispute`; if you know\n'
+      + '  better than it, `kb supersede`. Appending to a claim would make its evidence rows attest\n'
+      + '  to sentences their observers never saw.',
+    );
+  }
+  if (entry.data.status !== 'active') {
+    const survivor = survivorOf(base, entry);
+    throw new CaptureRefused(
+      `amend refused: ${id} is ${entry.data.status}`
+      + (survivor ? `; the procedure is held by ${survivor.data.id}, amend that instead` : ', and a withdrawn procedure is not improved'),
+    );
+  }
+  if (!step) {
+    throw new CaptureRefused(
+      'amend refused: --step is required. Name the step this corrects, so a reader of that step\n'
+      + '  meets the correction rather than finding it at the bottom of a page.\n'
+      + '  An amendment that belongs to no step is not a step correction -- it is a fact about the\n'
+      + '  platform, and `kb capture` is the door for one.',
+    );
+  }
+  if (!note) {
+    throw new CaptureRefused(
+      'amend refused: --note is required. It is the amendment itself -- what the step should say,\n'
+      + '  in the words of somebody who has just watched it not work.',
+    );
+  }
+
+  const stamp = stampOf(base, input);
+  const when = at ?? new Date().toISOString();
+  const where = [
+    input.deployment ?? null,
+    stamp.platformVersion ? `platform ${stamp.platformVersion}` : null,
+    by ?? null,
+  ].filter(Boolean).join(', ');
+
+  // An ERRATA SECTION, not an edit in place. Rewriting the step would leave every evidence row
+  // above attesting to text its observer never walked, which is the same defect this verb exists
+  // to avoid on the other side. Errata are a form every reader already understands, and each one
+  // names its step so it can be attached to the right place rather than read as a footnote.
+  const has = /\n## Amendments\n/.test(entry.body);
+  const line = `- **Step ${step}** — ${note}${where ? `  \n  _observed ${where} · ${when}_` : `  \n  _${when}_`}`;
+  const body = has
+    ? `${entry.body.replace(/\s+$/, '')}\n${line}\n`
+    : `${entry.body.replace(/\s+$/, '')}\n\n## Amendments\n\n`
+      + 'Corrections to individual steps, each from somebody who walked this and found it wanting.\n'
+      + 'The steps above are as first written; read these with them.\n\n'
+      + `${line}\n`;
+
+  writeEntry(base, entry.data, body);
+  const artifacts = rebuildCapturedArtifacts(base, entry.data.plane);
+  return { id, step, artifacts, stamp };
 }
 
 /**

@@ -64,8 +64,13 @@ export const CAPTURED_CATALOG = 'captured-catalog.md';
 //
 // This is the `reanchor` argument one level along. An anchor is an address rather than a claim, so
 // correcting it must not destroy the id; a flow's STEPS are not its identity either, its goal is,
-// so amending them should not destroy the id. NOT BUILT: one run, two gaps, and this base's own
-// rule is that a mechanism waits for the measurement that needs it.
+// so amending them must not destroy the id.
+//
+// BUILT as `kb amend`, on 2026-09-14, after run 09 hit the same wall a second time -- it found that
+// the step saying this storefront has no `/checkout` route is wrong about `/checkout/completed`,
+// and confirmed the flow rather than lose the correction. Three gaps, two runs, one of them lost
+// entirely; that is the measurement this base's rule asks for before a mechanism is built, and it
+// arrived in a day rather than being assumed on the plane's first afternoon.
 export const FLOWS_DIR = 'flows';
 export const FLOWS_INDEX = 'flows-index.json';
 export const FLOWS_CATALOG = 'flows-catalog.md';
