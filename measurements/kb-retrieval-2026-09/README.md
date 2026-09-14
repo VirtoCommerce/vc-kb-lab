@@ -407,11 +407,35 @@ The **trend**, because it is monotone and nobody has been watching it:
 | before run 04 | 590 | 12 | — |
 | after run 06 | 590 | 33 | — |
 | after run 07 | 590 | **39** | **12 of 30 rows** |
+| after run 08 | 590 | **47** | **13 of 30 rows** |
 
 If it holds, the derived plane becomes unreachable for any question phrased in ordinary storefront
 words, and it will happen without a single change to the code. The next run's rows say whether it
 holds. That is a cheaper thing to be right about than a knob chosen today from four candidates that
 disagree.
+
+### Run 08 is the first evidence AGAINST the extrapolation
+
+It added eight documents -- the per-run rate the trend assumed -- and bought **one** head slot.
+Per-document yield fell:
+
+```
+after run 07   12 leads / 39 documents = 0.31
+after run 08   13 leads / 47 documents = 0.28
+```
+
+The absolute count still rises, so the sentence above is not withdrawn. What is now doubtful is the
+*shape*: a linear reading of three points predicted the derived plane drowning, and the fourth point
+is sublinear. The obvious mechanism is saturation -- head slots are a fixed 30 rows deep and the
+easy ones are taken -- and an equally obvious alternative is that run 08's eight entries are about
+shipments, a subject none of the 34 replay questions asks about. **The two are not separable on one
+point**, and the second would mean this number moves with what a run happens to work on rather than
+with corpus size, which would make the whole trend an artefact of question choice.
+
+Mean best-experiential score also fell, 323.5 to 333.9 against a derived 344.8 -- still the same
+scale, which is what matters for the merge.
+
+Nothing shipped, again. Two more runs on unrelated subjects say which reading is right.
 
 ## The baseline was re-taken here, deliberately
 
