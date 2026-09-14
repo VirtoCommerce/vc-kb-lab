@@ -16,7 +16,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { buildIndex, SEARCH_OPTIONS } from '../src/index-build.mjs';
+import { buildIndex, SEARCH_OPTIONS, tokenize } from '../src/index-build.mjs';
 import { stringifyFrontmatter } from '../src/frontmatter.mjs';
 import { ask } from '../src/resolve.mjs';
 import { DERIVED_ENTRIES } from '../src/planes.mjs';
@@ -125,4 +125,23 @@ test('a miss says how many content terms it wanted, not that nothing matched at 
     'an absence produced by the floor is a different fact from an absence of any match, and the '
     + 'reader has to be able to tell which one they are looking at');
   drop(dir);
+});
+
+// A typographic apostrophe splits, and the em dash does not. Both halves are load-bearing.
+//
+// r3.2 asks about "the whole organization's orders" with a curly U+2019, which was in no split
+// class -- so it tokenized to one term matching nothing, while `gql-query-organizationorders`
+// matches a bare `organization` exactly. That row lost its anchor, and six floor variants could not
+// reach it because the term they were asked to credit was never produced.
+//
+// The em dash stays OUT: 1954 occurrences in the live corpus against four for the apostrophe, so
+// splitting on it rewrites a byte-gated index for nothing.
+test('typographic punctuation splits, except the em dash', () => {
+  assert.deepEqual(tokenize('organization’s orders'), ['organization', 's', 'orders']);
+  assert.deepEqual(tokenize('organization‘s'), ['organization', 's']);
+  assert.deepEqual(tokenize('a “quoted” word'), ['a', 'quoted', 'word']);
+  assert.deepEqual(tokenize('one–two'), ['one', 'two']);
+  assert.deepEqual(tokenize('and…then'), ['and', 'then']);
+  // the em dash is not a separator here, and a spaced one is dropped by processTerm instead
+  assert.deepEqual(tokenize('one—two'), ['one—two']);
 });

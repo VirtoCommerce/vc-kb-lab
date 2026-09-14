@@ -277,6 +277,71 @@ Ten floors were scored on all four numbers; `diagnose.mjs` reproduces any row of
 **No floor moved `wanted` at all.** That is not a tuning failure, it is arithmetic: a filter cannot
 reorder.
 
+## The floor, re-measured after three live costs — and it was not the floor
+
+Three questions agents actually typed were refused, none of them one of the 34 rows:
+
+```
+M1  run 09   "what happens to an existing cart when a promotion is edited"    wants KB-35A09C64
+M2  run 10   "create a promotion with a coupon code"          FLOW plane      wants KB-EB228603
+M3  r3.2     "…or the whole organization’s orders?"                           wants KB-6FE58084
+```
+
+Three is the number this project said it would look at a constant on. Six variants were scored on
+the current corpus — the shipped floor, a floor of two, two that credit a PREFIX match on a long
+query term, and two that credit a single rare term:
+
+| | M1 | M2 | M3 | off-topic | grader-wanted | rows losing their anchor |
+|---|---|---|---|---|---|---|
+| **A** exact, `min(3,n)` — shipped | · | · | · | 0/7 | 1/10 | 1 (r3.2) |
+| B exact, `min(2,n)` | · | **y** | · | 1/7 | 1/10 | 1 (r3.2) |
+| C exact or prefix ≥ 6, `min(3,n)` | · | · | · | 0/7 | 1/10 | 1 (r3.2) |
+| D exact or prefix ≥ 8, `min(3,n)` | · | · | · | 0/7 | 1/10 | 1 (r3.2) |
+| E `min(3,n)`, or one exact rare term | · | · | · | 0/7 | 1/10 | 1 (r3.2) |
+| F `min(3,n)`, or one rare prefix ≥ 6 | · | · | · | 0/7 | 1/10 | 1 (r3.2) |
+
+**Nothing moved.** One variant fixes one case and buys an off-topic entry doing it.
+
+### Because the floor was not what was wrong
+
+`r3.2` asks about *"the whole organization’s orders"* with a typographic **U+2019**, which was in no
+split class. So it tokenized to the single term `organization’s`, which matches nothing:
+
+```
+"organization’s"  ->  ["organization’s"]        the curly form, as the row is written
+"organization's"  ->  ["organization", "s"]     the straight form
+```
+
+`gql-query-organizationorders` matches a bare `organization` **exactly**. The floor was being asked
+to credit a term the tokenizer never produced. Two of the six variants existed only to reach this
+row by crediting a prefix, and they could not, for the same reason.
+
+One character in the split class puts that entry back at **rank 1**, and it is the row whose anchor
+both blind graders set independently and which run 03 had cited by id.
+
+**The em dash is deliberately excluded**: 1954 occurrences in this corpus against four for the
+apostrophe and zero for the other five, so adding it would rewrite the byte-gated derived index for
+no gain — a spaced `—` already splits on whitespace into a one-character term that `processTerm`
+drops. Verified rather than assumed, and the first version of this claim was wrong: it said all
+seven characters were absent, and comparing the rebuilt index said otherwise within a minute.
+
+### After
+
+| | before | after |
+|---|---|---|
+| rows losing their anchor | 1 | **0** |
+| grader-wanted served | 2 of 5 | **3 of 5** |
+| off-topic served | 0 of 7 | 0 of 7 |
+| derived, captured and flow indexes | — | **byte-identical** |
+
+`M1` and `M2` are untouched and are not floor problems either. M1 is a vocabulary gap — the asker
+said `edited`, the entry says `changing` — and this file has said since Part two that no floor
+reaches one. M2 is the same shape on the flow plane: four terms, two matched, and the flow carries
+neither `coupon` nor `code`.
+
+**The floor ships unchanged.** Three observed costs bought a one-character fix somewhere else, which
+is the outcome the measurement existed to make possible.
+
 ## Two levers that can reorder, both rejected
 
 **Field boosts.** A grid over subject boost × a de-weight on the prose `question` field × three

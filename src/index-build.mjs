@@ -6,9 +6,29 @@ import MiniSearch from '../vendor/minisearch.js';
 // Route segments, operationIds and GraphQL type names are what the asker actually types, so the
 // tokenizer breaks /api/payment/search, StoreModule_SearchStores and InputAddItemType into
 // findable words rather than three unfindable ones.
+// TYPOGRAPHIC PUNCTUATION SPLITS TOO, and leaving it out cost a real row. `r3.2` asks "...or the
+// whole organization’s orders?" with a curly U+2019, which was in no split class -- so it tokenized
+// to the single term `organization’s`, matching nothing, while the straight-quote form gives
+// `organization` and matches `gql-query-organizationorders` exactly. That entry sat at rank 5,
+// unserved, on the one row whose anchor BOTH blind graders set independently and which run 03 had
+// cited by id. With the character split it returns to rank 1.
+//
+// FOUND BY MEASURING THE FLOOR, WHICH WAS NOT WHAT WAS WRONG. Six floor variants -- counts,
+// coverage, rarity, and two that credit a prefix match -- moved that row not at all, because the
+// term they were being asked to credit was never produced by the tokenizer.
+//
+// THE EM DASH IS DELIBERATELY NOT HERE. It appears 1954 times in this corpus, against four for the
+// apostrophe and zero for the rest, so adding it would rewrite the byte-gated derived index and turn
+// `kb check` red -- and it buys nothing: a spaced `--` already splits on whitespace into a one-
+// character term that `processTerm` drops. The five that are here occur zero times in the corpus, so
+// this changes only what a QUESTION tokenizes to and leaves every index byte-identical. Both halves
+// verified rather than assumed -- the first version of this comment claimed all seven were absent,
+// and the index comparison said otherwise within a minute.
+const SPLIT = /[\s/.,;:()\[\]{}<>"'`|!?=+*&^%$#@~_‘’“”–…-]+/u;
+
 export function tokenize(string) {
   const out = [];
-  for (const chunk of string.split(/[\s/.,;:()\[\]{}<>"'`|!?=+*&^%$#@~_-]+/u)) {
+  for (const chunk of string.split(SPLIT)) {
     if (!chunk) continue;
     out.push(chunk);
     // camelCase and PascalCase carry the nouns: InputAddItemType -> input add item type

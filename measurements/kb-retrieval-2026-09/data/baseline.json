@@ -1,6 +1,6 @@
 {
   "base": "C:/_VIRTO/vc-knowledge",
-  "at": "2026-09-14T12:51:49.511Z",
+  "at": "2026-09-14T13:05:06.546Z",
   "rows": [
     {
       "row": "r1.1",
@@ -321,9 +321,9 @@
       "limit": 3,
       "question": "How does the storefront xAPI decide whether an order query returns only my orders or the whole organization’s orders?",
       "served": [
+        "KB-6FE58084",
         "KB-59E4B5FC",
-        "KB-360127D0",
-        "KB-CC195687"
+        "KB-360127D0"
       ],
       "miss": false
     },
