@@ -1,6 +1,6 @@
 {
   "base": "C:/_VIRTO/vc-knowledge",
-  "at": "2026-09-13T16:11:22.588Z",
+  "at": "2026-09-14T09:09:43.211Z",
   "rows": [
     {
       "row": "r1.1",
@@ -13,7 +13,7 @@
       "question": "how do I create a percentage-discount promotion in the Virto Commerce Admin SPA?",
       "served": [
         "KB-C0B7076C",
-        "KB-FF7E4D5B"
+        "KB-A3CE7FBA"
       ],
       "miss": false
     },
@@ -27,8 +27,8 @@
       "limit": 2,
       "question": "how does the storefront cart show an applied promotion discount in GraphQL?",
       "served": [
-        "KB-35A09C64",
-        "KB-AE6BEE53"
+        "KB-D992AF44",
+        "KB-358A70CB"
       ],
       "miss": false
     },
@@ -164,8 +164,8 @@
       "question": "what fields does the Discount type carry on a CustomerOrder and its line items",
       "served": [
         "KB-FF7E4D5B",
-        "KB-AB35BCDC",
-        "KB-D1F02657"
+        "KB-D1F02657",
+        "KB-AB35BCDC"
       ],
       "miss": false
     },
@@ -205,9 +205,9 @@
       "row": "r2.5",
       "held": "HELD",
       "want": null,
-      "anchor": "KB-12CEF821",
-      "because": "the row's recorded answer names DiscountType, OrderDiscountType and OrderLineItemType -- never CustomerOrderType, which merely ranked first",
-      "by": "run 02's own answer column",
+      "anchor": null,
+      "because": null,
+      "by": null,
       "limit": 3,
       "question": "does a cart line item or the cart total keep the discount percentage anywhere, or only the money amount",
       "served": [
@@ -243,8 +243,8 @@
       "limit": 3,
       "question": "DiscountType fields on the cart",
       "served": [
-        "KB-C495274F",
         "KB-D4A064A5",
+        "KB-C495274F",
         "KB-D61E2FFA"
       ],
       "miss": false
@@ -277,7 +277,7 @@
       "served": [
         "KB-D4A064A5",
         "KB-C495274F",
-        "KB-FF7E4D5B"
+        "KB-A3CE7FBA"
       ],
       "miss": false
     },
@@ -355,7 +355,7 @@
       "served": [
         "KB-4A8606CA",
         "KB-B769C7B1",
-        "KB-0B6067F8"
+        "KB-BAEBCDA7"
       ],
       "miss": false
     },
@@ -483,7 +483,7 @@
       "served": [
         "KB-AB35BCDC",
         "KB-12CEF821",
-        "KB-B65E4D94"
+        "KB-4D26A022"
       ],
       "miss": false
     },

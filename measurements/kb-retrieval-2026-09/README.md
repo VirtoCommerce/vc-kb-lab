@@ -408,6 +408,7 @@ The **trend**, because it is monotone and nobody has been watching it:
 | after run 06 | 590 | 33 | — |
 | after run 07 | 590 | **39** | **12 of 30 rows** |
 | after run 08 | 590 | **47** | **13 of 30 rows** |
+| after run 09 | 590 | **49** | **13 of 30 rows** |
 
 If it holds, the derived plane becomes unreachable for any question phrased in ordinary storefront
 words, and it will happen without a single change to the code. The next run's rows say whether it
@@ -436,6 +437,86 @@ Mean best-experiential score also fell, 323.5 to 333.9 against a derived 344.8 -
 scale, which is what matters for the merge.
 
 Nothing shipped, again. Two more runs on unrelated subjects say which reading is right.
+
+### Run 09 refuted the question rather than either answer
+
+Run 09 was designed to separate those two readings: it worked DISCOUNTS, the subject most of the
+replay rows ask about and the densest ground in the corpus, where run 08 had worked shipments, which
+no row asks about. The pre-registered prediction was that saturation would show as +8 entries and a
+0-1 slot move, and subject overlap as a move of 3 or more.
+
+**Neither branch fired, because both assumed a run adds about eight entries.** Run 09 added two. The
+share moved by zero.
+
+| run | ground | captures | confirmations |
+|---|---|---|---|
+| 01 | promotions, empty base | 4 | 0 |
+| 07 | order fields, 4 adjacent entries | 8 | 0 |
+| 08 | shipments, **0** entries on the subject | 10 | 3 |
+| 09 | discounts, **11** entries on the subject | 3 + 1 flow | **9** |
+
+**A run on covered ground confirms; a run on fresh ground writes.** Nobody designed that and no
+brief asks for it -- run 09 was told, as every run is, that recording nothing is a legitimate
+outcome, and it spent its writes on confirmations because the facts were already there.
+
+That is a self-limiting mechanism, and it is fatal to the extrapolation this section was built on.
+The trend assumed a constant ~8 entries per run continuing indefinitely. If the write rate falls as
+coverage rises, the experiential plane does not grow without bound, and "the derived plane becomes
+unreachable" is a scenario that never arrives.
+
+**The VOLUME forecast is withdrawn.** What stands is the observation it was built from: 49
+documents take 13 of 30 head slots against 590.
+
+### But the harm does not need the volume, and I conflated the two
+
+Withdrawing the forecast is not the same as closing the finding, and an hour after writing the
+paragraph above I had to correct it. Run 09 added **two** entries, moved the head-slot share by
+zero -- and broke `r1.2`.
+
+```
+r1.2  how does the storefront cart show an applied promotion discount in GraphQL?
+  1. KB-D992AF44  order discount row is a snapshot, not a live reference   [experiential]
+  2. KB-358A70CB  storefront order page projection of the shipment         [experiential]
+  wanted: KB-D61E2FFA  gql-type-carttype                                   [derived]
+```
+
+The question says CART. Both slots went to entries about ORDERS. `gql-type-carttype`, which names
+the exact type asked about, is out of a two-slot list — and this is the same row the raised floor
+was built to fix in the first place, broken again, by a different pair of entries.
+
+**Fifth instance of the shape** (r1.2 twice, r6.1, r7.6, r2.5), and the cheapest: two documents.
+
+So the two things are separable and were being treated as one:
+
+| | status |
+|---|---|
+| the plane grows until it drowns the derived one | **dead.** A run on covered ground confirms rather than writes |
+| a written entry displaces the derived entry that names the exact type asked about | **alive, and it costs two entries, not eighty** |
+
+The four mechanisms above stay unshipped for the reason they were always unshipped — every one buys
+a row and sells another, and their constants are underivable. What is no longer true is the thing I
+wrote an hour earlier, that the reason to act had gone with the forecast. It had not. It is the same
+reason it always was, and it is now five rows old.
+
+One honest caveat, unchanged: four points in the write-rate table, one run on one subject.
+
+## The baseline was re-taken again after run 09, and this is what it swallows
+
+Recorded BEFORE taking it, which is the whole point -- run 09 added four entries and the replay
+produced one LOST and six MOVED rows off the back of them.
+
+| row | what moved |
+|---|---|
+| **r1.2** | **the real one.** `gql-type-carttype` out of a two-slot list, both slots to order entries. Section above. |
+| r1.1 r2.2 r2.7 r2.9 r3.4 r7.3 | rank shuffles among on-topic entries as four documents entered the corpus |
+
+The six MOVED rows are the corpus changing rather than retrieval changing, which is the noise a
+regression detector has to absorb or stop being read. **r1.2 is not noise and is not absorbed by
+this** -- it is written up above and stays open after the re-take, which is the difference between
+re-baselining and laundering.
+
+`r2.5` also goes green here, and it earns it for a different reason: run 09 was sent at that exact
+question and answered it without the entry the row was anchored on. Settled, not swallowed.
 
 ## The baseline was re-taken here, deliberately
 

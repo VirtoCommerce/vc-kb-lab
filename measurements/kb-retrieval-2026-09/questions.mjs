@@ -27,7 +27,21 @@ export const QUESTIONS = [
   { row: 'r2.2', limit: 3, held: 'HELD', q: 'what fields does the Discount type carry on a CustomerOrder and its line items' },
   { row: 'r2.3', limit: 3, held: 'HELD', q: 'OrderDiscountType fields' },
   { row: 'r2.4', limit: 3, held: 'NOT-USED', q: 'how do I create a percentage discount promotion in the marketing module' },
-  { row: 'r2.5', limit: 3, held: 'HELD', anchor: 'KB-12CEF821', by: "run 02's own answer column", because: "the row's recorded answer names DiscountType, OrderDiscountType and OrderLineItemType -- never CustomerOrderType, which merely ranked first", q: 'does a cart line item or the cart total keep the discount percentage anywhere, or only the money amount' },
+  // SETTLED BY RUN 09, AND NOT RE-ANCHORED, because the evidence settles the QUESTION and not the
+  // id. Run 09 was sent at this exact subject and answered it in 244 calls without one mention of
+  // KB-12CEF821 or the string `orderlineitemtype` -- the contract table this row was anchored on.
+  // Its own question row for "does the shopping cart record the discount percentage rate" reads
+  // HELD, backed_by KB-EXPERIENTIAL. So the displacement that made this row LOST for two runs cost
+  // nothing: the entries that took the slots answered it.
+  //
+  // WHICH of the three it read is not recoverable. The run left `found_via` empty on four of its
+  // six rows -- the one column that would have named the entry -- so picking one by reading the
+  // answer text would be the guess this row exists to expose. The override is therefore REMOVED
+  // rather than moved, and the row falls back to the baseline like every other.
+  //
+  // That is the fourth row on which "rank 1 is what was acted on" has been wrong, after r3.2, r2.10
+  // and this row itself -- and the first settled by a run sent to settle it rather than by reading.
+  { row: 'r2.5', limit: 3, held: 'HELD', q: 'does a cart line item or the cart total keep the discount percentage anywhere, or only the money amount' },
   { row: 'r2.6', limit: 3, held: 'HELD', q: 'OrderLineItemType discount fields' },
   { row: 'r2.7', limit: 3, held: 'HELD', q: 'DiscountType fields on the cart' },
   { row: 'r2.8', limit: 3, held: 'HELD', q: 'where does a cart-level promotion reward land on the cart and how is it rounded' },
