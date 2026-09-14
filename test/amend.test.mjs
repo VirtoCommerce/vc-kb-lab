@@ -159,6 +159,22 @@ test('--step is required, because an amendment with no step is a fact', () => {
   drop(dir);
 });
 
+// Found by run 11, on the verb's second day, in its own report. The doc comment promised every
+// amendment carries a stamp; it only did when somebody passed --deployment, and nothing asked. Both
+// amendments runs 10 and 11 wrote landed unstamped -- a correction nobody could date or place.
+test('--deployment is required, so no amendment can land unattributable', () => {
+  const dir = makeBase();
+  const { id } = capture(dir, FLOW);
+  assert.throws(
+    () => amend(dir, id, { step: 2, note: 'the add control is the quantity stepper' }),
+    (e) => e instanceof CaptureRefused && /--deployment is required/.test(e.message),
+  );
+  // and with it, the stamp is there
+  amend(dir, id, { step: 2, note: 'x', deployment: 'vcptcore_stable' });
+  assert.match(body(dir, id), /observed vcptcore_stable, platform 3\.1007\.26/);
+  drop(dir);
+});
+
 test('--note is required', () => {
   const dir = makeBase();
   const { id } = capture(dir, FLOW);

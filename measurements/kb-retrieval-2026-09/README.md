@@ -523,16 +523,71 @@ run has ever used. On a phrasing a run did use, the entry is served.
 | r6.1 | self-healed when the run wrote its own |
 | r2.5 | **benign** — run 09, sent at it, answered without the displaced entry |
 | r1.2, second time | **benign** — run 10, sent at it, was served the displaced entry |
-| r7.6 | stands. An unmet `want`, never tested by a run sent at it |
+| r7.6 | **benign** — run 11, sent at it, never mentioned the entry in 240 calls |
 
-Two of the five were tested by a run sent to test them and **both evaporated**. One stands untested.
-That is not a finding in the shape I have been writing it: what looked like a corpus-level pathology
-is, so far, a replay harness measuring wordings nobody asks.
+**All three testable instances were tested by a run sent at them, and all three evaporated.** Run 11
+answered a configuration question end to end without one mention of `KB-4869F834` or the string
+`orderconfigurationitemtype` — the entry r7.6's `want` records as missing, and the one run 07 had to
+open by hand. What led the row instead, `KB-360127D0`, listed the fields in its own body.
+
+That row was the sharpest of the three, because run 07 DID open the type entry and r7.6 records run
+07's answer. The counter-case was available and lost.
+**That finding is closed, and it was not what I wrote it as.** What looked like a corpus-level
+pathology was a replay harness measuring wordings nobody asks, on rows where the displacing entry
+answered the question anyway. Three runs were spent settling it and the answer was no three times.
+
+What survives, and it is worth keeping: **the entry that leads is often not the entry a run uses.**
+True on five rows now. Runs read the whole list and pick; this harness reads rank 1 and cannot. That
+is a limit of the instrument, not of the base.
+
+The four plane-balance mechanisms stay unshipped. Nothing has been found for them to fix.
 
 What survives is narrower and still worth watching: **the entry that leads is often not the one a
 run uses**, which is now true on four rows, and a two-slot list is thin enough that a near miss at
 rank 1 costs the second slot. Runs read the list, notice, and pick correctly. The replay harness
 reads rank 1 and cannot.
+
+## Re-taken after run 11, and what that one swallows
+
+Seven entries about configured products entered a corpus of 651, and eight rows moved.
+
+**`r3.2` is LOST and its `want` goes missing** — `KB-6FE58084` out, displaced by run 11's
+`KB-59E4B5FC` and by `KB-360127D0`. Both are about configuration on an order, and r3.2 is not. This
+is the row whose anchor BOTH blind graders overrode independently, so it is the row where "rank 1 is
+what was used" was already known to be wrong, and it has now lost a `want` on top.
+
+Left open and not tuned — but it is **not** another instance of the pattern the section above
+closes, and the diagnosis says why:
+
+```
+terms: storefront, xapi, decide, whether, order, query, returns, only, orders, whole, organization’s
+
+ 442  KB-746B7535   matched: order, orders
+ 426  KB-59E4B5FC   matched: storefront, order, orders, only, whole
+ 400  KB-360127D0   matched: storefront, order, orders, only
+ 383  KB-CC195687   matched: order, orders, query, only
+ 368  KB-6FE58084   matched: order, orders, query        <- rank 5, and it is the answer
+```
+
+Every winner matches on the generic nouns of an order. `KB-59E4B5FC` takes rank 2 on
+`storefront, order, orders, only, whole` — five terms, not one of them about organization scoping.
+
+**And the one term that decides the question matches nothing.** `organization’s` is the whole
+question; `KB-6FE58084` is `gql-query-organizationorders`, whose document term is
+`organizationorders`. MiniSearch's `prefix: true` ranks that as a hit, but `contentMatches` keys on
+DOCUMENT terms, so the floor sees `organizationorders` — not in the query — and gives it no credit.
+The entry that literally names the thing asked about earns nothing from the word that names it.
+
+That is by design and stated where the floor is defined: prefix and fuzzy buy recall and are not
+evidence. **This is the third time that design has been observed to cost a correct answer** — after
+run 09's "edited" against an entry saying "changing", and `kb how` missing a flow on "coupon code".
+Three is the number at which this project has said it will look at a constant.
+
+Unlike the three rows above, `r3.2` has never been put to a run. Recorded as a diagnosed defect
+awaiting one, not as settled either way.
+
+The other seven MOVED are on-topic rank shuffles: seven documents entering a corpus that now answers
+configuration questions it could not answer yesterday.
 
 ## Re-taken again after run 10, and what that one swallows
 

@@ -1,6 +1,6 @@
 {
   "base": "C:/_VIRTO/vc-knowledge",
-  "at": "2026-09-14T11:33:33.992Z",
+  "at": "2026-09-14T12:51:49.511Z",
   "rows": [
     {
       "row": "r1.1",
@@ -87,8 +87,8 @@
       "limit": 2,
       "question": "which mutation changes the quantity of a line item already in the cart?",
       "served": [
-        "KB-17361565",
-        "KB-0181473A"
+        "KB-A1B35892",
+        "KB-17361565"
       ],
       "miss": false
     },
@@ -164,8 +164,8 @@
       "question": "what fields does the Discount type carry on a CustomerOrder and its line items",
       "served": [
         "KB-FF7E4D5B",
-        "KB-D1F02657",
-        "KB-AB35BCDC"
+        "KB-59E4B5FC",
+        "KB-D1F02657"
       ],
       "miss": false
     },
@@ -228,8 +228,8 @@
       "question": "OrderLineItemType discount fields",
       "served": [
         "KB-12CEF821",
-        "KB-AB35BCDC",
-        "KB-C85CD432"
+        "KB-C85CD432",
+        "KB-AB35BCDC"
       ],
       "miss": false
     },
@@ -321,9 +321,9 @@
       "limit": 3,
       "question": "How does the storefront xAPI decide whether an order query returns only my orders or the whole organization’s orders?",
       "served": [
-        "KB-CC195687",
-        "KB-6FE58084",
-        "KB-43BEEB50"
+        "KB-59E4B5FC",
+        "KB-360127D0",
+        "KB-CC195687"
       ],
       "miss": false
     },
@@ -355,7 +355,7 @@
       "served": [
         "KB-4A8606CA",
         "KB-B769C7B1",
-        "KB-0B6067F8"
+        "KB-BAEBCDA7"
       ],
       "miss": false
     },
@@ -449,9 +449,9 @@
       "limit": 3,
       "question": "how does a configurable product become a line item in the cart",
       "served": [
-        "KB-57A0330B",
-        "KB-AE6BEE53",
-        "KB-360127D0"
+        "KB-A1B35892",
+        "KB-59E4B5FC",
+        "KB-57A0330B"
       ],
       "miss": false
     },
@@ -481,8 +481,8 @@
       "limit": 3,
       "question": "which money fields does an order line item carry with and without tax",
       "served": [
-        "KB-AB35BCDC",
         "KB-12CEF821",
+        "KB-AB35BCDC",
         "KB-4D26A022"
       ],
       "miss": false
@@ -515,7 +515,7 @@
       "served": [
         "KB-FF7E4D5B",
         "KB-CC195687",
-        "KB-4982C91F"
+        "KB-360127D0"
       ],
       "miss": false
     },
@@ -530,8 +530,8 @@
       "question": "what shape does a chosen configuration take on an order line item",
       "served": [
         "KB-360127D0",
-        "KB-AB35BCDC",
-        "KB-12CEF821"
+        "KB-59E4B5FC",
+        "KB-AB35BCDC"
       ],
       "miss": false
     }

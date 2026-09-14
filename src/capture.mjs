@@ -820,6 +820,23 @@ export function amend(base, id, input = {}) {
       + '  in the words of somebody who has just watched it not work.',
     );
   }
+  // REFUSED, exactly as `capture` refuses it, and this was missing for the verb's first two days.
+  // The doc comment above promised that "the amendment carries its own stamp where it is written"
+  // -- and it only did when somebody happened to pass --deployment, which nothing asked for. Both
+  // amendments written by runs 10 and 11 landed unstamped, so a correction to a procedure said
+  // nothing about where or on what version it had been seen.
+  //
+  // That is this base's oldest defect in a new place: a field that exists while nothing asks for it.
+  // It is the 54-of-54 unversioned evidence rows again, and the M3 no-defaults rule one level up.
+  // The two amendments already written stay as they are, for the same reason those 54 rows did.
+  if (!input.deployment) {
+    throw new CaptureRefused(
+      'amend refused: --deployment is required. An amendment says a step does not work, and a\n'
+      + '  correction nobody can date or place is a correction the next reader cannot weigh --\n'
+      + '  a step may have been right on the version it was written against and wrong on yours.\n'
+      + '  `capture` refuses without it for the same reason; this verb did not, for two days.',
+    );
+  }
 
   const stamp = stampOf(base, input);
   const when = at ?? new Date().toISOString();
