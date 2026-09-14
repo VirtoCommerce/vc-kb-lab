@@ -1,0 +1,24 @@
+{
+  "_comment_measurement": "The ground-truth half of the two-log design. tool-log.mjs appends one JSONL line per tool call to <VC_MEASURE_OUT>/tool-log-<session>.jsonl; the door (kb) writes the question half beside it through vendor/agent-log/log-row.mjs, and vendor/agent-log/reconcile.mjs joins the two. There is no matcher on purpose: an independent record of what a session did is only independent if it records everything, and a filter here would silently shrink the denominator of every coverage number computed later. The hook is fail-open by construction (never throws, never writes on the happy path, always exits 0), so it cannot block or slow the work it measures. VC_MEASURE_SECRETS points at the env file whose VALUES are redacted from the log, keyed on the value rather than on a name like `password`, because PW='...' has no keyword to key on. WHICH LOG IS WHOSE: log-row, reconcile and resolveSession all refuse to guess which of several logs in one folder is this session -- and since 2026-09-13 they rarely have to. The hook records CLAUDE_CODE_HOST_SESSION_ID, which the harness sets per session and tool children inherit, on every line; each resolver matches on it and finds its own log among any number of others. A run no longer needs VC_MEASURE_SESSION on every kb call, which is what runs 04-06 were told to do and what one missed prefix would have silently cost a question row. The refusal still stands for logs written before the field existed (runs 01-06) and for a harness that does not set it, and VC_MEASURE_SESSION still overrides. Archive a finished run into MEASUREMENT-archive/ (see README, The journal). What does NOT work, tested and reverted the same day: giving the two sessions different folders via VC_MEASURE_OUT in settings.local.json. The env block is re-read on every hook invocation rather than captured at session start, so the already-running session follows the new value too.",
+  "env": {
+    "VC_MEASURE_OUT": "C:/_VIRTO/vc-kb-lab/MEASUREMENT",
+    "VC_MEASURE_SECRETS": "C:/_VIRTO/vc-kb-lab/.env.local"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/vendor/agent-log/tool-log.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/hooks/arrive.mjs\""
+          }
+        ]
+      }
+    ]
+  },
+  "_comment_arrival": "The second PostToolUse hook makes the base ARRIVE rather than be visited. Three runs consulted it in their first minutes and never again -- run 03 asked its four questions at tool calls 7-10 of 319 -- so arrive.mjs looks at what the agent just touched, matches it against the coordinates both planes are anchored on, and hands back the entries. Measured over the three archived tool logs and counting only entries that existed BEFORE each run: 9 of run 01's 83 calls, 1 of run 02's 172, 2 of run 03's 319. It pays where the work touches routes (run 01 drove REST with curl) and barely where it is browser clicks against a GraphQL app. Shipped because it costs one file and improves as the experiential plane grows, NOT as a fix for the front-loading -- see measurements/kb-arrival-2026-09/. Fails silent by construction."
+}

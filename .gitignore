@@ -1,0 +1,33 @@
+# NO env file is committed, in any bucket. The scheme's buckets 1 and 2 -- .env.defaults and
+# .env.<env> -- were tracked while this repository was private, on the correct grounds that they
+# carry URLs and identities rather than passwords. Public changes the question: they name internal
+# test accounts and the hostnames of QA deployments, which is not a secret and is not something to
+# publish either. Bucket 3 was never committed and never will be.
+#
+# A clone therefore arrives with no deployment configuration, which is correct: this workbench
+# describes whichever deployment you point it at. See .env.example for the keys it reads.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+node_modules/
+_*.mjs
+
+# Raw session logs. Per-run working data, and it carries the question text an agent typed and the
+# targets it addressed -- so it goes through vendor/agent-log/scrub-scan.mjs before any of it is
+# published, and the analysed result lands in measurements/ rather than here.
+MEASUREMENT/
+MEASUREMENT-archive/
+
+# Local overrides that must never travel. settings.local.json was protected only by a rule in one
+# developer's personal global ignore file (~/.config/git/ignore) -- protection that does not survive
+# a clone, so the next person to have one would have had nothing stopping them committing it. It
+# can carry env values: during the run-06 experiment it carried VC_MEASURE_OUT.
+.claude/settings.local.json
+*.local.json
+
+# Per-run scratch. Run 07 created .scratch-run07/ for response bodies pulled off a live deployment;
+# those are unredacted platform responses and belong nowhere near a commit.
+.scratch-*/

@@ -1,0 +1,133 @@
+{
+  "mcpServers": {
+    "playwright-chrome": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@0.0.77",
+        "--browser",
+        "chrome",
+        "--isolated",
+        "--secrets",
+        "C:\\_VIRTO\\vc-mcp-testing-module\\.env.playwright.local",
+        "--viewport-size",
+        "1920x1080",
+        "--output-dir",
+        "C:\\_VIRTO\\vc-mcp-testing-module\\reports\\bugs\\screenshots\\_incoming\\chrome"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--dns-result-order=ipv4first",
+        "npm_config_prefer_offline": "true"
+      }
+    },
+    "playwright-firefox": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@0.0.77",
+        "--browser",
+        "firefox",
+        "--isolated",
+        "--secrets",
+        "C:\\_VIRTO\\vc-mcp-testing-module\\.env.playwright.local",
+        "--viewport-size",
+        "1920x1080",
+        "--output-dir",
+        "C:\\_VIRTO\\vc-mcp-testing-module\\reports\\bugs\\screenshots\\_incoming\\firefox"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--dns-result-order=ipv4first",
+        "npm_config_prefer_offline": "true"
+      }
+    },
+    "playwright-edge": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@0.0.77",
+        "--browser",
+        "msedge",
+        "--isolated",
+        "--secrets",
+        "C:\\_VIRTO\\vc-mcp-testing-module\\.env.playwright.local",
+        "--viewport-size",
+        "1920x1080",
+        "--output-dir",
+        "C:\\_VIRTO\\vc-mcp-testing-module\\reports\\bugs\\screenshots\\_incoming\\edge"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--dns-result-order=ipv4first",
+        "npm_config_prefer_offline": "true"
+      }
+    },
+    "Chrome DevTools": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "chrome-devtools-mcp@1.6.0",
+        "--userDataDir",
+        "C:\\Users\\Danil\\.chrome-devtools-mcp\\vc-qa-profile",
+        "--viewport",
+        "1920x1080",
+        "--redactNetworkHeaders"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--dns-result-order=ipv4first",
+        "npm_config_prefer_offline": "true"
+      }
+    },
+    "postman": {
+      "type": "http",
+      "url": "https://mcp.postman.com/minimal",
+      "headers": {
+        "Authorization": "Bearer <POSTMAN_API_KEY>"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "<CONTEXT7_API_KEY>"
+      }
+    },
+    "azure-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@azure/mcp@3.0.0-beta.32",
+        "server",
+        "start"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--dns-result-order=ipv4first",
+        "npm_config_prefer_offline": "true"
+      }
+    },
+    "figma-remote-mcp": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    }
+  }
+}
