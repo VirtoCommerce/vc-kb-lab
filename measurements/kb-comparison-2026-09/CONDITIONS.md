@@ -86,8 +86,20 @@ apply each other's discounts to each other's carts.
 
 ### The arena
 
-`C:/_VIRTO/_arena` holds `.mcp.json` (one browser server) and `.env` (URLs, store id, the sign-in
-literal). **No `CLAUDE.md`, no `.claude/`, not a git repository.** Emptied of artifacts between arms.
+`C:/_VIRTO/_arena` holds `.mcp.json` (one browser server), `.env` (URLs, store id, the sign-in
+literal), and a `.claude/settings.json` that contains **the instrument and nothing else** — one
+`PostToolUse` logging hook, the call cap, and for arm C the one variable that IS the treatment,
+`KB_BASE`. **No `CLAUDE.md`, no skills, no rules, no knowledge directory, not a git repository.**
+Emptied of artifacts between arms.
+
+The per-arm settings files are committed beside this page in `arena-settings/`, so the only
+difference between arm A and arm C is visible as a diff: one environment variable.
+
+**All three arms are counted by the same build of the counter** —
+`vc-kb-lab/vendor/agent-log/tool-log.mjs`, the copy runs 07–12 used and the one the port carries.
+The QA repository was already wired to a DIFFERENT copy under `_kb-work/instrument/`, which has
+since diverged; it was repointed for arm B. Two arms counted by two builds of the counter are not
+comparable, and that was worth catching before the first arm rather than after the third.
 
 No secret is in that directory. The browser runs with `--secrets`, so an arm types the NAME
 `IMPERSONATION_ADMIN_PASSWORD` and never sees a value.

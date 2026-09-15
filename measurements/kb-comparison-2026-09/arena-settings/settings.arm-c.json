@@ -1,0 +1,15 @@
+{
+  "_comment": "Arm C — the arena WITH the base. Identical to arm A's settings but for KB_BASE, which is the whole treatment. Nothing else differs: same instrument, same cap, same browser server, no CLAUDE.md, no skills, no rules.",
+  "env": {
+    "VC_MEASURE_OUT": "C:/_VIRTO/_arena/logs/arm-C",
+    "VC_MEASURE_CAP": "150",
+    "VC_MEASURE_SECRETS": "C:/_VIRTO/vc-mcp-testing-module/.env.playwright.local",
+    "KB_BASE": "C:/_VIRTO/vc-knowledge"
+  },
+  "enabledMcpjsonServers": ["playwright-chrome"],
+  "hooks": {
+    "PostToolUse": [
+      { "hooks": [ { "type": "command", "command": "node \"C:/_VIRTO/vc-kb-lab/vendor/agent-log/tool-log.mjs\"" } ] }
+    ]
+  }
+}
