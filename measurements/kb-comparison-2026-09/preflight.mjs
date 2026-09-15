@@ -89,6 +89,28 @@ if (arm === 'B') {
       .filter((f) => existsSync(`${ARENA}/${f}`));
     bad.length ? fail(`present: ${bad.join(', ')}`) : pass('no CLAUDE.md, no skills, no rules, not a git repo');
   });
+
+  // The arena is an arm's WORKING DIRECTORY: anything in it is readable, and another arm's report
+  // carries every answer this one is supposed to find. The logs used to live in ./logs and were
+  // moved out entirely; this check exists so they cannot drift back.
+  check('no other arm material is readable from the arena', (pass, fail) => {
+    const leftovers = [];
+    const walk = (d, depth = 0) => {
+      if (depth > 3) return;
+      for (const e of readdirSync(d, { withFileTypes: true })) {
+        if (e.name === 'artifacts' || e.name === 'node_modules') continue;
+        const full = `${d}/${e.name}`;
+        if (e.isDirectory()) { walk(full, depth + 1); continue; }
+        if (/report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]/i.test(e.name)) {
+          leftovers.push(full.replace(ARENA + '/', ''));
+        }
+      }
+    };
+    walk(ARENA);
+    leftovers.length
+      ? fail(`an arm could read: ${leftovers.join(', ')} — another arm's report holds every answer this one must find`)
+      : pass('nothing from any arm is reachable from the working directory');
+  });
 }
 
 // ---- the instrument actually writes ---------------------------------------------------------

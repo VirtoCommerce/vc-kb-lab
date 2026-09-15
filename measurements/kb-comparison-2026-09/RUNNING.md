@@ -15,6 +15,24 @@ result. C still runs before the repeat, on the residue arm B left.
 
 ## Before any arm
 
+**Run the pre-flight and get READY.** It exercises the environment rather than reading it:
+configs parsed and every path they name stat'd, the logging hook fed an empty payload, the secrets
+file checked for the names the brief types, both deployment URLs called, the base opened and `kb`
+actually made to answer — against a COPY, because `ask` and `how` write.
+
+```
+node C:/_VIRTO/vc-kb-lab/measurements/kb-comparison-2026-09/preflight.mjs B|A|C
+```
+
+A check that cannot run reports SKIPPED and the whole run reports NOT READY. Do not launch an arm
+on anything but READY. Two launches died on configuration that had been written and never run, and
+the fix is not care — it is this.
+
+**Arm material lives OUTSIDE the arena**, in `C:/_VIRTO/_comparison-logs/`. The arena is an arm's
+working directory: anything inside it is readable, and another arm's report holds every answer this
+one is supposed to find. The pre-flight checks for that too.
+
+
 1. **The repository must be on `main`**, with `plugins/vc-kb/` absent. PR #298 stays open and
    unmerged until arm B is finished — otherwise arm B finds the tool while looking around and stops
    being a clean control.
@@ -35,7 +53,7 @@ result. C still runs before the repeat, on the residue arm B left.
 **Working directory:** `C:/_VIRTO/vc-mcp-testing-module`, on `main`.
 
 Already wired: `.claude/settings.local.json` points `VC_MEASURE_OUT` at
-`C:/_VIRTO/_arena/logs/arm-B` and the `PostToolUse` hook at the shared instrument. Nothing else was
+`C:/_VIRTO/_comparison-logs/arm-B` and the `PostToolUse` hook at the shared instrument. Nothing else was
 changed, and the file is restored from
 `scratchpad/settings.local.json.bak` afterwards.
 
@@ -142,8 +160,8 @@ prompt and the write-up says so.
 
 ## After each arm
 
-1. **Save the arm's report** to `C:/_VIRTO/_arena/logs/arm-<X>/report.md`.
-2. **Check the log landed:** `ls C:/_VIRTO/_arena/logs/arm-<X>/` should show a
+1. **Save the arm's report** to `C:/_VIRTO/_comparison-logs/arm-<X>/report.md`.
+2. **Check the log landed:** `ls C:/_VIRTO/_comparison-logs/arm-<X>/` should show a
    `tool-log-*.jsonl`.
 3. **Check the deployment was left as asked** — cart empty, order cancelled, promotion disabled and
    not deleted. Record what is actually left, including anything the arm failed to clean up.
