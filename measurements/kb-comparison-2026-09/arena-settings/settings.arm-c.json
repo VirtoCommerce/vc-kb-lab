@@ -36,7 +36,16 @@
       "mcp__playwright-chrome__browser_take_screenshot",
       "mcp__playwright-chrome__browser_console_messages",
       "mcp__playwright-chrome__browser_network_requests",
-      "Bash"
+      "Bash",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformBackendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__FrontendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformFrontendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__StorefrontDeveloperGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformDeveloperGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformUserGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__StorefrontUserGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__VirtoCommerce",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__B2BExperts"
     ],
     "deny": [
       "mcp__playwright-chrome__browser_evaluate",

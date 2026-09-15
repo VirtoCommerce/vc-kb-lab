@@ -1,5 +1,5 @@
 {
-  "_comment": "Arm A — the arena with NO base. The only thing in this file is the instrument: one PostToolUse hook that records what the session actually did, one JSONL line per tool call, redacted by value. It is fail-open by construction and invisible to the agent. Every arm is counted by THIS build of the counter, because two arms counted by two builds are not comparable. There is no KB_BASE here, and that absence is what makes this arm A.",
+  "_comment": "Arm A \u2014 the arena with NO base. The only thing in this file is the instrument: one PostToolUse hook that records what the session actually did, one JSONL line per tool call, redacted by value. It is fail-open by construction and invisible to the agent. Every arm is counted by THIS build of the counter, because two arms counted by two builds are not comparable. There is no KB_BASE here, and that absence is what makes this arm A.",
   "env": {
     "VC_MEASURE_OUT": "C:/_VIRTO/_comparison-logs/arm-A",
     "VC_MEASURE_CAP": "600",
@@ -35,7 +35,16 @@
       "mcp__playwright-chrome__browser_take_screenshot",
       "mcp__playwright-chrome__browser_console_messages",
       "mcp__playwright-chrome__browser_network_requests",
-      "Bash"
+      "Bash",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformBackendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__FrontendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformFrontendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__StorefrontDeveloperGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformDeveloperGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformUserGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__StorefrontUserGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__VirtoCommerce",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__B2BExperts"
     ],
     "deny": [
       "mcp__playwright-chrome__browser_evaluate",
