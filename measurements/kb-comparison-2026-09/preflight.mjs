@@ -134,8 +134,13 @@ if (arm === 'B') {
 // the same check, both because it was easier to describe the shape than to name the thing. Append
 // an arm's order here when it places one.
 const ARM_ORDERS = ['CO260915-00001', 'CO260915-00002', 'CO260915-00003', 'CO260915-00004'];
-const ORDER_RE = new RegExp(ARM_ORDERS.join('|'));
-const ARM_NAME_RE = /report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]|order-verification/i;
+// ROUND THREE identifiers. The orders above are named IN the round-three task, so they stopped being
+// a leak signal; what leaks now is the answer, and the answer is a member's account state. These
+// two members are the ones the roster lies about, so an earlier arm's material naming either of
+// them alongside a lock word is the leak this check exists to catch.
+const ARM_MEMBERS = ['imp-target-blocked-20260514', 'imp-target-invited-20260514'];
+const ORDER_RE = new RegExp([...ARM_ORDERS, ...ARM_MEMBERS].join('|'));
+const ARM_NAME_RE = /report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]|order-verification|ground-truth|acct-|members-roster/i;
 
 // THE WALK STOPPED AT DEPTH 4, and the QA repository drops browser artefacts at depth 5:
 // reports/bugs/screenshots/_incoming/chrome. So the one directory an arm actually writes into was
@@ -150,6 +155,12 @@ const ARM_NAME_RE = /report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]|o
 const SKIP_DIRS = new Set([
   'node_modules', '.git', 'artifacts', 'test-results', 'results',
   '.fix-workspace', '.local-env', '.nuke', 'dist', 'bin', 'obj',
+  // test-data is the REPOSITORY'S OWN seed data, not an earlier arm's material. For round three it
+  // names both members the task turns on, with their account states -- which is arm B's TREATMENT,
+  // exactly like the GraphQL schemas were in round two. Removing it to protect the comparison would
+  // be curating one arm's context to flatter another, so it stays and CONDITIONS-MEMBERS.md records
+  // what it holds and where it is stale. The check surfaced it, which is the check working.
+  'test-data',
 ]);
 
 check('no earlier arm material is readable from the working directory', (pass, fail) => {
