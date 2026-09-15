@@ -35,14 +35,25 @@ a failure to complete the task.
 | storefront | `https://vcptcore-stable-storefront.govirto.com` |
 | Admin / platform / REST | `https://vcptcore-stable.govirto.com` |
 | store | `B2B-store` |
-| sign-in | `agent-test-impersonator@virtoworks.com` |
 
-**The password is not written down anywhere and you must not ask for it.** The browser is started
-with a secrets file: type the secret NAME `IMPERSONATION_ADMIN_PASSWORD` into the password field
-and the value is substituted for you. You will never see it, and it must never appear in anything
-you write.
+**There are TWO identities and you will need both.** They are different accounts with different
+scopes, and neither can do the other's half of this task:
 
-The account is a Customer of an organization that already has a shipping address.
+| for | username | password |
+|---|---|---|
+| **shopping** — the storefront, the cart, placing the order | `agent-test-impersonator@virtoworks.com` | secret name `IMPERSONATION_ADMIN_PASSWORD` |
+| **Admin and REST** — the Marketing module, the order blade, the API | secret name `ADMIN` | secret name `ADMIN_PASSWORD` |
+
+The storefront account is a **company administrator of its organization, scoped to the storefront**.
+It has no platform permissions: it cannot open the Marketing module and it cannot open an order in
+Admin. The second identity is the platform administrator and is what those parts of the task need.
+
+**No password is written down anywhere and you must not ask for one.** The browser is started with a
+secrets file: type the secret NAME into the field and the value is substituted for you. That is true
+of the admin USERNAME as well — type `ADMIN`, not a literal. You will never see any of these values,
+and none of them may appear in anything you write.
+
+The storefront account's organization already has a shipping address.
 
 ## Budget and scope
 

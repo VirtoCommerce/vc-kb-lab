@@ -110,6 +110,35 @@ VCST-5963 teaches that skill to consult the base. Once it does, an arm without a
 clean B nor the shipped configuration — it is "the repository with a broken base". So the
 measurement runs ahead of the construction, deliberately.
 
+## Arm B's first attempt was aborted, and why
+
+The first launch of arm B was stopped after about **20 tool calls, with nothing created or changed
+on the deployment**. It found two defects, both in the apparatus rather than in the task:
+
+**The brief named one identity and the task needs two.** `agent-test-impersonator` is a company
+administrator of its organization, **scoped to the storefront**. It cannot open the Marketing module
+and it cannot open an order in Admin — so "create a percentage-off promotion yourself" and "verify
+on the Admin order blade" were not reachable with the account the brief gave. The platform
+administrator credentials existed in the environment the whole time; I simply failed to put them in
+the brief. Both identities are now named, as secret NAMES rather than literals, so nothing sensitive
+sits in a public file.
+
+**No browser permissions.** The twelve measured runs ran with an explicit allow-list of fourteen
+Playwright tools. Neither the QA repository nor the arena had it, so the sign-in submit was refused
+by the auto-mode classifier as credential exploration. All three arms now carry the identical
+fourteen. `browser_network_request` (singular) stays deliberately absent — it returned a sign-in POST
+body in plaintext during run 02.
+
+**The seal is unaffected.** It covers the PREDICTIONS, which are about outcomes and are unchanged.
+A task that cannot be performed as written has to be fixed or the comparison measures nothing; the
+fix is recorded here, applies identically to every arm, and no arm has produced a gradable result
+yet.
+
+This is prediction **P16** — that the first arm would find something wanting in the apparatus rather
+than me — arriving on the twentieth tool call. Six of the seven instrument fixes across the previous
+twelve runs came from a run rather than from its author, and budgeting for that is the reason the
+prediction was written down instead of being a surprise.
+
 ## What is not being changed for this comparison
 
 No code in the base or the tool. No entry retired, corrected, re-anchored or confirmed. No catalog

@@ -5,10 +5,37 @@
     "VC_MEASURE_CAP": "150",
     "VC_MEASURE_SECRETS": "C:/_VIRTO/vc-mcp-testing-module/.env.playwright.local"
   },
-  "enabledMcpjsonServers": ["playwright-chrome"],
+  "enabledMcpjsonServers": [
+    "playwright-chrome"
+  ],
   "hooks": {
     "PostToolUse": [
-      { "hooks": [ { "type": "command", "command": "node \"C:/_VIRTO/vc-kb-lab/vendor/agent-log/tool-log.mjs\"" } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:/_VIRTO/vc-kb-lab/vendor/agent-log/tool-log.mjs\""
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "mcp__playwright-chrome__browser_snapshot",
+      "mcp__playwright-chrome__browser_navigate",
+      "mcp__playwright-chrome__browser_navigate_back",
+      "mcp__playwright-chrome__browser_click",
+      "mcp__playwright-chrome__browser_press_key",
+      "mcp__playwright-chrome__browser_type",
+      "mcp__playwright-chrome__browser_fill_form",
+      "mcp__playwright-chrome__browser_hover",
+      "mcp__playwright-chrome__browser_select_option",
+      "mcp__playwright-chrome__browser_evaluate",
+      "mcp__playwright-chrome__browser_wait_for",
+      "mcp__playwright-chrome__browser_take_screenshot",
+      "mcp__playwright-chrome__browser_console_messages",
+      "mcp__playwright-chrome__browser_network_requests"
     ]
   }
 }
