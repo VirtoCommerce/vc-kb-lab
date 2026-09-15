@@ -1,5 +1,5 @@
 {
-  "_comment": "Arm C — the arena WITH the base. Identical to arm A's settings but for KB_BASE, which is the whole treatment. Nothing else differs: same instrument, same cap, same browser server, no CLAUDE.md, no skills, no rules.",
+  "_comment": "Arm C - the arena WITH the base. KB_BASE is the whole treatment and VC_MEASURE_OUT is where the log goes; nothing else may differ from arm A's file. The previous version of this comment said exactly that and was FALSE: this file was missing the browser_network_request deny, so arm C had a tool arms A and B did not, in BOTH rounds. Verify with a diff, never with this sentence.",
   "env": {
     "VC_MEASURE_OUT": "C:/_VIRTO/_comparison-logs/arm-C",
     "VC_MEASURE_CAP": "600",
@@ -40,7 +40,8 @@
     ],
     "deny": [
       "mcp__playwright-chrome__browser_evaluate",
-      "mcp__playwright-chrome__browser_run_code_unsafe"
+      "mcp__playwright-chrome__browser_run_code_unsafe",
+      "mcp__playwright-chrome__browser_network_request"
     ]
   }
 }

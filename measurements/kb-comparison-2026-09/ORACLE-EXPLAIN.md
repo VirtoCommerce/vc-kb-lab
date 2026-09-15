@@ -111,3 +111,31 @@ run wrote each and on what date**. `@kb(…)` citations appearing in the report.
 **n = 1 per arm.** Four runs of the first comparison spanned 149–232 calls on a task where the arms
 were doing the same thing. This task removes the clicking, which should narrow the spread — but that
 is a hope, not a measurement, until it is run more than once.
+
+
+---
+
+# Correction, added after grading — item 1's stated cause was wrong
+
+**The oracle was written from the corpus, and it inherited the corpus's error.** Item 1 above opens
+"With no tax provider enabled, the discount ROW's WithTax field stays 0.0000", which couples the zero
+to the absence of tax. `KB-A646D086` says the same thing and is where it came from.
+
+**Arm C disproved it during the round.** It fetched `CO260909-00001` from the Electronics store,
+where the FixedRate tax provider is active at 20%, and found the line item's own
+`discountAmountWithTax` correctly populated at 35.40 while `discounts[0].discountAmountWithTax`
+was still 0. An active tax provider does not fill the row.
+
+**The correct answer:** the zero is structural. Nothing on the placement path ever assigns a
+`Discount` row's `DiscountAmountWithTax` — `RewardExtensions.ApplyRewards` builds the row without it,
+the cart and order totals calculators set `WithTax` only on LineItem, Shipment and PaymentIn, and
+`CustomerOrderBuilder` copies the row verbatim. The field sits at its CLR default. Tax has nothing to
+do with it.
+
+The practical advice in both the oracle and the entry is unaffected and still right: never read the
+row's `WithTax` as the discount.
+
+**Nothing is re-graded.** All three arms gave the structural mechanism and all three scored 1.0; arm C
+merely proved empirically what the other two argued from source. This note exists because an oracle
+that stays wrong after being shown wrong is worth less than no oracle, and because the gap between
+"the corpus says so" and "the deployment says so" is the entire subject of this exercise.

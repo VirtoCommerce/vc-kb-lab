@@ -84,6 +84,33 @@ if (arm === 'B') {
     pass(`log -> ${out}${hasBase ? `, KB_BASE -> ${s.env.KB_BASE}` : ', no KB_BASE'}`);
   });
 
+  // THE TWO ARENA FILES MUST DIFFER BY KB_BASE AND THE LOG PATH, AND BY NOTHING ELSE. The arm C
+  // file was missing the browser_network_request deny for both rounds, so arm C had a tool arms A
+  // and B did not -- and it is the tool that returned a sign-in POST body in plaintext in run 02.
+  // A comment inside the file asserted the two were identical but for KB_BASE. A sentence is not a
+  // check; this is. Round one's validity page made the same assertion and invited anybody to run
+  // the diff, and nobody ran it for five weeks.
+  check('the two arena settings differ by KB_BASE and the log path only', (pass, fail) => {
+    const dir = `${LAB}/measurements/kb-comparison-2026-09/arena-settings`;
+    const a = readJson(`${dir}/settings.arm-a.json`);
+    const c = readJson(`${dir}/settings.arm-c.json`);
+    const sorted = (x) => JSON.stringify([...(x ?? [])].sort());
+    const diffs = [];
+    if (sorted(a.permissions?.deny) !== sorted(c.permissions?.deny)) diffs.push('deny lists differ');
+    if (sorted(a.permissions?.allow) !== sorted(c.permissions?.allow)) diffs.push('allow lists differ');
+    if (sorted(a.enabledMcpjsonServers) !== sorted(c.enabledMcpjsonServers)) diffs.push('MCP server lists differ');
+    const keys = new Set([...Object.keys(a.env ?? {}), ...Object.keys(c.env ?? {})]);
+    for (const k of keys) {
+      if (k === 'KB_BASE' || k === 'VC_MEASURE_OUT') continue;
+      if (a.env?.[k] !== c.env?.[k]) diffs.push(`env ${k} differs`);
+    }
+    if (!c.env?.KB_BASE) diffs.push('arm C file has no KB_BASE');
+    if (a.env?.KB_BASE) diffs.push('arm A file has a KB_BASE');
+    const hook = (x) => x.hooks?.PostToolUse?.[0]?.hooks?.[0]?.command;
+    if (hook(a) !== hook(c)) diffs.push('the logging hook differs -- two arms counted by two builds');
+    diffs.length ? fail(diffs.join('; ')) : pass('KB_BASE and VC_MEASURE_OUT, and nothing else');
+  });
+
   check('no project context leaked into the arena', (pass, fail) => {
     const bad = ['CLAUDE.md', '.git', '.claude/skills', '.claude/knowledge', '.claude/rules']
       .filter((f) => existsSync(`${ARENA}/${f}`));
