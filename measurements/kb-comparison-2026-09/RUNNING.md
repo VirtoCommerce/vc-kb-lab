@@ -4,7 +4,12 @@
 directory: the oracle, the conditions and the predictions all live here, and an arm that reads them
 is grading itself.
 
-Order: **B → A → C.** C last, on the residue the others leave.
+Order, revised after arm B: **B → C → B again → A if there is time.**
+
+Arm A was demoted. It measures what an agent does with no context at all, which nobody disputes; a
+SECOND arm B is worth more, because n = 1 per arm is this comparison's biggest weakness and twelve
+earlier runs ranged from 83 to 319 tool calls. Without a spread for B, "C was faster" is not a
+result. C still runs before the repeat, on the residue arm B left.
 
 ---
 

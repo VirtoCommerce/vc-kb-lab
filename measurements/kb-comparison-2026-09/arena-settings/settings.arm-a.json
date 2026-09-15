@@ -34,7 +34,8 @@
       "mcp__playwright-chrome__browser_wait_for",
       "mcp__playwright-chrome__browser_take_screenshot",
       "mcp__playwright-chrome__browser_console_messages",
-      "mcp__playwright-chrome__browser_network_requests"
+      "mcp__playwright-chrome__browser_network_requests",
+      "Bash"
     ],
     "deny": [
       "mcp__playwright-chrome__browser_evaluate",

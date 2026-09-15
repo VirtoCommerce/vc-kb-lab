@@ -36,6 +36,13 @@ the comparison is trying to see** — P4 predicted arm C would beat arm B by at 
 settings. No arm can script the page. Arm B lacked it by hook, arms A and C lack it by rule; the
 capability set is the same.
 
+**Also equalised:** `Bash` is granted to both arena arms. Arm B ran eleven shell calls in the
+repository without being asked each time, and an arena arm that must approve every one is not doing
+the same task — it would hit arm C hardest, since running `kb` IS its treatment.
+
+**The two arena settings now differ by exactly two lines**, and it is a diff anybody can run:
+`KB_BASE`, which is the treatment, and `VC_MEASURE_OUT`, which is where the log goes.
+
 **Not fixable, and carried instead:** `enforce-secret-token.mjs` shapes how arm B typed into fields.
 The arena arms only ever hold secret NAMES, so they would type names regardless — but the enforcement
 is not identical, and saying so is cheaper than pretending it is.
@@ -47,8 +54,13 @@ Arm B's narration says `browser_evaluate` was refused; the tool log contains **z
 and **zero** failures. The attempt is invisible.
 
 So **149 is a floor, not a count.** Arm B's true number of attempts is higher by however many times a
-hook refused it. Only the repository has such hooks, so only arm B is undercounted — and it is
-undercounted in the direction that flatters it against the arena arms.
+hook refused it.
+
+**Corrected after the fix:** the asymmetry is now smaller than that paragraph first claimed. A
+permission `deny` also stops a call before it executes, and `PostToolUse` fires only on a call that
+ran — so the arena arms have an invisible-refusal path too, now that scripting is denied there. All
+three arms can under-count in the same way. What stays one-sided is the SHAPE of the refusal: arm B
+met a hook that explains itself, the arena arms meet a flat denial.
 
 This is the second instrument defect the measured party found rather than its author, on the second
 arm-day. It does not invalidate anything already recorded; it means the call counts are reported as
