@@ -39,7 +39,8 @@
     ],
     "deny": [
       "mcp__playwright-chrome__browser_evaluate",
-      "mcp__playwright-chrome__browser_run_code_unsafe"
+      "mcp__playwright-chrome__browser_run_code_unsafe",
+      "mcp__playwright-chrome__browser_network_request"
     ]
   }
 }
