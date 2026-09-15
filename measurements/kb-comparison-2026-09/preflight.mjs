@@ -90,28 +90,48 @@ if (arm === 'B') {
     bad.length ? fail(`present: ${bad.join(', ')}`) : pass('no CLAUDE.md, no skills, no rules, not a git repo');
   });
 
-  // The arena is an arm's WORKING DIRECTORY: anything in it is readable, and another arm's report
-  // carries every answer this one is supposed to find. The logs used to live in ./logs and were
-  // moved out entirely; this check exists so they cannot drift back.
-  check('no other arm material is readable from the arena', (pass, fail) => {
-    const leftovers = [];
-    const walk = (d, depth = 0) => {
-      if (depth > 3) return;
-      for (const e of readdirSync(d, { withFileTypes: true })) {
-        if (e.name === 'artifacts' || e.name === 'node_modules') continue;
-        const full = `${d}/${e.name}`;
-        if (e.isDirectory()) { walk(full, depth + 1); continue; }
-        if (/report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]/i.test(e.name)) {
-          leftovers.push(full.replace(ARENA + '/', ''));
-        }
-      }
-    };
-    walk(ARENA);
-    leftovers.length
-      ? fail(`an arm could read: ${leftovers.join(', ')} — another arm's report holds every answer this one must find`)
-      : pass('nothing from any arm is reachable from the working directory');
-  });
 }
+
+// A WORKING DIRECTORY IS READABLE, and an earlier arm's material holds every answer this one is
+// supposed to establish. Written for the arena after arm B's report turned up inside arm C's
+// working directory; extended to the repository after arm B's 108 browser artifacts turned out to
+// name its order number and its exact figures in 18 files.
+//
+// THE FIRST VERSION KEYED ON FILENAMES and flagged 41 of the repository's own BA reports, because
+// "report" is this repository's vocabulary. A guard shaped like the last failure catches the wrong
+// things -- so the repository is checked on CONTENT (does the file carry an order number from this
+// comparison?) and the arena, which has no legitimate content of its own, on both.
+// The orders THIS comparison has placed, and nothing else. The first content version matched any
+// September order and flagged nine of the repository's own bug reports, which carry order numbers
+// from ordinary QA work -- CO260902-00011, CO260909-00001 and so on. Two wrong guards in a row on
+// the same check, both because it was easier to describe the shape than to name the thing. Append
+// an arm's order here when it places one.
+const ARM_ORDERS = ['CO260915-00001', 'CO260915-00002'];
+const ORDER_RE = new RegExp(ARM_ORDERS.join('|'));
+const ARM_NAME_RE = /report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]|order-verification/i;
+
+check('no earlier arm material is readable from the working directory', (pass, fail) => {
+  const root = arm === 'B' ? REPO : ARENA;
+  const byName = arm !== 'B';
+  const hits = [];
+  const walk = (d, depth = 0) => {
+    if (depth > 4 || !existsSync(d)) return;
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (['node_modules', '.git', 'artifacts', 'test-results', 'results'].includes(e.name)) continue;
+      const full = `${d}/${e.name}`;
+      if (e.isDirectory()) { walk(full, depth + 1); continue; }
+      if (byName && ARM_NAME_RE.test(e.name)) { hits.push(full); continue; }
+      if (!/\.(yml|log|png|json|md|txt|csv)$/i.test(e.name)) continue;
+      try { if (ORDER_RE.test(readFileSync(full, 'utf8').slice(0, 200000))) hits.push(full); }
+      catch { /* binary or unreadable: not a leak this check can see, and it says so */ }
+    }
+  };
+  walk(root);
+  const uniq = [...new Set(hits)];
+  uniq.length
+    ? fail(`${uniq.length} file(s) carry an earlier arm's order or name its material: ${uniq.slice(0, 3).map((f) => f.replace(root + '/', '')).join(', ')}`)
+    : pass(`nothing from an earlier arm is reachable${byName ? '' : ' (checked by order number; this repository has reports of its own)'}`);
+});
 
 // ---- the instrument actually writes ---------------------------------------------------------
 check('the logging hook runs and is fail-open', (pass, fail) => {
