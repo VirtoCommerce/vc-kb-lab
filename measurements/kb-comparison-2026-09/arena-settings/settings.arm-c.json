@@ -32,11 +32,14 @@
       "mcp__playwright-chrome__browser_fill_form",
       "mcp__playwright-chrome__browser_hover",
       "mcp__playwright-chrome__browser_select_option",
-      "mcp__playwright-chrome__browser_evaluate",
       "mcp__playwright-chrome__browser_wait_for",
       "mcp__playwright-chrome__browser_take_screenshot",
       "mcp__playwright-chrome__browser_console_messages",
       "mcp__playwright-chrome__browser_network_requests"
+    ],
+    "deny": [
+      "mcp__playwright-chrome__browser_evaluate",
+      "mcp__playwright-chrome__browser_run_code_unsafe"
     ]
   }
 }
