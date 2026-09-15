@@ -55,10 +55,10 @@ and none of them may appear in anything you write.
 
 The storefront account's organization already has a shipping address.
 
-## Budget and scope
+## Scope
 
-* **150 tool calls.** Report where you stopped if you reach it. A batched browser call counts as
-  one, the same way the harness counts it.
+* **Work until the task is done.** There is no call budget — how much it costs to finish is part of
+  what this is for. Do not ration, and do not stop early because it is taking a while.
 * **You may create ONE promotion**, and edit or disable the one you created. Name it so it is
   obviously yours and obviously disposable.
 * **Do not touch any promotion that existed before you arrived.** Several are deliberately left

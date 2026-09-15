@@ -111,7 +111,7 @@ sentence.
 >
 > **Budget and scope**
 >
-> * **150 tool calls.** Report where you stopped if you reach it. A batched browser call counts as one.
+> * **Work until the task is done.** There is no call budget — how much it costs to finish is part of what this is for. Do not ration, and do not stop early because it is taking a while.
 > * You may create **ONE** promotion, and edit or disable the one you created. Name it so it is obviously yours and obviously disposable.
 > * **Do not touch any promotion that existed before you arrived.** Several are deliberately left disabled by earlier work, and none of them is yours.
 > * **One order.** An order cannot be deleted on this platform — cancel what you place.
