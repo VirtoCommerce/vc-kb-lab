@@ -65,8 +65,17 @@ that actually asked the question.
 
 ### Residue a reader should know about
 
-* Orders `CO260913-00001` … `CO260914-00004`, all **Cancelled**. Orders cannot be deleted here.
-  Three shipments remain `New`.
+* Orders `CO260913-00001` … `CO260915-00001`, all **Cancelled**. Orders cannot be deleted here.
+  Shipments remain `New` after a cancel — four of them now, arm B's included.
+* **Four older orders are still `New`**, not cancelled: `CO260809-00002`, `CO260909-00001`,
+  `CO260909-00002`, `CO260910-00001`. They predate this comparison and belong to nobody in it.
+  This page previously listed only the residue from runs 07–12 and implied everything was
+  cancelled; it was not, and an incomplete residue list is worse than none because a reader stops
+  looking.
+* **Nineteen shopping carts exist on `B2B-store`, ten of them holding items** — all either
+  anonymous sessions or other people's accounts (`Agent Vcst5705`, `Elena Mutykova`). **The
+  shopper's own cart is empty**, checked over REST rather than taken from arm B's report, which is
+  the only claim that matters for an arm about to build one.
 * **Three disabled promotions**, from runs 09, 10 and 12. **None of them belongs to any arm.** Run
   12's still describes itself as 10% while its reward is 20%; that mismatch is deliberate evidence
   and is not to be fixed.
