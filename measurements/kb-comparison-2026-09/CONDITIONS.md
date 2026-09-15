@@ -33,7 +33,12 @@ Measured by probing a COPY of the corpus, not by recollection:
 **The base holds the recipe, not hints.** That is stated here, in the ticket, and on the result page,
 rather than left for a reader to discover.
 
-**Tax is a MISS** under every phrasing tried.
+**Tax:** nothing in the corpus explains how tax is CALCULATED. That is narrower than what this page
+first claimed — *"a MISS under every phrasing tried"* was three phrasings, not every phrasing. Arm C
+asked about shipping and tax in one sentence and was served `KB-A646D086`, which sits on a
+`taxProvider=none` scope axis and answers what a missing tax provider does to an order's discount
+fields. Corrected here rather than quietly: generalising from three probes is the same mistake this
+corpus's known retrieval gap is made of.
 
 **One known retrieval gap sits on item S4.** `"why is the delivery option price zero"` returns
 `KB-6AA0D7FB` at rank 1; `"what does shipping cost on this deployment"` MISSES. Same entry, same
