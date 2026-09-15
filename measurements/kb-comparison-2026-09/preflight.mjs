@@ -106,7 +106,7 @@ if (arm === 'B') {
 // from ordinary QA work -- CO260902-00011, CO260909-00001 and so on. Two wrong guards in a row on
 // the same check, both because it was easier to describe the shape than to name the thing. Append
 // an arm's order here when it places one.
-const ARM_ORDERS = ['CO260915-00001', 'CO260915-00002'];
+const ARM_ORDERS = ['CO260915-00001', 'CO260915-00002', 'CO260915-00003'];
 const ORDER_RE = new RegExp(ARM_ORDERS.join('|'));
 const ARM_NAME_RE = /report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]|order-verification/i;
 

@@ -70,3 +70,21 @@ beside anything favourable.
 An active, non-exclusive, $50 promotion did not apply to a $1,612.97 cart. That is worth an entry in
 the base once the comparison is over and the corpus can be written to again — as an observation with
 the order number attached, not as the explanation, because the mechanism is unestablished.
+
+
+---
+
+## CORRECTED after arm B2
+
+This page said arm C's check was "a difference in thoroughness" and that whether the base caused it
+could not be shown by one run. **Arm B2 settled it: no.**
+
+Arm B2 had no base, read the promotions surface before building its cart, found `test promo`, and
+held its cart to $445.97 for the same stated reason. It went further than arm C did — it chose 17%,
+a rate no other promotion on this store uses, so the discount is attributable by RATE as well as by
+id.
+
+So checking the promotions surface before trusting it is something a capable agent does anyway. Arm
+B missed it; the two arms that followed did not; only one of those had a base. **The contrast on
+this page was between arm B and everyone else, not between the base and its absence**, and reading
+it the other way would have been the most flattering mistake available.
