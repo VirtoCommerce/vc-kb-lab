@@ -110,14 +110,29 @@ const ARM_ORDERS = ['CO260915-00001', 'CO260915-00002', 'CO260915-00003', 'CO260
 const ORDER_RE = new RegExp(ARM_ORDERS.join('|'));
 const ARM_NAME_RE = /report|tool-log|kb-log|oracle|condition|predict|arm-[ABC]|order-verification/i;
 
+// THE WALK STOPPED AT DEPTH 4, and the QA repository drops browser artefacts at depth 5:
+// reports/bugs/screenshots/_incoming/chrome. So the one directory an arm actually writes into was
+// the one directory this check could not see, and it reported PASS on an unexamined folder. Found
+// by a background grep run for a different reason, not by this file -- an unrun check is not a
+// passed one, and a check that cannot reach the place is an unrun check.
+//
+// Depth is 8 now, and the skip list is explicit rather than a shape: `artifacts` alone was never
+// what the repository calls it. `.fix-workspace` and the build outputs are skipped because they
+// are vendored source, not arm material -- they carry field names like discountAmountWithTax
+// legitimately, and that is the repository's own content, which is arm B's treatment.
+const SKIP_DIRS = new Set([
+  'node_modules', '.git', 'artifacts', 'test-results', 'results',
+  '.fix-workspace', '.local-env', '.nuke', 'dist', 'bin', 'obj',
+]);
+
 check('no earlier arm material is readable from the working directory', (pass, fail) => {
   const root = arm === 'B' ? REPO : ARENA;
   const byName = arm !== 'B';
   const hits = [];
   const walk = (d, depth = 0) => {
-    if (depth > 4 || !existsSync(d)) return;
+    if (depth > 8 || !existsSync(d)) return;
     for (const e of readdirSync(d, { withFileTypes: true })) {
-      if (['node_modules', '.git', 'artifacts', 'test-results', 'results'].includes(e.name)) continue;
+      if (SKIP_DIRS.has(e.name)) continue;
       const full = `${d}/${e.name}`;
       if (e.isDirectory()) { walk(full, depth + 1); continue; }
       if (byName && ARM_NAME_RE.test(e.name)) { hits.push(full); continue; }
