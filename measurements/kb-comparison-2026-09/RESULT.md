@@ -1,108 +1,116 @@
-# The comparison — three runs, and what they actually show
+# The comparison — four runs, and the number does not say what we wanted
 
-All arms have run. **Arm A was not run**: it measures an agent with no context at all, which nobody
-disputes, and a second arm B was worth more.
+All four arms have run. The quantitative result is **negative**. The qualitative one is not, and it
+is the one the base was built for.
 
 ## The numbers
 
-| arm | context | logged calls | wall clock | budget told to the arm |
-|---|---|---|---|---|
-| **B** | QA repository | **149** | 13 min | "150 tool calls" — and it rationed to 149 |
-| **C** | the base, nothing else | **194** | 20 min | none |
-| **B2** | QA repository | **232** | 19 min | none |
+Only the three uncapped runs are comparable.
 
-**Compare only the two uncapped runs.** Arm C finished in **194 calls against arm B2's 232 — 16%
-fewer**, on the same task, same deployment, same day.
+| arm | context | logged calls | wall clock |
+|---|---|---|---|
+| **C** | the base, nothing else | **194** | 20 min |
+| **A** | nothing at all | **211** | 20 min |
+| **B2** | the full QA repository | **232** | 19 min |
+
+| excluded | | | |
+|---|---|---|---|
+| B | QA repository, told "150 tool calls" | 149 | 13 min |
+
+### The ordering is not the one anybody predicted
+
+**The arm with the full QA repository was the most expensive. The arm with nothing at all beat it by
+9%.** If accumulated project context helps an agent do this task, arm B2 should have finished ahead
+of arm A. It finished 21 calls behind.
+
+And the base's margin over *nothing* is **8%** — smaller than its margin over the repository.
+
+### Therefore the call count says nothing
+
+Three runs spanning **194 to 232** is a 19% band. Twelve earlier runs on this same deployment, doing
+comparable work, spanned **83 to 319**. Three single samples inside a band a quarter the width of the
+known noise are indistinguishable from each other.
+
+**P4** — arm C finishes in at least 25% fewer calls — is **falsified**. So is the weaker reading:
+there is no ordering here that survives the noise.
 
 **The cap was worth about 83 calls.** The same arm-type that finished at 149 under a stated budget
-took 232 when told to work until done. That is the measure of how much a nearly-binding cap
-compresses a run, and it is why arm B's first number cannot be compared with arm C's.
+took 232 when told to work until done. That is the one solid quantitative fact the comparison
+produced, and it is a fact about measurement, not about knowledge.
 
-### The prediction was wrong, and by how much
+## What survives, and it is the whole claim
 
-**P4** said arm C would finish in **at least 25% fewer** calls. It finished in 16% fewer. **Falsified
-as stated**, and recorded as falsified rather than reworded. The direction was right; the size was
-not.
+`discounts[0].discountAmountWithTax` reads 0 while `discountAmount` holds the real figure.
+**All four arms met it independently, on four different orders.**
 
-## What n = 3 does and does not buy
+| arm | context | what it concluded |
+|---|---|---|
+| B | QA repository | "Candidate defect, not confirmed — I couldn't establish whether 0 is intended" |
+| B2 | QA repository | "I can't test this under a non-zero rate — there's no tax provider on this store" |
+| A | nothing | "Unknown: whether that pair is intentional or a data-population defect — these three surfaces can't settle it, so I'm not guessing" |
+| **C** | **the base** | served `KB-A646D086`, written **2026-09-10** by a different run, stating the behaviour and warning that reading the field as the discount reports no discount at all |
 
-Two runs of the same arm-type, 149 and 232, are **not a spread** — one was capped. So **the variance
-of an uncapped arm B is still unmeasured**, and a 16% difference between two single runs is an
-observation, not a result. Twelve earlier runs on this deployment ranged from 83 to 319 calls. A
-16% gap sits comfortably inside that kind of noise.
+**Three arms said "I cannot settle this". One did not have to.** The difference was one tool call
+against an entry somebody else wrote five days earlier.
 
-**This is the honest ceiling of the whole exercise and it goes on the demo page in the same type
-size as the 16%.**
+Discovery was universal — every arm, with or without context, found the anomaly. **Resolution was
+not.** That is what a knowledge base is for, and it is the only thing in this comparison that no
+caveat touches: it does not depend on call counts, on sample size, on which products an arm chose, or
+on the residue it met.
 
-## What the base actually did, checked rather than assumed
+## What the base did NOT do
 
-### It answered something two arms could not
+**It did not make an agent more careful.** Arms A, B2 and C all read the promotions surface before
+building a cart, all found `test promo` ($50 off at subtotal ≥ $500, active, non-exclusive), and all
+sized their carts to stay under the threshold. Two of the three had no base. Arm A went further than
+arm C and picked a rate — 23% — that no promotion on the store uses, so its discount is attributable
+by amount alone; arm B2 did the same with 17%.
 
-`discounts[0].discountAmountWithTax` reads 0 while `discountAmount` holds the real figure. **All
-three arms met this independently**, on three different orders:
+Only arm B, the first and the capped one, missed it. **The contrast was between arm B and everybody
+else, not between the base and its absence.** `FINDING-second-promotion.md` originally read it the
+other way and is corrected.
 
-| arm | what it said |
-|---|---|
-| B | "Candidate defect, not confirmed — I couldn't establish whether 0 is intended" |
-| B2 | "I can't test this under a non-zero rate — there's no tax provider on this store" |
-| C | served `KB-A646D086`, written 2026-09-10 by a different run, which states the behaviour and warns that reading the field as the discount reports no discount at all |
+**It did not cover everything asked of it.** Arm C asked seven questions: five hits, two MISSes.
+`how is tax calculated on orders in this deployment` — MISS. `sign in to the Admin platform UI` —
+MISS, and the corpus has no procedure for the thing every arm does first.
 
-Discovery was universal. **Resolution was not.** Two arms with the full QA repository met the same
-thing and both stopped at "I cannot settle this"; the arm with the base had it answered in one call,
-five days after somebody else wrote it down. That is the product claim, and it survives every caveat
-on this page because it has nothing to do with speed.
+**And a MISS did not stop the arm.** Refused on tax, arm C asked the derived plane which endpoints
+exist under `/api/tax`, read the store's tax providers itself, and established that other stores on
+this deployment DO have tax (Electronics 10%, TestStorePostman 15%) — so the zero is store-specific.
+A better answer than the corpus holds, produced by an arm the corpus had just refused.
 
-### It did NOT cause the thing I was about to credit it with
+## The four orders — not the same experiment
 
-Arm C read the promotions API before building its cart, found `test promo` (active, $50 off at
-subtotal ≥ $500, non-exclusive), and sized its cart under the threshold so its own discount would be
-cleanly attributable. I wrote that up as a difference in thoroughness and said explicitly that
-whether the base caused it was not something one run could show.
-
-**Arm B2 did exactly the same thing, with no base.** It kept its cart at $445.97 for the same stated
-reason, and went further — it picked 17%, a rate no other promotion on the store uses, so the
-discount would be attributable by rate as well as by id.
-
-So `FINDING-second-promotion.md` overstated the contrast, and this page corrects it: **checking the
-promotions surface before trusting it is something a capable agent does anyway.** Arm B missed it;
-two later arms did not; only one of those two had a base.
-
-## What each arm asked the base
-
-Arm C: **seven questions, five hits, two MISSes**, recorded by the door rather than by the arm.
-
-The MISSes matter more than the hits. `how is tax calculated on orders in this deployment` — MISS.
-`sign in to the Admin platform UI` — MISS, and the corpus has no procedure for the thing every arm
-does first.
-
-**And the tax MISS did not stop it.** Refused, arm C asked the derived plane which endpoints exist
-under `/api/tax`, then read the store's tax providers itself and established that other stores on
-the same deployment DO have tax (Electronics 10%, TestStorePostman 15%), so the zero is
-store-specific. A better answer than the corpus holds, from an arm the corpus had just refused.
-
-## The three orders
-
-| arm | order | subtotal | discount | total | rate |
+| arm | order | subtotal | rate | discount | total |
 |---|---|---|---|---|---|
-| B | CO260915-00001 | 1612.97 | 241.95 | 1371.02 | 15% |
-| C | CO260915-00002 | 263.75 | 31.65 | 232.10 | 12% |
-| B2 | CO260915-00003 | 445.97 | 75.81 | 370.16 | 17% |
+| B | CO260915-00001 | 1612.97 | 15% | 241.95 | 1371.02 |
+| C | CO260915-00002 | 263.75 | 12% | 31.65 | 232.10 |
+| B2 | CO260915-00003 | 445.97 | 17% | 75.81 | 370.16 |
+| A | CO260915-00004 | 612.40 | 23% | 140.85 | 471.55 |
 
-**They are not the same experiment.** Arm B shopped above the $500 threshold and got no $50; the
-other two deliberately stayed below it. Arm B's order was six times arm C's. Whatever the call
-counts say, the three arms did not do equally hard arithmetic.
+Free product choice was kept so that nobody could pick products to suit the base. The cost is that
+the four arms did four different jobs, with subtotals spanning six-fold.
 
 ## Deployment state
 
-Three orders, all **Cancelled**. Three shipments left `New`, as every run since 07 has left one.
-Three new promotions, all **disabled, not deleted**. Eight pre-existing active promotions unchanged;
-the five earlier `KB-LAB` promotions untouched. Carts empty.
+Four orders, all **Cancelled**. Four shipments left `New`, as every run since 07 has left one. Four
+new promotions, all **disabled, not deleted**. **Eight pre-existing active promotions unchanged
+across every arm** — the one condition that could have moved an arm's arithmetic, and it never
+varied. Carts empty.
 
 ## What goes on the demo page
 
-1. **The `discountAmountWithTax` story**, end to end, with all three arms' own words. It is the
-   claim, it is documented by parties that never met, and no caveat on this page touches it.
-2. **194 against 232 — 16%**, with the sample size stated beside it and the 149 explained.
+1. **The `discountAmountWithTax` story**, four arms in their own words. It is the claim; it is
+   documented by parties that never met; nothing here weakens it.
+2. **The call counts, and the statement that they show nothing** — 194 / 211 / 232 inside a known
+   83–319 band, with the QA repository slowest. A demo that hid this would not survive the first
+   person who asked for the raw numbers.
 3. **Five hits and two MISSes**, both MISSes named.
-4. **The second-promotion correction**, because a demo that only survives when the audience does not
-   read the working notes is not worth giving.
+4. **What the base did not cause**, because two arms without one did the careful thing anyway.
+
+## What would make the number mean something
+
+Three to five runs per condition, not one. That is six to fifteen sessions and it is a separate
+piece of work — proposed after the demo, now that there is a reason to want it. Today's answer to
+"is the base faster" is **unknown, and measured to be unknown**, which is worth more than a 16%
+that would not have survived arm A.
