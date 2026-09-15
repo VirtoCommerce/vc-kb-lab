@@ -76,7 +76,7 @@ that actually asked the question.
   anonymous sessions or other people's accounts (`Agent Vcst5705`, `Elena Mutykova`). **The
   shopper's own cart is empty**, checked over REST rather than taken from arm B's report, which is
   the only claim that matters for an arm about to build one.
-* **Three disabled promotions**, from runs 09, 10 and 12. **None of them belongs to any arm.** Run
+* **Five disabled `KB-LAB` promotions**, from runs 09, 10, 12, an earlier one, and arm B's own. **No arm may touch any of them**, its own included, once it has finished. Run
   12's still describes itself as 10% while its reward is 20%; that mismatch is deliberate evidence
   and is not to be fixed.
 * **One permanent product configuration** from run 11, neutralised to `isActive: false,
@@ -96,13 +96,13 @@ apply each other's discounts to each other's carts.
 
 **C last**, on the residue the others leave, so nobody can say it had the clean stand.
 
-**150 tool calls each**, counted the way the harness counts them: a batched browser call is one.
+**No call budget.** Removed after arm B finished at 149 of a 150 cap — one call short of binding. Cost-to-completion is the measurement, and a cap that nearly binds compresses the arms towards it instead of separating them. `VC_MEASURE_CAP` is 600, a runaway stop that annotates the log; no arm is told a number.
 
 ### The arena
 
 `C:/_VIRTO/_arena` holds `.mcp.json` (one browser server), `.env` (URLs, store id, the sign-in
 literal), and a `.claude/settings.json` that contains **the instrument and nothing else** — one
-`PostToolUse` logging hook, the call cap, and for arm C the one variable that IS the treatment,
+`PostToolUse` logging hook, the runaway stop, and for arm C the one variable that IS the treatment,
 `KB_BASE`. **No `CLAUDE.md`, no skills, no rules, no knowledge directory, not a git repository.**
 Emptied of artifacts between arms.
 
