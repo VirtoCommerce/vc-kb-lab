@@ -17,6 +17,7 @@ import { loadIndex, tokenize, SEARCH_OPTIONS } from './index-build.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin } from './capture.mjs';
 import { DERIVED_INDEX } from './planes.mjs';
+import { sourceDoor, renderSourceDoor } from './source-door.mjs';
 
 // Function words carry no evidence that a result is about the question. Without excluding them,
 // "how do I bake sourdough bread" returns /api/sitemaps at top trust, because `do` matched
@@ -347,12 +348,22 @@ export function ask(base, question, { limit = 3 } = {}) {
     // An uncovered question returns an explicit MISS. It does not return the nearest thing with
     // the caveat filed off, because a plausible invention is the one output that costs more than
     // silence.
+    //
+    // What it MAY do is say where the answer lives. The entries that matched but did not clear the
+    // floor are not answers and are not served; their `appliesTo` still names the module this
+    // question sits in and the version of it installed here. See src/source-door.mjs for why that
+    // is worth saying and why it is not a source plane.
+    const nearMisses = raw
+      .map((h) => ({ ...h, evidence: contentMatches(h, queryTerms).length }))
+      .filter((h) => h.evidence >= 1)
+      .sort((a, b) => b.score - a.score);
     return {
       miss: true,
       question,
       searched,
       results: [],
       degraded: null,
+      source: sourceDoor(base, nearMisses),
       note: raw.length
         ? `No entry matches ${floor} content term${floor === 1 ? '' : 's'} of this question. ${raw.length} entr${raw.length === 1 ? 'y' : 'ies'} matched fewer than that, or only function words and fuzzy near-misses, which is not evidence of an answer.`
         : 'No entry covers this question.',
@@ -385,6 +396,7 @@ export function renderAnswer(res) {
     } else {
       out.push(`  searched : ${res.searched.join(', ')}`);
       out.push(`  ${res.note}`);
+      out.push(...renderSourceDoor(res.source ?? []));
     }
     return out.join('\n');
   }
