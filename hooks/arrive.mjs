@@ -29,9 +29,11 @@
  * runs on every call an agent makes.
  */
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { buildArrivalIndex, arrivalsFor, textOf } from '../src/arrive.mjs';
+import { resolveBase } from '../src/base.mjs';
 
-const BASE = process.env.KB_BASE ?? 'C:/_VIRTO/vc-knowledge';
+const BASE = resolveBase({ here: fileURLToPath(new URL('..', import.meta.url)) });
 
 function main() {
   let payload;

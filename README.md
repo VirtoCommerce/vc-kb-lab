@@ -161,24 +161,43 @@ an environment is how a run reports facts about a deployment nobody named.
 
 ## Where this repository stands after 2026-09-16
 
-The tool now has a second home. `plugins/vc-kb/` on branch `claude/kb-tool` of
-`VirtoCommerce/vc-mcp-testing-module` is where it **evolves**; this repository keeps a full working
-copy and stays the bench.
+**Work happens here.** This is the full working copy and the bench: the tool, the tests, the
+measurements and the archive in one tree, which is what the measurement scripts need — they import
+`../../src/` and read `MEASUREMENT-archive/` beside them.
 
-**The two copies are meant to diverge, and that is the point.** The `src/` here is the exact code the
-twelve exploratory runs and the three controlled comparisons were measured against. Keeping it frozen
-is what lets an archived result be reproduced; syncing it forward would quietly invalidate every
-number in `measurements/`. When you need to know what the tool did during a run, read it here. When
-you need to change the tool, change it there.
+`plugins/vc-kb/` on branch `claude/kb-tool` of `VirtoCommerce/vc-mcp-testing-module` is a **port**,
+and it stays one until the tool has to meet that repository's agents and skills. Re-port then;
+`plugins/vc-kb/PORT.md` is the account of what came and what did not. Nothing is developed there in
+the meantime.
 
-Two differences already exist and are deliberate: the plugin resolves its corpus through
-`src/base.mjs` (`--base` → `KB_BASE` → a sibling `vc-knowledge` checkout → nothing) where this copy
-carries an absolute path, and the plugin owns `docs/`.
+An earlier version of this section argued the two copies should be allowed to diverge so that
+archived results stayed reproducible. That was wrong: git already freezes the measured code, at
+`4aea955` and at every other commit, and a stale working tree adds nothing to it. The one real
+difference has been brought back here instead — see below.
 
-The measurement record is mirrored on branch `claude/kb-measurements` of the same repository, under
-`measurements-kb/`, and **must never merge into its `main`**: comparison arms launch in that
-repository and arm B runs on `main`, so an oracle or a graded result reachable from `main`
-contaminates every future comparison by construction.
+### What came back from the port, and the defect it carried
 
-Arm reports, arm artefacts and the sealed predictions live in neither repository — `_comparison-logs/`
-and `_predictions/` — because a run must not be able to read the material of the run before it.
+`src/base.mjs` resolves the corpus instead of hardcoding a path: `--base` → `KB_BASE` → a sibling
+checkout → **nothing**, with no fallback constant, because *"no base was read"* and *"the base holds
+nothing about this"* are different answers and a wrong default collapses one into the other.
+
+Its sibling search was written as `resolve(here, '..', '..', '..', 'vc-knowledge')` — three levels,
+because that is how deep `plugins/vc-kb` sits inside the consumer repository. **It therefore
+resolved from exactly one layout.** From this repository the same three steps land on `C:/vc-knowledge`
+and the tool reported no base at all while the corpus sat beside it. A hardcoded depth is a constant
+wearing a path's clothes, and it is the same mistake as the absolute path it was written to replace.
+
+It now climbs from the tool's own root and asks at each ancestor, capped, because a search that
+reaches the filesystem root has stopped being a search. `test/base.test.mjs` pins both layouts and
+the cap.
+
+### The measurement record, mirrored
+
+Branch `claude/kb-measurements` of the consumer repository carries it under `measurements-kb/`, and
+**must never merge into that repository's `main`**: comparison arms launch there and arm B runs on
+`main`, so an oracle or a graded result reachable from `main` contaminates every future comparison
+by construction.
+
+Arm reports, arm artefacts and the sealed predictions live in neither repository —
+`_comparison-logs/` and `_predictions/` — because a run must not be able to read the material of the
+run before it.

@@ -21,9 +21,10 @@ import {
   unconfirmedUses, loopBanner,
 } from '../src/demand.mjs';
 import { OWNED_ROOTS, OWNED_FILES, DERIVED_ENTRIES } from '../src/planes.mjs';
+import { resolveBase, baseNotFoundMessage } from '../src/base.mjs';
 
 const HERE = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_BASE = process.env.KB_BASE ?? 'C:/_VIRTO/vc-knowledge';
+const DEFAULT_BASE = resolveBase({ here: HERE });
 
 const VERB_HELP = { capture: CAPTURE_HELP };
 
@@ -206,6 +207,13 @@ async function main() {
   if (asksForHelp(process.argv.slice(2))) {
     console.log(VERB_HELP[cmd] ?? USAGE);
     return 0;
+  }
+
+  // After the help pages, because `kb --help` must work on a machine that has no base yet, and
+  // before every verb, because there is no verb that can do anything useful without one.
+  if (!base) {
+    console.error(baseNotFoundMessage({ explicit: a.base, here: HERE }));
+    return 2;
   }
 
   if (cmd === 'extract' || cmd === 'check') {
@@ -752,7 +760,9 @@ ${c.groups.length} group(s) of entries still share a coordinate — \`kb consoli
 // journal able to fail the call it is recording would corrupt the work it exists to measure.
 const journal = (cmd, code, outcome) => {
   const a = args(process.argv.slice(3));
-  record({ cmd, argv: a, base: a.base ?? DEFAULT_BASE, exit: code, outcome });
+  const base = a.base ?? DEFAULT_BASE;
+  if (!base) return; // nothing was read and nothing was written; there is no journal to write to
+  record({ cmd, argv: a, base, exit: code, outcome });
 };
 
 main().then((r) => {
@@ -762,7 +772,8 @@ main().then((r) => {
   // thing, and the help pages because nothing has happened yet.
   if (cmd && cmd !== 'demand' && !asksForHelp(process.argv.slice(2))) {
     try {
-      const banner = loopBanner(args(process.argv.slice(3)).base ?? DEFAULT_BASE);
+      const bannerBase = args(process.argv.slice(3)).base ?? DEFAULT_BASE;
+      const banner = bannerBase && loopBanner(bannerBase);
       if (banner) console.log(`\n${banner}`);
     } catch { /* never fail a verb over its own bookkeeping */ }
   }
