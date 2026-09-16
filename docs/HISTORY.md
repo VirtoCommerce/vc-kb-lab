@@ -230,6 +230,26 @@ The most useful half of this record. Each was measured, and the measurement said
   motivated trying, "sign in to the Admin platform UI", still returns three entries about other
   things. Open.
 
+* **The flow-plane fix was checked against questions nobody wrote for it, and held.** The goal rule
+  shipped on 2026-09-16 was measured on fourteen probes written by its author. Scored afterwards on
+  the 88 distinct questions in `demand.jsonl`, against a bar written before the variants ran: 0
+  false HITs and 2 false MISSes, best of six candidate rules. It also showed D4 was understated —
+  before the change the flow plane answered **74 of 88 real questions**, five in six, including
+  "what fields does OrderShipmentType have" and "sign in to the Admin platform UI". Loosening the
+  rule recovers the two and buys four false HITs, so it was not loosened.
+  `measurements/kb-flowmiss-2026-09/`.
+* **A held-out set taken from a COPY of the corpus is not held out.** `kb ask` and `kb how` write a
+  demand row, so probing a copy — the standard safe practice here — appended the probe questions to
+  that copy's log. Five questions written for the change under test appeared inside the set meant to
+  be held out from it; 88 became 93 and every score moved. The list is now frozen in a file.
+* **78.5% of the corpus has never been in front of anybody.** Counting the most generous way —
+  ever served in any of 107 retrievals, or ever anchored on a coordinate touched in any of 4,223
+  logged tool calls — 527 of 671 entries are neither. By shape: `gql-type` 11% used,
+  `gql-mutations` 15%, `rest-api` 29%, agent-written entries **69%**, flows **100%**. The plane
+  that is free to generate is the dead one; the plane that costs a run to write is the live one.
+  Nothing deleted: the recommendation is to stop growing the derived plane by projection and give
+  it the job it alone can do. `measurements/kb-utilization-2026-09/`.
+
 ---
 
 ## Conventions that were paid for
