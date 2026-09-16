@@ -1,7 +1,7 @@
 {
   "_comment": "Arm A \u2014 the arena with NO base. The only thing in this file is the instrument: one PostToolUse hook that records what the session actually did, one JSONL line per tool call, redacted by value. It is fail-open by construction and invisible to the agent. Every arm is counted by THIS build of the counter, because two arms counted by two builds are not comparable. There is no KB_BASE here, and that absence is what makes this arm A.",
   "env": {
-    "VC_MEASURE_OUT": "C:/_VIRTO/_comparison-logs/arm-A",
+    "VC_MEASURE_OUT": "C:/_VIRTO/_comparison-logs/round5/arm-A",
     "VC_MEASURE_CAP": "600",
     "VC_MEASURE_SECRETS": "C:/_VIRTO/vc-mcp-testing-module/.env.playwright.local"
   },

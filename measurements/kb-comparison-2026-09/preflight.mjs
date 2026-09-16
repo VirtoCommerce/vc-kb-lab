@@ -19,8 +19,15 @@ import { readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const arm = (process.argv[2] ?? '').toUpperCase();
-if (!['A', 'B', 'C', 'C4'].includes(arm)) {
-  console.error('usage: preflight.mjs A|B|C|C4   (C4 = round four, the register in the prompt)');
+// THE CATALOG ARMS, AND THE GENERATOR EACH ONE IS CHECKED AGAINST. C4 and C5 run the same treatment
+// -- the register in the session's context -- but NOT the same brief: round five's adds the stale-pin
+// warning and the `attested` column's explanation. Comparing round five's CLAUDE.md against round
+// four's generator fails, correctly, and that failure is what this split is for. Repointing C4 at the
+// new generator would have made round four unreproducible to buy the same green line.
+const CATALOG_ARM = arm === 'C4' || arm === 'C5';
+const BRIEF_RUN = arm === 'C5' ? 'kb-run5-2026-09' : 'kb-run4-2026-09';
+if (!['A', 'B', 'C', 'C4', 'C5'].includes(arm)) {
+  console.error('usage: preflight.mjs A|B|C|C4|C5   (C4/C5 = the register in the prompt, round four/five)');
   process.exit(2);
 }
 
@@ -77,7 +84,7 @@ if (arm === 'B') {
     if (!hook.includes('tool-log.mjs')) return fail('no PostToolUse logging hook — the run would not be counted');
     const out = s.env?.VC_MEASURE_OUT;
     if (!out) return fail('VC_MEASURE_OUT unset — the log has nowhere to go');
-    const wantBase = arm === 'C' || arm === 'C4';
+    const wantBase = arm === 'C' || CATALOG_ARM;
     const hasBase = Boolean(s.env?.KB_BASE);
     if (wantBase !== hasBase) return fail(`arm ${arm} ${wantBase ? 'needs' : 'must not have'} KB_BASE, and ${hasBase ? 'has' : 'has not'} got it`);
     if (!s.permissions?.deny?.some((d) => d.includes('browser_evaluate')))
@@ -126,7 +133,7 @@ if (arm === 'B') {
     if (others.length) return fail(`present: ${others.join(', ')}`);
 
     const claudeMd = `${ARENA}/CLAUDE.md`;
-    if (arm !== 'C4') {
+    if (!CATALOG_ARM) {
       return existsSync(claudeMd)
         ? fail('present: CLAUDE.md')
         : pass('no CLAUDE.md, no skills, no rules, not a git repo');
@@ -134,7 +141,7 @@ if (arm === 'B') {
     if (!existsSync(claudeMd)) return fail('CLAUDE.md is ABSENT, and it is the treatment of this round');
 
     const tmp = `${ARENA}/.preflight-brief.md`;
-    const gen = spawnSync(process.execPath, [`${LAB}/measurements/kb-run4-2026-09/make-brief.mjs`, '--out', tmp], { encoding: 'utf8' });
+    const gen = spawnSync(process.execPath, [`${LAB}/measurements/${BRIEF_RUN}/make-brief.mjs`, '--out', tmp], { encoding: 'utf8' });
     if (gen.status !== 0) return fail(`make-brief.mjs failed: ${(gen.stderr ?? '').trim().slice(0, 120)}`);
     const same = readFileSync(claudeMd, 'utf8') === readFileSync(tmp, 'utf8');
     rmSync(tmp, { force: true });
@@ -147,7 +154,7 @@ if (arm === 'B') {
 // THE TREATMENT, EXERCISED RATHER THAN READ. Round four's arm differs from arm C by one env var and
 // a log path; the settings file says so in a comment, and a comment in this very directory has been
 // false for two rounds before. This runs the diff and then runs the verb.
-if (arm === 'C4') {
+if (CATALOG_ARM) {
   check('round four differs from arm C by KB_RETRIEVAL_OFF and the log path only', (pass, fail) => {
     const dir = `${LAB}/measurements/kb-comparison-2026-09/arena-settings`;
     const c = readJson(`${dir}/settings.arm-c.json`);
@@ -313,7 +320,7 @@ const admin = await reach('https://vcptcore-stable.govirto.com/');
 (typeof admin === 'number' ? ok : bad)('platform answers', `HTTP ${admin}`);
 
 // ---- the base, for arm C --------------------------------------------------------------------
-if (arm === 'C' || arm === 'C4') {
+if (arm === 'C' || CATALOG_ARM) {
   check('the base is where KB_BASE says, and is clean', (pass, fail) => {
     if (!existsSync(`${BASE}/kb.json`)) return fail(`${BASE} carries no kb.json — it is not a base`);
     const st = spawnSync('git', ['-C', BASE, 'status', '--porcelain'], { encoding: 'utf8' });
