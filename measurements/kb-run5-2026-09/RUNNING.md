@@ -76,7 +76,7 @@ into the session automatically, without the agent choosing to open anything.
 ```powershell
 node C:/_VIRTO/vc-kb-lab/measurements/kb-run5-2026-09/make-brief.mjs --out C:/_VIRTO/_arena/CLAUDE.md
 Copy-Item C:/_VIRTO/vc-kb-lab/measurements/kb-comparison-2026-09/arena-settings/settings.arm-c-catalog.json C:/_VIRTO/_arena/.claude/settings.json -Force
-Copy-Item C:/_VIRTO/_arena/CLAUDE.md C:/_VIRTO/_comparison-logs/round5/arm-C-catalog/CLAUDE.md.as-handed -Force
+Copy-Item C:/_VIRTO/_arena/CLAUDE.md C:/_VIRTO/_comparison-logs/round5/arm-C-catalog.as-handed.md -Force
 ```
 
 **Archive the brief as handed.** The corpus moves during a run — round four's first scorer counted
@@ -106,7 +106,7 @@ the task. If an arm asks, the honest reply is *"everything you need is in the ta
 node C:/_VIRTO/vc-kb-lab/measurements/kb-run5-2026-09/score-protocol.mjs \
   --arm-c C:/_VIRTO/_comparison-logs/round5/arm-C-catalog \
   --arm-a C:/_VIRTO/_comparison-logs/round5/arm-A \
-  --catalog C:/_VIRTO/_comparison-logs/round5/arm-C-catalog/CLAUDE.md.as-handed
+  --catalog C:/_VIRTO/_comparison-logs/round5/arm-C-catalog.as-handed.md
 ```
 
 It will report every licensed entry as **unscored** and refuse to print a headline. That is
