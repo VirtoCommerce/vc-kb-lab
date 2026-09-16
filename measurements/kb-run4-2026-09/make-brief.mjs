@@ -69,6 +69,13 @@ Three things worth knowing before you read it:
   here; fetch that from the schema.
 * **\`confirmations\` is how many independent parties have seen it.** An entry with two or more has
   been seen by somebody other than its author. One means one, and one is a claim, not a fact.
+  (Until 2026-09-16 this column counted evidence ROWS, and was overstated for eight entries — one
+  of them printed 3 where a single party had seen it. It counts parties now.)
+* **\`attested\` says whether any of them wrote down what they saw.** \`confirm\` took no note until
+  2026-09-16, so agreement in this corpus is mostly undescribed: 5 of the 22 entries you may act on
+  unverified carry an attested row. A \`confirmations\` of 3 with \`attested: no\` means three parties
+  agreed and none of them said what they were looking at. Treat that as weaker than the number
+  suggests, and prefer to check it.
 * **\`disputed\` means somebody recorded the opposite.** Those are listed first in their section on
   purpose: a contested claim is the most useful thing to know before you lean on it.
 

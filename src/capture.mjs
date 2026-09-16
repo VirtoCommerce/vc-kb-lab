@@ -85,6 +85,17 @@ const sourceTools = { locate, installedVersionOf, knownModules };
 // this" and is why the column exists.
 export const confirmationsOf = (data) =>
   partiesOf((data.evidence ?? []).filter((e) => !e.contradicts && e.method !== 'source'));
+// DOES ANY ROW SAY WHAT WAS SEEN? Distinct from the count beside it, and the register now prints
+// both, because the licence to act on a `confirmed` entry without re-verifying rests on this one
+// and not on that one. A count says how many parties agreed; it cannot say that any of them wrote
+// down what they saw. `confirm` took no `--note` until 2026-09-16, so most of the corpus's
+// agreement is undescribed — 5 of the 22 licensed entries carry an attested row. That number is not
+// a reason to demote the other 17; it is the number the next run should be raising.
+//
+// Three shapes count: a note on the row, a `from` naming a report a reader can open, or a source
+// reading, which names module, installed version and path and is self-describing.
+export const attestedOf = (data) =>
+  (data.evidence ?? []).some((e) => !e.contradicts && (e.note || e.from || e.method === 'source'));
 export const disputesOf = (data) => (data.evidence ?? []).filter((e) => e.contradicts).length;
 export const isDisputed = (data) => disputesOf(data) > 0;
 
@@ -244,8 +255,8 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
     ];
 
   const TABLE_HEAD = flow
-    ? ['| id | goal | confirmations | disputed | scope |', '|---|---|---|---|---|']
-    : ['| id | subject | confirmations | disputed | scope | also |', '|---|---|---|---|---|---|'];
+    ? ['| id | goal | confirmations | attested | disputed | scope |', '|---|---|---|---|---|---|']
+    : ['| id | subject | confirmations | attested | disputed | scope | also |', '|---|---|---|---|---|---|---|'];
 
   const row = (e, also = []) => {
     const scope = (e.data.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`).join(' ') || '—';
@@ -253,6 +264,7 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
       `[\`${e.data.id}\`](${e.rel})`,
       `\`${e.data.subject}\`${e.data.status === 'active' ? '' : ' _(retired)_'}`,
       String(confirmationsOf(e.data)),
+      attestedOf(e.data) ? 'yes' : 'no',
       isDisputed(e.data) ? `yes (${disputesOf(e.data)})` : 'no',
       scope,
     ];
