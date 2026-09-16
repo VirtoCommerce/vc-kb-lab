@@ -695,8 +695,10 @@ async function main() {
     const p = plan(base);
     console.log(renderPlan(p));
     return {
-      code: 0,
-      outcome: { detail: { open: p.rows.length, check: p.check.length, procedure: p.procedure.length, source: p.source.length, stand: p.stand.length } },
+      // 3, the same code `ask` returns for a degraded base. An absent base exiting 0 is what let
+      // this print "the demand loop is empty" and be believed.
+      code: p.degraded ? 3 : 0,
+      outcome: { detail: { degraded: Boolean(p.degraded), open: p.rows.length, check: p.check.length, procedure: p.procedure.length, source: p.source.length, stand: p.stand.length } },
     };
   }
 

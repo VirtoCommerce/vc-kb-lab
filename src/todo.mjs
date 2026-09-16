@@ -30,7 +30,7 @@
 // closes on the question's WORDING. A capture written with a rephrased question leaves the row
 // open forever and the loop slowly fills with work that was already done.
 
-import { ask, how } from './resolve.mjs';
+import { ask, how, openBase } from './resolve.mjs';
 import { openQuestions } from './demand.mjs';
 
 /**
@@ -41,6 +41,21 @@ import { openQuestions } from './demand.mjs';
  * a question every time it planned would grow the list it is planning.
  */
 export function plan(base) {
+  // NO BASE IS NOT AN EMPTY LOOP, and the first version said it was. Pointed at a directory that
+  // does not exist it printed "the demand loop is empty. Nothing was asked and left unanswered."
+  // and exited 0 -- the most reassuring sentence the tool can produce, for the worst state it can
+  // be in. Found by tripping over it: exporting MSYS_NO_PATHCONV=1 for a whole shell stops Git Bash
+  // converting a Unix-style `--base /c/...`, Node resolves it to a path that is not there, and the
+  // loop came back clean while `kb demand` two lines later listed four open rows.
+  //
+  // `ask` has never had this failure, because ADR §9.5 makes it report `degraded` -- an absence of
+  // the BASE and an absence of COVERAGE are different answers and a caller must be able to tell
+  // them apart. A planner is exactly where that distinction matters most: it is read as "there is
+  // nothing to do".
+  const opened = openBase(base);
+  if (opened.degraded) {
+    return { degraded: opened.degraded, rows: [], check: [], procedure: [], source: [], stand: [] };
+  }
   const rows = openQuestions(base).map((q) => {
     const a = ask(base, q.question, { limit: 3 });
     if (!a.miss) {
@@ -87,6 +102,12 @@ export const captureCommand = (q, module) =>
 
 export function renderPlan(p) {
   const out = [];
+  if (p.degraded) {
+    out.push("TODO (degraded) — this is not an empty loop, it is an absent base.");
+    out.push(`  ${p.degraded.reason}`);
+    out.push("  Nothing about the demand loop can be said until the base is readable.");
+    return out.join('\n');
+  }
   const n = p.rows.length;
   if (!n) {
     out.push('TODO — the demand loop is empty. Nothing was asked and left unanswered.');

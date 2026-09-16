@@ -121,3 +121,28 @@ test('planning writes nothing — it reads the loop it is planning', () => {
     'a planner that logged a question every time it planned would grow the list it is planning');
   drop(dir);
 });
+
+// FOUND BY TRIPPING OVER IT. Pointed at a directory that is not a base, the first version printed
+// "the demand loop is empty. Nothing was asked and left unanswered." and exited 0 — the most
+// reassuring sentence the tool can produce, for the worst state it can be in. It happened for real:
+// exporting MSYS_NO_PATHCONV=1 for a whole shell stops Git Bash converting a Unix-style
+// `--base /c/...`, and the loop came back clean while `kb demand` two lines later listed four open
+// rows. `ask` has never had this failure because ADR §9.5 makes it separate an absent BASE from an
+// absent ANSWER; a planner is where that distinction matters most, because it is read as "there is
+// nothing to do".
+test('an absent base is reported as degraded, never as an empty loop', () => {
+  const p = plan(join(tmpdir(), 'kb-todo-definitely-not-a-base'));
+  assert.ok(p.degraded, 'a directory that is not a base must not answer questions about a loop it cannot read');
+  assert.equal(p.rows.length, 0);
+  const text = renderPlan(p);
+  assert.match(text, /degraded/i);
+  assert.doesNotMatch(text, /Nothing was asked/, 'the reassuring sentence is the one thing it must not say');
+});
+
+test('a real base with nothing open still says the loop is empty', () => {
+  const dir = makeBase();
+  const p = plan(dir);
+  assert.equal(p.degraded, undefined);
+  assert.match(renderPlan(p), /Nothing was asked and left unanswered/);
+  drop(dir);
+});

@@ -126,7 +126,20 @@ test('a question matching only function words is a MISS, not a confident irrelev
   assert.equal(off.miss, true, 'an off-topic question must MISS');
   assert.equal(off.degraded, null, 'a coverage MISS is not a degraded MISS');
 
-  const real = ask(base, 'which endpoint lists the payment methods a store has enabled');
+  // THE CONTROL QUESTION CHANGED ON 2026-09-16, and the reason is worth more than the assertion.
+  // It used to read "which endpoint lists the payment methods a store has enabled" — a question
+  // invented for this test, which no run has ever asked. Eleven entries mined out of the arm reports
+  // that day put an experiential entry at its head: the one about an empty Tax providers widget,
+  // which matches `store`, `enabled` and `provider` and answers a structurally identical question
+  // about a different subject. That is the MISS drift measured in kb-missdrift-2026-09, arriving
+  // here by way of the corpus getting bigger — the thing the whole page predicts.
+  //
+  // Measured before changing this: over the 88 questions runs really asked, those eleven entries
+  // lead 5 and every one of the 5 is a question they answer. The displacement is confined to this
+  // invented question. So the control moves to `OrderDiscountType fields`, which is row r2.3 of the
+  // held-out set — a question a run really typed, whose answer is a contract table and therefore
+  // belongs on the derived plane at `top` for a reason rather than by accident.
+  const real = ask(base, 'OrderDiscountType fields');
   assert.equal(real.miss, false);
   assert.equal(real.results[0].trust.level, 'top');
 });

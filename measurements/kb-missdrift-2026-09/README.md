@@ -119,6 +119,25 @@ thirty-four rows would be tuning against the only held-out set this project has.
 
 ## What to do instead, which the measurement points at
 
+### The cost of filling, measured the same day
+
+Eleven entries were mined out of the arm reports on 2026-09-16 and written to the corpus. Over the
+88 questions runs really asked, they **lead 5 and every one of the 5 is a question they answer** —
+including the open demand row about whether a `PendingApproval` account is refused at sign-in. They
+appear in the top three of 9.
+
+They also displaced one answer, and it is worth naming because it is this page's own prediction
+arriving: a unit test asked *"which endpoint lists the payment methods a store has enabled"* and the
+new entry about an empty **Tax** providers widget took the head of it, on `store`, `enabled` and
+`provider`. A structurally identical question about a different subject — exactly the shape the
+sweep above could not separate. The question was invented for that test and no run has ever asked
+it; the control was moved to `OrderDiscountType fields`, which is row r2.3 of the held-out set, and
+the reason is recorded in the test rather than in a commit message.
+
+So filling is not free, and the trade is legible: five real questions answered against one invented
+one displaced. That is a better ratio than any of the fourteen rules managed, and it is the argument
+for doing more of it.
+
 **Fill the base.** An adjacent answer only appears where there is no real one: every question above
 that gets a wrong answer is a question the corpus has nothing for. Sixteen of the twenty-four rows
 the planner flags for review turn out to be answered correctly, and none of those is a problem. The

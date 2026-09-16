@@ -552,6 +552,28 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
   // One door, two written planes. A flow takes the same seven inputs and means two of them slightly
   // differently -- `subject` is the goal, and it alone decides identity -- so it goes through every
   // refusal here rather than round a second door that would drift from this one.
+  // A BASE THAT DOES NOT EXIST IS NOT AN EMPTY BASE. Without this, `capture` pointed at any path at
+  // all creates the directories it needs and writes the entry there, leaving a corpus-shaped thing
+  // nobody will ever read. It happened on 2026-09-16: exporting MSYS_NO_PATHCONV=1 for a whole shell
+  // stops Git Bash converting a Unix-style `--base /c/...`, Node resolved the literal string against
+  // the drive root, and three entries plus an index and a catalog landed in C:\c\_VIRTO\vc-knowledge.
+  // Every command reported success. The loss was noticed only because a later read of the real base
+  // came up one entry short.
+  //
+  // `kb.json` is the marker because `validate` already treats its absence as "not a base" and
+  // refuses to say anything else about the directory. The same rule that makes `ask` report a
+  // degraded base rather than a coverage MISS applies here, and with more force: a read that is
+  // wrong is visible in its answer, a write that is wrong is silent until somebody goes looking.
+  if (!existsSync(join(base, 'kb.json'))) {
+    throw new CaptureRefused(
+      `capture refused: ${base} holds no kb.json, so it is not a knowledge base. Writing here would `
+        + 'CREATE one silently and the entry would be lost to everyone reading the real corpus. '
+        + 'Check --base: under Git Bash a Unix-style path is converted for you, and exporting '
+        + 'MSYS_NO_PATHCONV=1 for the whole shell turns that off, which is exactly how this was '
+        + 'first hit. Pass a drive-letter path like C:/_VIRTO/vc-knowledge and it cannot happen.',
+    );
+  }
+
   const plane = input.flow ? 'flow' : 'experiential';
   // `deployment` answers "where did you see this". A claim read out of code was not seen ANYWHERE
   // -- it was read at a tag -- and `--source` answers the same question better, because a module

@@ -13,7 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -248,4 +248,21 @@ test('rows written before authorship was recorded keep counting as separate, so 
   const t = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
   assert.equal(t.level, 'confirmed', '121 of 124 rows in the live corpus carry no author; the rule must not touch them');
   drop(dir);
+});
+
+// FOUND BY LOSING WORK TO IT. `capture` used to create whatever directories it needed, so pointed
+// at a path that is not a base it wrote the entry, an index and a catalog into a new tree and
+// reported success. On 2026-09-16 exporting MSYS_NO_PATHCONV=1 for a whole shell stopped Git Bash
+// converting a Unix-style `--base /c/...`; Node resolved the literal string against the drive root;
+// three entries landed in C:\c\_VIRTO\vc-knowledge and were noticed only because a later read of the
+// real corpus came up short. A read that goes wrong is visible in its answer. A write that goes
+// wrong is silent until somebody goes looking.
+test('capture refuses a directory that is not a base rather than creating one', () => {
+  const notABase = mkdtempSync(join(tmpdir(), 'kb-not-a-base-'));
+  assert.throws(
+    () => capture(notABase, { ...CLAIM, deployment: 'vcptcore_stable' }),
+    (e) => e instanceof CaptureRefused && /kb\.json/.test(e.message) && /not a knowledge base/.test(e.message),
+  );
+  assert.equal(existsSync(join(notABase, 'captured')), false, 'and it creates nothing on the way out');
+  drop(notABase);
 });
