@@ -13,6 +13,7 @@
 // separation that works is a separate QUESTION, which is what these tests hold in place.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { asAnotherParty } from './parties.mjs';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -184,7 +185,7 @@ test('the lifecycle verbs work on a flow without being told it is one', () => {
   const dir = makeBase();
   const { id } = capture(dir, ORDER_FLOW);
 
-  const c = confirm(dir, id, { deployment: 'vcptcore_stable' });
+  const c = asAnotherParty(() => confirm(dir, id, { deployment: 'vcptcore_stable' }));
   assert.equal(c.confirmations, 2, 'walking a flow again is a confirmation like any other');
   assert.equal(c.stamp.source, 'pin', 'and it is stamped with the version it was walked on');
 

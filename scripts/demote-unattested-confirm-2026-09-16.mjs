@@ -97,6 +97,18 @@ if (!write) {
   process.exit(0);
 }
 
-writeFileSync(file, stringifyFrontmatter(parsed.data, parsed.body));
+// TWO WAYS TO GET THIS WRONG, AND THIS SCRIPT FOUND BOTH.
+//
+// `stringifyFrontmatter` takes ONE argument and returns the frontmatter block alone, with no
+// trailing newline. Passing the body as a second argument drops it silently: the first run of this
+// script wrote a file that was frontmatter and nothing else, and reported `written:` while doing
+// it. `reindex` caught it ("no frontmatter terminator") and `git checkout` brought the row back.
+//
+// Then `stringify(data) + body` loses one newline, because `parseEntry` hands back a body that
+// already starts at the character after the closing `---\n`. The relabel migration next to this
+// one had exactly that form and would have eaten a blank line out of every entry it touched.
+// `test/frontmatter-roundtrip.test.mjs` now pins the only concatenation that reproduces a file
+// byte for byte.
+writeFileSync(file, stringifyFrontmatter(parsed.data) + String.fromCharCode(10) + parsed.body);
 console.log(`written: ${file}`);
 console.log('Now run `node bin/kb.mjs reindex` and `node bin/kb.mjs validate`.');

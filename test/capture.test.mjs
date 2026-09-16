@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { asAnotherParty } from './parties.mjs';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -394,7 +395,7 @@ test('a capture that lands on a retired fingerprint is refused against the survi
 test('both remedies a refusal names actually work on what it named', () => {
   const dir = makeBase();
   const { survivor } = retireInto(dir);
-  assert.equal(confirm(dir, survivor, { deployment: 'localhost' }).confirmations, 2);
+  assert.equal(asAnotherParty(() => confirm(dir, survivor, { deployment: 'localhost' })).confirmations, 2);
   assert.equal(dispute(dir, survivor, { deployment: 'localhost', note: 'observed otherwise' }).disputes, 1);
   drop(dir);
 });

@@ -33,7 +33,7 @@ import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX,
 // here. Its home moved to break an import cycle, not its meaning.
 export { normalizeAnchor } from './anchors.mjs';
 import { normalizeAnchor, LOOKS_LIKE_A_LOCAL_PATH, MSYS_REMEDY } from './anchors.mjs';
-import { sessionParty, transcriptionSource } from './provenance.mjs';
+import { sessionParty, transcriptionSource, partiesOf } from './provenance.mjs';
 import { sectioned } from './topics.mjs';
 
 // Re-exported: callers have always found these here, and their home moved to planes.mjs so that
@@ -70,7 +70,21 @@ export function fingerprint({ subject, anchors, appliesTo, plane }) {
 // that has no derived plane at all.
 const sourceTools = { locate, installedVersionOf, knownModules };
 
-export const confirmationsOf = (data) => (data.evidence ?? []).filter((e) => !e.contradicts).length;
+// THE NUMBER IN THE REGISTER MEANS INDEPENDENT PARTIES, BECAUSE THAT IS WHAT THE BRIEF SAYS IT
+// MEANS. It counted rows until 2026-09-16. The catalog handed to round four's arm carried a column
+// headed `confirmations`, and the brief in the same prompt told it: "`confirmations` is how many
+// independent parties have seen it. An entry with two or more has been seen by somebody other than
+// its author." That was false for eight active entries — `KB-BCA7468D` printed 3 where one party
+// had seen it, and three entries printed 1 for a reading of source code that nobody observed at
+// all. The trust LEVEL has used `partiesOf` since the provenance fix, so an entry could print
+// `confirmations: 3` and `single-observation` in the same breath.
+//
+// Source readings are excluded rather than folded in: code says what should happen and an
+// observation says what did, and `evidenceKinds` already reports the two side by side. An entry
+// backed only by source now reads 0, which is the honest answer to "how many parties have seen
+// this" and is why the column exists.
+export const confirmationsOf = (data) =>
+  partiesOf((data.evidence ?? []).filter((e) => !e.contradicts && e.method !== 'source'));
 export const disputesOf = (data) => (data.evidence ?? []).filter((e) => e.contradicts).length;
 export const isDisputed = (data) => disputesOf(data) > 0;
 

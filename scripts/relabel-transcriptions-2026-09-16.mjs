@@ -96,7 +96,7 @@ for (const f of readdirSync(dir)) {
     touched.push({ id: data.id, was, now: { by: row.by, from: row.from, at: row.at } });
   }
 
-  if (changed && write) writeFileSync(abs, stringifyFrontmatter(data) + body);
+  if (changed && write) writeFileSync(abs, stringifyFrontmatter(data) + String.fromCharCode(10) + body);
 }
 
 for (const t of touched) {
