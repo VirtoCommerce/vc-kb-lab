@@ -275,6 +275,25 @@ The most useful half of this record. Each was measured, and the measurement said
   comes from the base's own extraction and the registry supplies only the repository name.
   `src/source-door.mjs`, `measurements/kb-sourcedoor-2026-09/`.
 
+* **The gate now compares the two planes, on the one shape that has actually cost something.** A
+  written claim that something *cannot* be done, where the contract publishes an operation that does
+  it. `FINDING-orders-are-deletable.md` asked for this: "an order cannot be deleted on this
+  platform" rode through twelve runs while `DELETE /api/order/customerOrders` sat in the derived
+  plane. **Anchors cannot catch it** — the flow carrying the claim is anchored on `/cart`,
+  `/search` and `/account/orders`, and never on the delete route — so the check is over prose.
+  Measured: 1 flag over 70 active entries on the live corpus, and it is the real one; 3 of 3
+  planted contradictions caught with the right coordinate, 0 of 2 legitimate impossibility claims
+  flagged. It is a **notice**, because a published operation is not proof it works and may be
+  permission-gated, and a gate that failed would be answered by deleting the sentence rather than
+  checking the platform. `measurements/kb-contradiction-2026-09/`.
+* **A corpus can now say a claim was read out of code.** `method: source` records the module, the
+  version INSTALLED here and the path, with the version resolved from the derived plane rather than
+  typed — the same rule `stampOf` applies to the pin, and the same defect it prevents. A source
+  reading and an observation **do not confirm each other**, and two readings by one author are one
+  reading twice: recording both sides of the password-hash disagreement flipped an entry to
+  `confirmed` until the trust rule counted independent authors instead of rows. Rows with no author
+  still count separately, so the 121 written before 2026-09-16 are untouched.
+
 ---
 
 ## Conventions that were paid for

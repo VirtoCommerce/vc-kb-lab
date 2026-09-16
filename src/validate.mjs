@@ -8,6 +8,7 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { installedVersionOf } from './source-door.mjs';
+import { publishedOperations, contradictions } from './contradiction.mjs';
 import { join } from 'node:path';
 import { parseEntry, FIELD_ORDER } from './frontmatter.mjs';
 import { mintId } from './canonical.mjs';
@@ -218,7 +219,9 @@ export function validate(base) {
       // check the captured store's own index and catalog, and a flow is correctly absent from both.
       // Widening them was the first thing the flow tests caught -- the gate demanded that
       // captured-index.json carry an entry that lives in flows/.
-      if (d.status === 'active') activeExperiential.push({ rel, data: d });
+      // The BODY travels with it: the cross-plane contradiction check below reads prose, and the
+      // first version of it silently found nothing because this list carried frontmatter only.
+      if (d.status === 'active') activeExperiential.push({ rel, data: d, body: parsed.body });
       if (d.plane === 'experiential') {
         allCapturedIds.add(d.id);
         if (d.status === 'active') activeCapturedIds.add(d.id);
@@ -426,6 +429,31 @@ export function validate(base) {
     }
   } else if (existsSync(join(base, FLOWS_INDEX))) {
     note(`${FLOWS_INDEX} exists while ${FLOWS_DIR}/ holds no flows`);
+  }
+
+  // THE PLANES, COMPARED. Everything above checks that entries are well-formed and that indexes
+  // match their contents. Nothing checked that a WRITTEN claim survives the contract sitting beside
+  // it, and the cost of that gap is on the record: "an order cannot be deleted on this platform"
+  // rode through twelve runs, three briefs and a controlled comparison while the derived plane
+  // published `DELETE /api/order/customerOrders` the whole time. See src/contradiction.mjs for what
+  // this looks for, what it cannot see, and why it is a notice rather than a failure.
+  const ops = publishedOperations(base);
+  if (ops.length) {
+    for (const { data, body, rel } of activeExperiential) {
+      // ONE NOTICE PER ENTRY AND COORDINATE, not per sentence. An AMENDMENT quotes the claim it
+      // corrects -- KB-AFB2D3C5 carries both "an order cannot be deleted once placed" and, below
+      // it, "The step said an order cannot be deleted, only cancelled" as part of the correction --
+      // so a per-sentence notice makes every fix generate a permanent second complaint. The entry
+      // is the unit a reader judges anyway.
+      const seen = new Set();
+      for (const c of contradictions(body ?? '', ops)) {
+        if (seen.has(c.coordinate)) continue;
+        seen.add(c.coordinate);
+        notice(`${rel}: ${data.id} says "${c.sentence.slice(0, 110)}" while the contract publishes `
+          + `${c.coordinate}${c.operationId ? ` (${c.operationId})` : ''} — @kb(${c.via}). A published operation is not `
+          + 'proof it works, and it may be permission-gated; check the platform rather than the sentence.');
+      }
+    }
   }
 
   return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, flows: flowFiles.length, problems, notices };
