@@ -47,6 +47,20 @@ and not to try to correct the stamp.
 **6. `confirm` now requires `--note`.** An agreement that describes nothing no longer writes. This
 changes what both arms can do and is deliberately the same for both.
 
+## Five leftover promotions are deliberately NOT cleaned up
+
+The deployment carries five promotions from earlier rounds — `KB-LAB run09`, `run10`, `run12`,
+`run13` and one unnumbered `KB-LAB 10% off cart over 200`. All are inactive; `run10` carries a
+coupon. None is from round five: arm A deleted its own two, and the order count returned to 164.
+
+**They stay for arm C.** Arm A ran with them present, and removing them now would hand the two arms
+different deployments — which is the confound a control arm exists to remove. A dirty environment
+that is dirty *identically* for both arms costs nothing this run can measure; a clean one that
+changed between them would cost the comparison.
+
+Read off the operator's screenshot, not verified from a measuring session: nothing in this round
+queried the deployment from the lab.
+
 ## The arrival hook is still off
 
 One treatment per run. Its three filters remain unbuilt.
