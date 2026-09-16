@@ -56,11 +56,81 @@ export function coordinateIndex(base) {
       }
       const d = parsed.data;
       if (d.status && d.status !== 'active') continue;
+      // Trust travels with the coordinate because the ARRIVAL hook has to choose between entries
+      // that share one, and choosing by file order is what it did until 2026-09-16. Computed here
+      // rather than in the hook: the file is already open, and a hook that re-read four entries per
+      // tool call to rank them is a hook that gets turned off.
+      const evidence = d.evidence ?? [];
+      const disputes = evidence.filter((e) => e.contradicts).length;
+      const supporting = evidence.filter((e) => !e.contradicts);
+      const independent = new Set(supporting.filter((e) => e.by).map((e) => e.by)).size
+        + supporting.filter((e) => !e.by).length;
+      const row = {
+        id: d.id,
+        subject: d.subject,
+        plane: d.plane ?? plane,
+        path: `${dir}/${file}`,
+        disputed: disputes > 0,
+        independent,
+      };
       for (const anchor of d.anchors ?? []) {
         const key = normalizeAnchor(anchor?.coordinate);
         if (!key) continue;
         if (!byCoordinate.has(key)) byCoordinate.set(key, []);
-        byCoordinate.get(key).push({ id: d.id, subject: d.subject, plane: d.plane ?? plane, path: `${dir}/${file}` });
+        byCoordinate.get(key).push({ ...row });
+      }
+      // `arrivesAt` is NOT added here. This index feeds the cross-plane checks -- what the contract
+      // says about a claim's coordinates, which written entries are neighbours, which anchors
+      // nothing can raise -- and all three are questions about what a fact is ABOUT. A delivery
+      // address leaking in would make the gate report a missing contract coordinate for a storefront
+      // page nobody ever claimed the contract projects. `arrivalIndex` below adds them, for the one
+      // caller that wants them.
+    }
+  }
+  return byCoordinate;
+}
+
+/**
+ * The coordinate index PLUS every delivery address, for the arrival hook and nothing else.
+ *
+ * Two indexes rather than one flag, because the two questions are genuinely different and a caller
+ * that had to remember to pass `{ includeDelivery: false }` would eventually forget. Everything the
+ * gate and `capture` do goes through `coordinateIndex`; only arrival goes through this.
+ */
+export function arrivalIndex(base) {
+  const byCoordinate = coordinateIndex(base);
+  for (const [dir, plane] of PLANE_DIRS) {
+    const abs = join(base, dir);
+    if (!existsSync(abs)) continue;
+    for (const file of readdirSync(abs).filter((f) => f.endsWith('.md')).sort()) {
+      let parsed;
+      try {
+        parsed = parseEntry(readFileSync(join(abs, file), 'utf8'), `${dir}/${file}`);
+      } catch {
+        continue;
+      }
+      const d = parsed.data;
+      if (d.status && d.status !== 'active') continue;
+      if (!(d.arrivesAt?.length > 0)) continue;
+      const evidence = d.evidence ?? [];
+      const supporting = evidence.filter((e) => !e.contradicts);
+      const row = {
+        id: d.id,
+        subject: d.subject,
+        plane: d.plane ?? plane,
+        path: `${dir}/${file}`,
+        disputed: evidence.some((e) => e.contradicts),
+        independent: new Set(supporting.filter((e) => e.by).map((e) => e.by)).size
+          + supporting.filter((e) => !e.by).length,
+        delivery: true,
+      };
+      for (const at of d.arrivesAt) {
+        const key = normalizeAnchor(at?.coordinate ?? at);
+        if (!key) continue;
+        if (!byCoordinate.has(key)) byCoordinate.set(key, []);
+        // An entry that is both anchored here and delivered here is one entry, not two.
+        if (byCoordinate.get(key).some((e) => e.id === d.id)) continue;
+        byCoordinate.get(key).push(row);
       }
     }
   }

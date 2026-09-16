@@ -10,7 +10,7 @@ import { parseEntry } from '../src/frontmatter.mjs';
 import { validate } from '../src/validate.mjs';
 import {
   capture, supersede, confirm, dispute, retire,
-  reanchor, amend, CaptureRefused, rebuildCapturedArtifacts,
+  reanchor, amend, addArrival, CaptureRefused, rebuildCapturedArtifacts,
   readCaptured, confirmationsOf, evidenceKinds, disputesOf, isDisputed, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
 } from '../src/capture.mjs';
 import { consolidate, renderConsolidation, MergeRefused } from '../src/consolidate.mjs';
@@ -71,6 +71,9 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
   kb dispute     <id> --deployment … --note … record an observation that contradicts an entry
   kb retire      <id> --reason …              withdraw an entry; the id stays, the entry leaves the index
   kb supersede   <id> --reason … --subject …  replace an entry you now know better than, in one act
+  kb arrives     <id> --at … --reason …       say WHERE a fact should arrive, which is not where
+                                              it is ABOUT. Writes no evidence row and cannot
+                                              change an entry's identity.
   kb reanchor    <id> --was … --now … --reason …  correct a coordinate an entry is filed under,
                                               leaving the claim, the id and the evidence untouched
   kb amend       <id> --step … --note …       correct ONE STEP of a flow, keeping its goal and id.
@@ -99,11 +102,11 @@ A capture that lands on a fact the base already holds is REFUSED and exits 4; it
 silently, because whether two claims about one coordinate agree is not something text can be asked.
 `;
 
-const REPEATABLE = new Set(['anchor', 'scope']);
+const REPEATABLE = new Set(['anchor', 'scope', 'arrivesAt']);
 const FLAGS = {
   '--env': 'env', '--base': 'base', '--limit': 'limit',
   '--subject': 'subject', '--question': 'question', '--claim': 'claim',
-  '--anchor': 'anchor', '--scope': 'scope', '--refutable-by': 'refutableBy',
+  '--anchor': 'anchor', '--arrives-at': 'arrivesAt', '--scope': 'scope', '--refutable-by': 'refutableBy',
   '--deployment': 'deployment', '--pin': 'pin', '--platform-version': 'platformVersion',
   '--source': 'source',
   // `kb demand buried --entry <id>`: the entry that should have been served and was not.
@@ -119,7 +122,7 @@ const FLAGS = {
 };
 
 function args(argv) {
-  const out = { _: [], anchor: [], scope: [] };
+  const out = { _: [], anchor: [], scope: [], arrivesAt: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') out.json = true;
@@ -424,7 +427,7 @@ async function main() {
     try {
       const r = capture(base, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
-        anchors: a.anchor, appliesTo: a.scope, flow: a.flow,
+        anchors: a.anchor, arrivesAt: a.arrivesAt, appliesTo: a.scope, flow: a.flow,
         deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
       });
       console.log(`${a.flow ? 'FLOW ' : ''}CAPTURED ${r.id}`);
@@ -514,7 +517,7 @@ async function main() {
     try {
       const r = supersede(base, oldId, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
-        anchors: a.anchor, appliesTo: a.scope, reason: a.reason,
+        anchors: a.anchor, arrivesAt: a.arrivesAt, appliesTo: a.scope, reason: a.reason,
         deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
       });
       console.log(`SUPERSEDED ${r.superseded} -> ${r.id}`);
@@ -580,6 +583,26 @@ async function main() {
   // An anchor is where a claim is FILED, not part of the claim, so correcting one is neither a new
   // observation nor a new fact -- which is why it edits in place and keeps the id. Everything else
   // in this file that changes an entry either adds evidence or withdraws it.
+  if (cmd === 'arrives') {
+    const id = a._[0];
+    if (!id) {
+      console.error('kb arrives <id> --at <coordinate> --reason "who needs it there"');
+      console.error('  Where a fact should ARRIVE, which is not where it is ABOUT. Writes no evidence');
+      console.error('  row and cannot change identity: saying where a fact is wanted is not a sighting.');
+      return 2;
+    }
+    try {
+      const r = addArrival(base, id, { at: a.at, reason: a.reason });
+      console.log(`ARRIVES ${r.id} at ${r.at}`);
+      console.log(`  reason      : ${r.reason}`);
+      console.log(`  delivers to : ${r.arrivesAt.join(', ')}`);
+      console.log('  identity    : unchanged — a delivery address is not an anchor');
+      return { code: 0, outcome: { wrote: { id: r.id, arrivesAt: r.arrivesAt } } };
+    } catch (e) {
+      if (e instanceof CaptureRefused) { console.error(e.message); return 4; }
+      throw e;
+    }
+  }
   if (cmd === 'reanchor') {
     const id = a._[0];
     if (!id) {

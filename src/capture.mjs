@@ -625,6 +625,21 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     }
   }
 
+  // Delivery addresses. Normalized like anchors so the same string matches whichever field it was
+  // written in, and deliberately absent from the fingerprint below: identity is (anchors, scope),
+  // and a delivery address that could collide two facts would make the cheapest improvement
+  // available -- saying where a fact is wanted -- into a thing that refuses entries.
+  const arrivesAt = (Array.isArray(input.arrivesAt) ? input.arrivesAt : [input.arrivesAt])
+    .filter(Boolean)
+    .map((a) => (typeof a === 'string' ? { coordinate: a } : a));
+  for (const a of arrivesAt) {
+    if (LOOKS_LIKE_A_LOCAL_PATH.test(String(a.coordinate ?? ''))) {
+      throw new CaptureRefused(
+        `capture refused: arrival coordinate "${a.coordinate}" is a path on this machine. ${MSYS_REMEDY}`,
+      );
+    }
+  }
+
   const fp = fingerprint({ subject: input.subject, anchors, appliesTo, plane });
   let existing = findByFingerprint(base, fp, plane);
   if (existing && ignoreId && existing.data.id === ignoreId) existing = null;
@@ -693,6 +708,7 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     refutableBy: input.refutableBy,
     appliesTo,
     anchors,
+    ...(arrivesAt.length ? { arrivesAt } : {}),
     evidence: [evidenceRow({
       deployment: input.deployment,
       pin: stamp.pin,
@@ -722,6 +738,51 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
 // A repeat capture raises the count on the entry that exists. It never creates a second file, and
 // what it appends is an observation event -- so the count and the version range stay readable off
 // the same list rather than off a counter someone has to remember to increment.
+/**
+ * Say where an entry that already exists should ARRIVE.
+ *
+ * `capture` can write a delivery address, but 78 entries were written before the field existed and
+ * the whole value of it is retrofitting them: `/sign-in` was visited 19 times across the archived
+ * logs with nothing arriving, while four entries that answer sign-in questions sat in the corpus
+ * anchored elsewhere. A field only new entries can use would have taken twelve more runs to matter.
+ *
+ * It writes no evidence row. Saying where a fact is wanted is not a second sighting of it, and a
+ * verb that quietly raised the confirmation count would make the cheapest edit in the tool also the
+ * easiest way to inflate trust. `amend` made the same choice for the same reason.
+ *
+ * A REASON IS REQUIRED, as it is for `reanchor`. A delivery address is a claim about where somebody
+ * will need this, and an unexplained one is indistinguishable from a coordinate pasted into the
+ * wrong entry.
+ */
+export function addArrival(base, id, { at, reason } = {}) {
+  const entry = loadEntry(base, id);
+  if (!entry) throw new CaptureRefused(`no entry ${id}`);
+  if (!at) throw new CaptureRefused('refused: --at is required — the coordinate an agent would be standing on');
+  if (!reason) {
+    throw new CaptureRefused(
+      'refused: --reason is required. A delivery address says somebody will need this fact HERE, '
+      + 'and one without a reason cannot be told from a coordinate pasted into the wrong entry.',
+    );
+  }
+  if (entry.data.status !== 'active') {
+    throw new CaptureRefused(`refused: ${id} is ${entry.data.status}; delivering a withdrawn fact is worse than not delivering it`);
+  }
+  if (LOOKS_LIKE_A_LOCAL_PATH.test(String(at))) {
+    throw new CaptureRefused(`refused: "${at}" is a path on this machine, not a coordinate. ${MSYS_REMEDY}`);
+  }
+  const key = normalizeAnchor(at);
+  if (!key) throw new CaptureRefused(`refused: "${at}" does not normalize to a coordinate`);
+  const already = [...(entry.data.arrivesAt ?? []), ...(entry.data.anchors ?? [])]
+    .some((a) => normalizeAnchor(a?.coordinate) === key);
+  if (already) {
+    throw new CaptureRefused(`refused: ${id} already arrives at "${at}" — as a delivery address or as an anchor, which delivers too`);
+  }
+  entry.data.arrivesAt = [...(entry.data.arrivesAt ?? []), { coordinate: at }];
+  writeEntry(base, entry.data, entry.body);
+  const artifacts = rebuildCapturedArtifacts(base, entry.data.plane);
+  return { id, at, reason, arrivesAt: entry.data.arrivesAt.map((a) => a.coordinate), artifacts };
+}
+
 export function confirm(base, id, input, { now = () => new Date().toISOString() } = {}) {
   const entry = loadEntry(base, id);
   if (!entry) throw new CaptureRefused(`no captured entry ${id}`);

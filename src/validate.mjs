@@ -170,6 +170,12 @@ export function validate(base) {
       } else derivedCoordinates.add(key);
     }
     if (!(d.evidence?.length > 0)) note(`${rel}: carries no evidence`);
+    // A delivery address must still be a coordinate. It is NOT checked for reachability: the whole
+    // point of the field is that a fact can be wanted somewhere the contract does not project, such
+    // as a storefront page, and reporting that as a missing coordinate would be reporting the design.
+    for (const at of d.arrivesAt ?? []) {
+      if (!at || !at.coordinate) note(`${rel}: an arrivesAt row carries no coordinate: ${JSON.stringify(at)}`);
+    }
     // A CLAIM READ OUT OF CODE HAS TO SAY WHICH CODE. `method: source` without a module, a version
     // and a path is the same failure as an observation without a deployment: unrefutable, because
     // nobody can go back to where it came from. The version must be one the base records as

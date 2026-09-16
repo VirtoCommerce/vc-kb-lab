@@ -15,7 +15,7 @@
 // There is no matching of a question against a body, so there is no relevance guesswork, and a hit
 // is a hit rather than a ranking.
 
-import { coordinateIndex } from './coordinates.mjs';
+import { arrivalIndex } from './coordinates.mjs';
 
 // Coordinates that are a single bare word match too much. `organization` is a real GraphQL type,
 // and on a substring search it fired on 19 of run 03's 319 calls -- every URL with `organizationId`
@@ -133,6 +133,30 @@ export function arrivalsFor(text, index, { limit = 3 } = {}) {
   // one line is going to be read it should be the specific one.
   hits.sort((a, b) => b.coordinate.length - a.coordinate.length);
 
+  // WITHIN one coordinate the order used to be whatever order the files were read in, and that was
+  // invisible until a coordinate held more than the hook could show. `/sign-in` holds four entries;
+  // three are shown; which three was decided by filename. Ranked now, and each step has a reason:
+  //
+  //   1  DISPUTED first. An entry somebody has contradicted is the single most important thing to
+  //      say to a reader about to rely on it, and it arrives carrying that label.
+  //   2  then by how many INDEPENDENT parties have seen it -- the corpus's own trust measure, the
+  //      same count `ask` serves, rather than a second notion invented here.
+  //   3  then WRITTEN before DERIVED. A contract entry is regenerable and the reader can always go
+  //      and read the contract; an agent-written observation exists nowhere else.
+  //
+  // Coordinate specificity still decides first, above all of this: `POST /api/members/search` says
+  // more about where you are standing than `/api/members`, and where you are standing is the whole
+  // premise of arriving.
+  const rank = (e) => (e.disputed ? 0 : 1);
+  const written = (e) => (e.plane === 'derived-first' ? 1 : 0);
+  for (const hit of hits) {
+    hit.entries = [...hit.entries].sort(
+      (a, b) => rank(a) - rank(b)
+        || written(a) - written(b)
+        || (b.independent ?? 0) - (a.independent ?? 0),
+    );
+  }
+
   // An entry is named once even when several of its coordinates matched. The agent is being handed
   // something to read, not a relevance report.
   const seen = new Set();
@@ -148,4 +172,5 @@ export function arrivalsFor(text, index, { limit = 3 } = {}) {
   return out;
 }
 
-export const buildArrivalIndex = (base) => coordinateIndex(base);
+// Delivery addresses included: this is the one caller that wants them.
+export const buildArrivalIndex = (base) => arrivalIndex(base);
