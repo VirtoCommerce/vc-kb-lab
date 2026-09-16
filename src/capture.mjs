@@ -77,6 +77,12 @@ export const isDisputed = (data) => disputesOf(data) > 0;
 export function observedOn(data) {
   const seen = new Map();
   for (const e of data.evidence ?? []) {
+    // A source reading was not observed ANYWHERE, so it does not belong in a list of where
+    // something was seen. Left in, it grouped under the key `null@?` and printed as
+    // "null — 1 confirming", which reads as a broken stamp rather than as a different kind of
+    // evidence -- the exact failure `method: source` exists to prevent. Caught by running the verb
+    // against the live corpus, not by a test, which is the third time that has been the order.
+    if (e.method === 'source') continue;
     const key = `${e.deployment ?? '?'}@${e.platformVersion ?? '?'}`;
     if (!seen.has(key)) seen.set(key, { deployment: e.deployment ?? null, platformVersion: e.platformVersion ?? null, contradicts: 0, confirms: 0 });
     const row = seen.get(key);
@@ -705,19 +711,33 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
       survivor ? { supersededBy: survivor.data.id } : {},
     );
   }
-  if (!input.deployment) throw new CaptureRefused('confirm refused: --deployment is required — a confirmation with no observation behind it is not a confirmation');
+  // `--source` is the other way to back an existing claim: somebody went and read the code that
+  // decides it. It is NOT a confirmation and the verb says so -- `evidenceKinds` keeps the counts
+  // apart and `experientialTrust` refuses to call one of each `confirmed`. It is recorded on the
+  // entry all the same, because the alternative is a second entry saying the same thing with a
+  // different provenance, which is the duplicate the fingerprint exists to prevent.
+  if (!input.deployment && !input.source) {
+    throw new CaptureRefused(
+      'confirm refused: --deployment is required — a confirmation with no observation behind it is '
+        + 'not a confirmation. If you READ the code that decides this rather than watching it happen, '
+        + 'pass --source <Module.Id>:<path> instead: that is recorded as evidence of a different kind '
+        + 'and does not raise the confirmation count.',
+    );
+  }
 
-  const stamp = stampOf(base, input);
+  const source = input.source ? sourceRef(base, input.source, sourceTools) : null;
+  const stamp = source ? { pin: null, platformVersion: null, source: 'read-from-source' } : stampOf(base, input);
   entry.data.evidence = [...entry.data.evidence, evidenceRow({
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
     by: input.by,
     at: input.at ?? now(),
+    source,
   })];
   writeEntry(base, entry.data, entry.body);
   rebuildCapturedArtifacts(base, entry.data.plane);
-  return { id, confirmations: confirmationsOf(entry.data), observedOn: observedOn(entry.data), stamp };
+  return { id, confirmations: confirmationsOf(entry.data), kinds: evidenceKinds(entry.data), observedOn: observedOn(entry.data), stamp, source };
 }
 
 // A dispute is an observation that contradicts. It lands ON the entry rather than beside it,

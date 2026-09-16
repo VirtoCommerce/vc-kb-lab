@@ -542,6 +542,13 @@ async function main() {
       if (cmd === 'confirm') {
         const r = confirm(base, id, a);
         recordSettled(base, r.id);
+        if (r.source) {
+          // Said as what it is. A source reading backing an existing claim is evidence of a
+          // different kind, and printing it as a confirmation would undo the rule in one line.
+          console.log(`SOURCE-BACKED ${r.id} — read at ${r.source.module}:${r.source.version}`);
+          console.log(`  ${r.source.url ?? r.source.path}`);
+          console.log(`  evidence now: ${r.kinds.observation} observed, ${r.kinds.source} read from source. This did NOT raise the confirmation count: code says what should happen, an observation says what did.`);
+        } else
         console.log(`CONFIRMED ${r.id} — ${r.confirmations} independent observation(s)`);
         for (const o of r.observedOn) console.log(`  ${o.deployment}${o.platformVersion ? `:${o.platformVersion}` : ''} — ${o.confirms} confirming, ${o.contradicts} contradicting`);
         printStamp(r.stamp);

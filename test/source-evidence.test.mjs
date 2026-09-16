@@ -179,3 +179,73 @@ test('the gate flags a source row citing a version this base does not run', () =
   );
   drop(dir);
 });
+
+// --- backing an EXISTING claim with source ----------------------------------------------------------
+//
+// The common case is not a new entry. Somebody goes and reads the code that decides a claim the
+// corpus already holds from observation -- which is exactly what happened to the cancel-cascade
+// entry and to the two-endpoints-disagree entry on 2026-09-16. Writing a second entry for it would
+// be the duplicate the fingerprint exists to prevent, so the row lands on the entry, and does not
+// raise the confirmation count.
+
+test('`confirm --source` records a source row on an existing entry without confirming it', () => {
+  const dir = makeBase();
+  const r = capture(dir, { ...CLAIM, deployment: 'vcptcore_stable' });
+  const before = loadEntry(dir, r.id).data.evidence.length;
+
+  const out = confirm(dir, r.id, { source: SOURCE, at: '2026-09-16T03:00:00Z' });
+  assert.equal(out.kinds.observation, 1);
+  assert.equal(out.kinds.source, 1);
+  assert.ok(out.source.url, 'the caller is handed the url so it can print what it just recorded');
+
+  const rows = loadEntry(dir, r.id).data.evidence;
+  assert.equal(rows.length, before + 1);
+  assert.equal(rows.at(-1).method, 'source');
+  assert.equal(rows.at(-1).deployment, undefined);
+
+  const trust = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
+  assert.equal(trust.level, 'single-observation', 'reading the code that decides a claim is not a second sighting of it');
+  drop(dir);
+});
+
+test('`confirm` with neither a deployment nor a source is refused, and says what each one means', () => {
+  const dir = makeBase();
+  const r = capture(dir, { ...CLAIM, deployment: 'vcptcore_stable' });
+  assert.throws(
+    () => confirm(dir, r.id, {}),
+    (e) => e instanceof CaptureRefused && /--source/.test(e.message) && /not a confirmation/.test(e.message),
+  );
+  drop(dir);
+});
+
+test('a source row is not a place, and never appears in the list of where something was observed', () => {
+  const dir = makeBase();
+  const r = capture(dir, { ...CLAIM, deployment: 'vcptcore_stable' });
+  const out = confirm(dir, r.id, { source: SOURCE, at: '2026-09-16T03:00:00Z' });
+  assert.deepEqual(out.observedOn.map((o) => o.deployment), ['vcptcore_stable'],
+    'before this, the source row grouped under a null deployment and printed as "null — 1 confirming"');
+  drop(dir);
+});
+
+test('two readings by the same author are one reading twice, and do not confirm', () => {
+  const dir = makeBase();
+  const r = capture(dir, { ...CLAIM, source: SOURCE, by: 'one-agent' });
+  confirm(dir, r.id, { source: 'VirtoCommerce.Orders:src/VirtoCommerce.OrdersModule.Data/Model/CustomerOrderEntity.cs', by: 'one-agent', at: '2026-09-16T04:00:00Z' });
+  const t1 = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
+  assert.equal(t1.kinds.source, 2, 'both rows are recorded');
+  assert.equal(t1.level, 'single-observation', 'and neither confirms the other, because one author read both');
+
+  confirm(dir, r.id, { source: 'VirtoCommerce.Orders:src/VirtoCommerce.OrdersModule.Data/Services/CustomerOrderService.cs', by: 'a-different-agent', at: '2026-09-16T05:00:00Z' });
+  const t2 = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
+  assert.equal(t2.level, 'confirmed', 'a second author reading the same claim is what confirmation means');
+  drop(dir);
+});
+
+test('rows written before authorship was recorded keep counting as separate, so nothing is re-graded', () => {
+  const dir = makeBase();
+  const r = capture(dir, { ...CLAIM, deployment: 'vcptcore_stable' });
+  confirm(dir, r.id, { deployment: 'vcptcore_stable', at: '2026-09-16T01:00:00Z' });
+  const t = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
+  assert.equal(t.level, 'confirmed', '121 of 124 rows in the live corpus carry no author; the rule must not touch them');
+  drop(dir);
+});

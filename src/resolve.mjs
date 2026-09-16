@@ -177,7 +177,22 @@ function experientialTrust(data) {
   // two counts are reported side by side rather than blended, because a blended number would be a
   // weight nobody has measured, and this base has been wrong before about a constant that felt
   // obviously right. VCST-5975's fourth acceptance is this rule.
-  const repeated = Math.max(kinds.observation, kinds.source) > 1;
+  // INDEPENDENCE, not row count. Two readings by the same author in one sitting are one reading
+  // twice, and counting them as confirmation is the self-confirmation this project keeps catching
+  // itself at -- "a run helped by its own captures is not evidence of anything" is already the rule
+  // the arrival measurement is built on. It was caught here the same way: recording both sides of
+  // the password-hash disagreement, two files read minutes apart by one author, flipped the entry
+  // to `confirmed`.
+  //
+  // A row with no `by` counts as its own author, because the tool cannot tell. That is deliberately
+  // permissive and it is what keeps this from re-grading the corpus: 121 of the 124 evidence rows
+  // written before 2026-09-16 carry no author, so their levels are untouched. The rule only ever
+  // tightens, and only for rows that say who wrote them.
+  const independent = (wantSource) => {
+    const rows = (data.evidence ?? []).filter((e) => !e.contradicts && ((e.method === 'source') === wantSource));
+    return new Set(rows.filter((r) => r.by).map((r) => r.by)).size + rows.filter((r) => !r.by).length;
+  };
+  const repeated = Math.max(independent(false), independent(true)) > 1;
   const both = kinds.observation > 0 && kinds.source > 0;
   return {
     level: repeated ? 'confirmed' : 'single-observation',
