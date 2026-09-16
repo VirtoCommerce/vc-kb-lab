@@ -131,3 +131,24 @@ test('a session cannot vote twice by citing an artefact it produced', () => {
     { by: 'session:aaaa', from: 'logs/round2/arm-C/report.md' },
   ]), 2);
 });
+
+// A CONFIRM NOBODY CAN SHOW AN OBSERVATION FOR DOES NOT VOTE. Round four's arm confirmed an entry
+// about order timestamps at the end of a pricing task, in a batch of three one second apart; its
+// report names no timestamp. Asked for by the second review, which also asked for the same check
+// over every confirm ever written — see `scripts/demote-unattested-confirm-2026-09-16.mjs` for why
+// the sweep is refused: `confirm` has never taken a note, so the absence of one is a gap in the
+// verb and not a verdict on 37 rows nobody can read.
+test('a row marked unattested is kept and does not count as a party', () => {
+  const rows = [
+    { by: 'session:aaaa' },
+    { by: 'session:bbbb', attested: false, whyNot: 'the report describes nothing of the kind' },
+  ];
+  assert.equal(partiesOf(rows), 1, 'an unattested row must not take an entry to `confirmed`');
+
+  // Kept, not deleted: the row still records that a session touched the entry, and a later reader
+  // can open the artefact named in `whyNot` and disagree.
+  assert.equal(rows.length, 2, 'partiesOf must not mutate or drop the rows it is given');
+
+  // Absent or true both vote. Only an explicit false is a judgement somebody made.
+  assert.equal(partiesOf([{ by: 'session:aaaa' }, { by: 'session:bbbb', attested: true }]), 2);
+});

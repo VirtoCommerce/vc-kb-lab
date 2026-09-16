@@ -72,7 +72,28 @@ export function transcriptionSource(from, { root = process.cwd() } = {}) {
  * neither `from` nor `by` -- the 121 rows written before any of this existed -- each count as
  * their own party, which is what they have always done.
  */
+/**
+ * A row marked `attested: false` is kept and does not vote.
+ *
+ * `confirm` has never taken a note, so no row in this corpus records what its author saw. That is a
+ * gap in the verb, not a verdict on the rows, and it is NOT what this flag is for. A row earns the
+ * flag only when somebody has gone to the artefact and established that nothing was observed:
+ * round four's `KB-7E35E6BC` row confirms a claim about order timestamps, and the arm's report,
+ * archived beside the log, is about pricing and contains no timestamp anywhere.
+ *
+ * The temptation is to sweep. 40 of the corpus's 47 confirm rows carry no `from`, and demoting all
+ * of them takes the licensed set -- two or more parties, not disputed, the set an agent may act on
+ * without re-verifying -- from 23 entries to 7. Thirty-seven of those rows carry no author either;
+ * they predate `sessionParty` and there is no artefact to check them against. Marking them
+ * unattested would be inventing a verdict on rows nobody can read, which is the same move as a
+ * writer typing its own witnesses, pointed the other way.
+ */
+export function isAttested(row) {
+  return row.attested !== false;
+}
+
 export function partiesOf(rows) {
+  rows = rows.filter(isAttested);
   // A SESSION CANNOT VOTE TWICE BY CITING ITSELF. Condition set by the second review when it
   // accepted the artefact rule: `from ?? by` let one session count once for a row it typed unaided
   // and again for a row citing an artefact it had produced. Not present in the data when the rule

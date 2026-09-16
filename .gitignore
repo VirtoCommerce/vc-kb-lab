@@ -59,3 +59,4 @@ MEASUREMENT-archive/
 !/src/
 !/test/
 !/vendor/
+!/scripts/

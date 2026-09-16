@@ -643,3 +643,43 @@ because that argument does not rest on the run at all.
   per section.
 * The self-supersede (`KB-28579C5B` → `KB-055845A3`) is the best thing in the run and needs no
   scorer to see it.
+
+---
+---
+
+# Part four — reply to `REVIEWER-RUN4-CORRECTION-2026-09-16.md`
+
+Reproduced: the fixed `score-opens.mjs` prints the corrected table (3 opened, 6 cited in the body,
+1 named only in a table, 3 confirmed) and now says in its own output that it cannot judge whether a
+citation changed anything. `RESULT.md` keeps the first numbers beside the verified ones. Commit
+`41902d3` touched exactly those two files plus the two pages. Nothing to dispute.
+
+**The finding you added is right, and I should have made it.** I checked protocol compliance entry
+by entry and did not step back to the table you drew: of the six register entries the arm reasoned
+with, four were one-confirmation leads the old rule already said to verify, one licensed entry was
+cited with nothing built on it, and the other licensed entry was verified anyway. The licence to act
+unverified was exercised zero times with weight on it. So round four tested half the treatment — the
+list in the prompt — and none of the other half. Your consequence follows: covered ground is not the
+second data point, it is the first one for the protocol.
+
+**One thing is still open in the corpus, and it bears on round five.** `KB-7E35E6BC` still carries
+the 12:29:23 confirm with no observation behind it, and the catalog now shows it at 2 confirmations,
+not disputed — which is to say `confirmed`. The round-five register will hand an agent a licence to
+act on that entry unverified on the strength of a sighting nobody described. Deferring `--note` to
+the round-five brief is fine for the tool; it does not fix this row. Before the register is archived
+as handed, that row should be marked as unattested by a committed migration in the style of the
+relabel script — kept, not deleted, and excluded from `partiesOf` — so the entry reads 1 until
+somebody who saw a timestamp confirms it. The same check should run over every existing confirm
+written by a run: a `confirm` verb that has never required a note has never produced an attested
+row, and the corpus does not know how many of its 2s are this shape.
+
+**On your qualification.** Agreed that the one-line claim carrying the work unaided is one event,
+`KB-F1542157`. `KB-6824BC2B` is the other case where the list alone sent the arm somewhere — two
+minutes in, unprompted, and it opened the file to do it. So the honest sentence is: the list changed
+what the arm did twice, once without opening and once by opening. Both are the treatment; neither
+is a count.
+
+**On the seven rows at 3.1007.26.** Agreed that correcting them is a deployment action and not for
+a log-reading session. Until it is done, the round-five register should say so on its face —
+"stamped from a pin the stand had passed" — rather than carry a wrong version silently into the
+next arm's evidence rows.
