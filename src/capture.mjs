@@ -34,6 +34,7 @@ import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX,
 export { normalizeAnchor } from './anchors.mjs';
 import { normalizeAnchor, LOOKS_LIKE_A_LOCAL_PATH, MSYS_REMEDY } from './anchors.mjs';
 import { sessionParty, transcriptionSource } from './provenance.mjs';
+import { sectioned } from './topics.mjs';
 
 // Re-exported: callers have always found these here, and their home moved to planes.mjs so that
 // both planes are named in one place rather than as literals scattered across six modules.
@@ -218,15 +219,51 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
       'The confirmation count, the disputed flag and the versions each fact has been seen on are read',
       'out of `evidence[]`. Nothing here declares them.',
       '',
-      '| id | subject | confirmations | disputed | scope |',
-      '|---|---|---|---|---|',
+      'SECTIONS EXIST SO THE LIST STAYS READ. This catalog is meant to be handed to an agent whole,',
+      'and what fails as it grows is the reading, not the context window. Sections are derived from',
+      'subject, question and anchors (`src/topics.mjs`), so a wrong filing is visible here rather than',
+      'hidden in a table. An entry is filed under one section and its other topics are named beside',
+      'it: 27 of 78 touch more than one, so these are tags, not folders.',
+      '',
+      'Within a section: disputed first, then by independent confirmations. A reader who stops early',
+      'should stop on what most parties have seen, and on what somebody disagrees with.',
     ];
-  for (const e of all.sort((a, b) => a.data.id.localeCompare(b.data.id))) {
+
+  const TABLE_HEAD = flow
+    ? ['| id | goal | confirmations | disputed | scope |', '|---|---|---|---|---|']
+    : ['| id | subject | confirmations | disputed | scope | also |', '|---|---|---|---|---|---|'];
+
+  const row = (e, also = []) => {
     const scope = (e.data.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`).join(' ') || '—';
-    lines.push(
-      `| [\`${e.data.id}\`](${e.rel}) | \`${e.data.subject}\`${e.data.status === 'active' ? '' : ' _(retired)_'} ` +
-        `| ${confirmationsOf(e.data)} | ${isDisputed(e.data) ? `yes (${disputesOf(e.data)})` : 'no'} | ${scope} |`,
-    );
+    const cells = [
+      `[\`${e.data.id}\`](${e.rel})`,
+      `\`${e.data.subject}\`${e.data.status === 'active' ? '' : ' _(retired)_'}`,
+      String(confirmationsOf(e.data)),
+      isDisputed(e.data) ? `yes (${disputesOf(e.data)})` : 'no',
+      scope,
+    ];
+    if (!flow) cells.push(also.length ? also.join(', ') : '—');
+    return `| ${cells.join(' | ')} |`;
+  };
+
+  if (flow) {
+    // Three procedures do not need sections, and a heading per row would be worse than a table.
+    lines.push('', ...TABLE_HEAD);
+    for (const e of all.sort((a, b) => a.data.id.localeCompare(b.data.id))) lines.push(row(e));
+  } else {
+    // Retired entries are not part of what an agent should scan; they go last, in one block, so the
+    // sections above are exactly the live register.
+    const retiredEntries = all.filter((e) => e.data.status !== 'active');
+    for (const [section, rows] of sectioned(live, { confirmations: confirmationsOf, disputed: isDisputed })) {
+      lines.push('', `## ${section} — ${rows.length}`, '', ...TABLE_HEAD);
+      for (const { entry, also } of rows) lines.push(row(entry, also));
+    }
+    if (retiredEntries.length) {
+      lines.push('', `## retired — ${retiredEntries.length}`, '',
+        'Superseded or withdrawn. Kept so a reader who meets an id somewhere can find out what',
+        'happened to it; not part of the register an agent scans.', '', ...TABLE_HEAD);
+      for (const e of retiredEntries.sort((a, b) => a.data.id.localeCompare(b.data.id))) lines.push(row(e));
+    }
   }
   lines.push('');
   return { index, catalog: lines.join('\n'), active: live.length, retired: all.length - live.length };
