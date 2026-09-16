@@ -158,3 +158,27 @@ an environment is how a run reports facts about a deployment nobody named.
 |---|---|
 | `vcptcore_stable` | **the reference.** Stable bundle v14, platform `3.1007.26` |
 | `localhost` | the local stack; a developer's module mix, matching no shipped release |
+
+## Where this repository stands after 2026-09-16
+
+The tool now has a second home. `plugins/vc-kb/` on branch `claude/kb-tool` of
+`VirtoCommerce/vc-mcp-testing-module` is where it **evolves**; this repository keeps a full working
+copy and stays the bench.
+
+**The two copies are meant to diverge, and that is the point.** The `src/` here is the exact code the
+twelve exploratory runs and the three controlled comparisons were measured against. Keeping it frozen
+is what lets an archived result be reproduced; syncing it forward would quietly invalidate every
+number in `measurements/`. When you need to know what the tool did during a run, read it here. When
+you need to change the tool, change it there.
+
+Two differences already exist and are deliberate: the plugin resolves its corpus through
+`src/base.mjs` (`--base` → `KB_BASE` → a sibling `vc-knowledge` checkout → nothing) where this copy
+carries an absolute path, and the plugin owns `docs/`.
+
+The measurement record is mirrored on branch `claude/kb-measurements` of the same repository, under
+`measurements-kb/`, and **must never merge into its `main`**: comparison arms launch in that
+repository and arm B runs on `main`, so an oracle or a graded result reachable from `main`
+contaminates every future comparison by construction.
+
+Arm reports, arm artefacts and the sealed predictions live in neither repository — `_comparison-logs/`
+and `_predictions/` — because a run must not be able to read the material of the run before it.
