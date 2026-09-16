@@ -50,6 +50,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { deliver } from '../../src/deliver.mjs';
+import { how } from '../../src/resolve.mjs';
 import { QUESTIONS } from './questions.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -60,9 +61,31 @@ const base = args.includes('--base') ? args[args.indexOf('--base') + 1] : (proce
 const write = args.includes('--write');
 
 
-const run = () => QUESTIONS.map(({ row, held, want, anchor, because, by, limit, q }) => {
+const run = () => QUESTIONS.map(({
+  row, held, want, anchor, procedural, because, by, limit, q,
+}) => {
   const d = deliver(base, q, { limit });
-  return { row, held, want: want ?? null, anchor: anchor ?? null, because: because ?? null, by: by ?? null, limit, question: q, served: (d.citations ?? []).map((c) => c.id), miss: !d.hit };
+  const served = (d.citations ?? []).map((c) => c.id);
+  // A row marked `procedural` is scored on two halves, not on a served entry: `ask` must refuse it,
+  // and `kb how` must answer it with the flow named. Checking only the refusal would let the row
+  // pass while the procedure it belongs to had gone missing.
+  const procedureServed = procedural
+    ? how(base, q, { limit: 2 }).results.map((r) => r.id).includes(procedural)
+    : null;
+  return {
+    row,
+    held,
+    want: want ?? null,
+    anchor: anchor ?? null,
+    procedural: procedural ?? null,
+    procedureServed,
+    because: because ?? null,
+    by: by ?? null,
+    limit,
+    question: q,
+    served,
+    miss: !d.hit,
+  };
 });
 
 const current = run();
@@ -91,6 +114,13 @@ for (const r of current) {
   }
   // The entry that ranked FIRST is the one the agent read first and acted on, so it is the one
   // whose disappearance is a regression. A rank change inside the served set is not.
+  if (r.procedural) {
+    const ok = r.miss && r.procedureServed;
+    if (!ok) lost += 1;
+    console.log(`  ${r.row.padEnd(6)} ${r.held.padEnd(10)} ${ok ? 'PROC  ' : 'BROKEN'} ask ${r.miss ? 'refuses' : `still serves ${r.served.join(', ')}`}; \`how\` ${r.procedureServed ? 'serves' : 'does NOT serve'} ${r.procedural}`);
+    console.log(`${' '.repeat(25)}re-expected as procedural by ${r.by ?? '(unattributed)'}: ${r.because}`);
+    continue;
+  }
   const anchorId = r.anchor ?? was.served[0] ?? null;
   const kept = anchorId ? r.served.includes(anchorId) : null;
   const changed = JSON.stringify(was.served) !== JSON.stringify(r.served);

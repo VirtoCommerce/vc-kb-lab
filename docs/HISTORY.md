@@ -250,6 +250,31 @@ The most useful half of this record. Each was measured, and the measurement said
   Nothing deleted: the recommendation is to stop growing the derived plane by projection and give
   it the job it alone can do. `measurements/kb-utilization-2026-09/`.
 
+* **The `ask` MISS contract has stopped holding, and the base's own log proves it.** Of the eight
+  questions `demand.jsonl` records the base refusing, it answers seven today and six of those seven
+  answers are adjacent rather than right — a tax question answered with a discount-row entry, a
+  sign-in question with platform GraphiQL. Six code-mechanism questions of the kind round two went
+  to source for also all return answers, which is why the source door almost never opens. A floor
+  that counts matched terms cannot hold: as entries accumulate, more of them contain any three given
+  words. **Rarity was swept and rejected** — a document-frequency floor that refuses the negatives
+  loses 16 to 32 of the 34 held-out anchors. A raw-score cut separates them and was rejected
+  unswept, because a BM25 constant is not comparable across corpus versions and would drift exactly
+  as the contract has. `measurements/kb-missdrift-2026-09/`.
+* **A procedural question now belongs to `kb how`, and `ask` refuses it.** The plane separation was
+  only ever enforced on the corpus side — `ask` never sees a flow — which left a procedural
+  *question* being answered out of the fact planes by whatever mentioned the same journey. The test
+  is the goal rule `how` already uses. It costs one of the 34 anchors, r2.4, which is itself a
+  procedure and is marked NOT-USED by the run that asked it; that row is re-expected rather than
+  overridden away, and the harness now checks both halves — `ask` refuses AND `how` serves the flow.
+* **A MISS on a code question names the module and the version this deployment runs.** 119 derived
+  entries have carried `appliesTo: [{module, version}]` since the first day and nothing read it.
+  Round two's arm A discovered five of those tags by hand, through an extra call, and every one
+  matches what the base already held; arms B and C did not and read `dev` ten times between them.
+  Not a source plane: no code is indexed and no speed is claimed. A registry names a wave, not a
+  machine — bundle v14 disagrees with this deployment about 2 of 9 module versions — so the version
+  comes from the base's own extraction and the registry supplies only the repository name.
+  `src/source-door.mjs`, `measurements/kb-sourcedoor-2026-09/`.
+
 ---
 
 ## Conventions that were paid for

@@ -345,3 +345,35 @@ test('the goal rule is a strict majority of the question\'s content terms', () =
   assert.equal(aboutGoal([], new Set(['checkout'])), false);
   assert.equal(aboutGoal(['order'], new Set(['order'])), true);
 });
+
+// --- the other half of the plane separation -------------------------------------------------------
+//
+// The separation was only ever enforced on the CORPUS side: `ask` never sees a flow. That left a
+// procedural QUESTION getting answered out of the fact planes by whatever mentioned the same
+// journey. Measured 2026-09-16 on the live base: "create a percentage-off promotion in the Admin
+// Marketing module" -- a question the base itself once recorded as a MISS -- was answered with the
+// REST route table for /api/marketing/promotions and two unrelated experiential entries, while the
+// flow plane held the procedure.
+
+test('`ask` refuses a procedural question and names the verb that serves it', () => {
+  const dir = makeBase();
+  const flow = capture(dir, PROMO_FLOW);
+  capture(dir, PAYMENT_FACT);
+  const res = ask(dir, 'create a percentage-off promotion', { limit: 3 });
+  assert.equal(res.miss, true, 'facts are not served in a procedure\'s place');
+  assert.deepEqual(res.procedural.map((p) => p.id), [flow.id]);
+  assert.match(res.note, /kb how/);
+  assert.deepEqual(how(dir, 'create a percentage-off promotion').results.map((r) => r.id), [flow.id],
+    'and the verb it points at actually answers, which is the half a refusal alone would not check');
+  drop(dir);
+});
+
+test('a fact question that merely travels a flow\'s pages is still answered', () => {
+  const dir = makeBase();
+  capture(dir, LONG_ORDER_FLOW);
+  const fact = capture(dir, PAYMENT_FACT);
+  const res = ask(dir, 'which endpoint lists the payment methods a store has enabled', { limit: 3 });
+  assert.equal(res.miss, false, 'the goal rule is what stops this refusing everything about orders');
+  assert.equal(res.results[0].id, fact.id);
+  drop(dir);
+});

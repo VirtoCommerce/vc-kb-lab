@@ -26,7 +26,26 @@ export const QUESTIONS = [
   { row: 'r2.1', limit: 3, held: 'UNANSWERED', q: 'how does a percentage discount appear on a CustomerOrder in Virto Commerce' },
   { row: 'r2.2', limit: 3, held: 'HELD', q: 'what fields does the Discount type carry on a CustomerOrder and its line items' },
   { row: 'r2.3', limit: 3, held: 'HELD', q: 'OrderDiscountType fields' },
-  { row: 'r2.4', limit: 3, held: 'NOT-USED', q: 'how do I create a percentage discount promotion in the marketing module' },
+  // RE-EXPECTED, NOT OVERRIDDEN AWAY, 2026-09-16. This row is a PROCEDURE, and `ask` now refuses a
+  // procedural question and names the verb that serves it instead of answering out of the fact
+  // planes. Its old anchor was `rest-api-marketing-promotions` -- the REST route table, which is
+  // not how anybody creates a promotion, and the run that asked did nothing with it (NOT-USED).
+  //
+  // So the row is not deleted and the loss is not hidden: what "correct" means for it has changed,
+  // and the harness now checks BOTH halves -- that `ask` refuses, and that `kb how` serves the flow
+  // named here. If either half fails, the row fails. Cost measured in
+  // measurements/kb-missdrift-2026-09/: this is the only one of the 34 the redirect touches.
+  {
+    row: 'r2.4',
+    limit: 3,
+    held: 'NOT-USED',
+    procedural: 'KB-EB228603',
+    by: 'the author of the flow-redirect change, 2026-09-16',
+    because: 'a question about how to reach a goal belongs to `kb how`, which answers it with the '
+      + 'Admin promotion flow. `ask` answering it with a route table is the plane separation holding '
+      + 'on the corpus side and failing on the question side',
+    q: 'how do I create a percentage discount promotion in the marketing module',
+  },
   // SETTLED BY RUN 09, AND NOT RE-ANCHORED, because the evidence settles the QUESTION and not the
   // id. Run 09 was sent at this exact subject and answered it in 244 calls without one mention of
   // KB-12CEF821 or the string `orderlineitemtype` -- the contract table this row was anchored on.

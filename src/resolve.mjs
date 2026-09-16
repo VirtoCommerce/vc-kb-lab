@@ -337,6 +337,43 @@ export function ask(base, question, { limit = 3 } = {}) {
   const queryTerms = new Set(
     tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
   );
+
+  // A PROCEDURAL QUESTION BELONGS TO THE OTHER VERB, and `ask` refuses it rather than answering it
+  // with facts that merely share its nouns.
+  //
+  // The plane separation was built so a procedure and a fact never compete in one ranked list. It
+  // was only ever enforced on the CORPUS side -- `ask` never sees a flow -- and that left the other
+  // half open: a procedural QUESTION still got answered, out of the fact planes, by whatever
+  // mentioned the same journey. Measured 2026-09-16 on the two flow questions the base itself
+  // recorded as MISS in its own demand log: "create a percentage-off promotion in the Admin
+  // Marketing module" was answered with the REST route table for /api/marketing/promotions plus two
+  // unrelated experiential entries, and "create a promotion with a coupon code" the same way, while
+  // the flow plane answers both correctly.
+  //
+  // The test is the goal rule `how` already uses, unchanged: a flow is reached only when a majority
+  // of the question's content terms land in its goal. So this cannot fire on a fact question that
+  // merely travels through a flow's pages -- that is measured in kb-flowmiss-2026-09 and is the
+  // whole reason the goal rule exists.
+  //
+  // COST, MEASURED, on the 34 held-out rows of kb-retrieval-2026-09: one anchor, r2.4 -- "how do I
+  // create a percentage discount promotion in the marketing module" -- which is itself a procedure,
+  // is marked NOT-USED by the run that asked it, and is answered by `kb how`. Both blind graders'
+  // off-topic and wanted counts are unchanged. See measurements/kb-missdrift-2026-09/.
+  const procedural = flowsMatching(base, question);
+  if (procedural.length) {
+    return {
+      miss: true,
+      question,
+      searched,
+      results: [],
+      degraded: null,
+      procedural,
+      note: `This asks how to reach a goal, and ${procedural.length === 1 ? 'a procedure' : 'procedures'} `
+        + `for it ${procedural.length === 1 ? 'is' : 'are'} recorded on the flow plane, which \`ask\` cannot serve. `
+        + `Run \`kb how "${question}"\`. Facts are not served here instead, because an entry that shares this `
+        + 'question\'s nouns is not an answer to it.',
+    };
+  }
   const search = (index) => (index ? index.search(question, SEARCH_OPTIONS) : []);
   const raw = [...search(opened.derived), ...search(opened.captured)];
   const floor = relevanceFloor(queryTerms);
@@ -396,6 +433,7 @@ export function renderAnswer(res) {
     } else {
       out.push(`  searched : ${res.searched.join(', ')}`);
       out.push(`  ${res.note}`);
+      for (const p of res.procedural ?? []) out.push(`      @kb(${p.id})  ${p.subject}`);
       out.push(...renderSourceDoor(res.source ?? []));
     }
     return out.join('\n');
