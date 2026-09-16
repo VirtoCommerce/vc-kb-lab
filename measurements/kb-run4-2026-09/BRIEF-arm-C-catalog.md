@@ -7,15 +7,21 @@ Read this whole page before your first tool call.
 A real QA task against a Virto Commerce deployment. **The task is the job.** Everything below is a
 tool you may use; none of it is the subject of the work, and you are not testing it.
 
-Your task is in `measurements/kb-run4-2026-09/TASK.md`. Read it next.
+Your task was given to you directly. There is no task file to go and find, and nothing under
+`C:/_VIRTO/vc-kb-lab/measurements/` is for you — that directory holds how this session is being
+measured, including what somebody predicted you would do, and reading it would make you the grader
+of your own run.
 
 ## The register
 
-Below is **everything this project's agents have written down** about this deployment: 89 one-line
+Below is **everything this project's agents have written down** about this deployment: 78 one-line
 claims, grouped by subject, each with an id. It is not a search index and there is nothing to query.
 It is a list. Read it the way you would read the contents page of a thin book.
 
-**To open one:** `node bin/kb.mjs show <id>` — or open `captured/<id>.md` under the base directly.
+**To open one:** `node C:/_VIRTO/vc-kb-lab/bin/kb.mjs show <id>`, or read `C:/_VIRTO/vc-knowledge/captured/<id>.md`.
+
+A last section lists 11 **retired** entries — superseded or withdrawn, kept so that an id you meet
+somewhere can still be looked up. They are not part of the register you are reading.
 
 Three things worth knowing before you read it:
 
@@ -37,8 +43,8 @@ This is the protocol, and it is different from previous rounds. Read it carefull
 * An entry with **one confirmation**, or any **disputed** entry, is a lead and not a finding. Verify
   it before you rely on it, and say in your report what you saw.
 * Reality still outranks the register. If what you observe contradicts an entry, that observation
-  wins, and `node bin/kb.mjs dispute <id> --deployment vcptcore-stable --note "<what you saw>"`
-  records it.
+  wins, and `node C:/_VIRTO/vc-kb-lab/bin/kb.mjs dispute <id> --deployment vcptcore-stable
+  --note "<what you saw>"` records it.
 
 ### The loop
 
@@ -46,11 +52,11 @@ When you learn something the register does not hold — and on this task you wil
 nothing about the ground you are working on — write it:
 
 ```
-node bin/kb.mjs capture --subject "…" --question "…" --claim "…" \
+node C:/_VIRTO/vc-kb-lab/bin/kb.mjs capture --subject "…" --question "…" --claim "…" \
   --anchor "<a route, a page, a GraphQL type>" --scope "surface=…" --deployment vcptcore-stable
 ```
 
-`node bin/kb.mjs capture --help` explains what belongs in each field. If something in the register
+`node C:/_VIRTO/vc-kb-lab/bin/kb.mjs capture --help` explains what belongs in each field. If something in the register
 held, `confirm` it; if it did not, `dispute` it.
 
 **`kb ask`, `kb how` and `kb deliver` are switched off in this session.** That is deliberate and
