@@ -86,7 +86,7 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
 
 Supporting:
 
-  kb confirm     <id> --deployment …          a repeat observation; raises the count, writes no second entry
+  kb confirm     <id> --deployment … --note … a repeat observation; raises the count, writes no second entry
   kb extract     [--env <name>]               regenerate the derived plane from a deployment
   kb check       [--env <name>]               regenerate in memory and byte-compare
   kb validate                                 gate the corpus on disk; needs no deployment
@@ -877,7 +877,7 @@ ${c.groups.length} group(s) of entries still share a coordinate — \`kb consoli
       console.log(`${uses.length} observation(s) served and not yet confirmed or disputed:`);
       for (const u of uses) console.log(`  ${u.id}   served ${u.at}`);
       console.log('');
-      console.log('  `kb confirm <id> --deployment <name>` if it held, `kb dispute` if it did not.');
+      console.log('  `kb confirm <id> --deployment <name> --note "<what you saw>"` if it held, `kb dispute` if it did not.');
       console.log('  A confirmation is the only thing that moves an entry from one report to');
       console.log('  something two runs have seen.');
     }

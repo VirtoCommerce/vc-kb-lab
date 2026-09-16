@@ -122,7 +122,7 @@ test('evidenceKinds counts the two kinds apart and never sums them', () => {
 test('an observation does not confirm a source reading', () => {
   const dir = makeBase();
   const r = capture(dir, { ...CLAIM, source: SOURCE });
-  confirm(dir, r.id, { deployment: 'vcptcore_stable', at: '2026-09-16T01:00:00Z' });
+  confirm(dir, r.id, { deployment: 'vcptcore_stable', note: 'watched it happen on the stand', at: '2026-09-16T01:00:00Z' });
 
   const served = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 });
   const trust = served.results[0].trust;
@@ -137,8 +137,8 @@ test('an observation does not confirm a source reading', () => {
 test('a second reading of the SAME kind does confirm, when it is a second party', () => {
   const dir = makeBase();
   const r = capture(dir, { ...CLAIM, source: SOURCE });
-  confirm(dir, r.id, { deployment: 'vcptcore_stable', by: 'agent-one', at: '2026-09-16T01:00:00Z' });
-  confirm(dir, r.id, { deployment: 'vcptcore_stable', by: 'agent-two', at: '2026-09-16T02:00:00Z' });
+  confirm(dir, r.id, { deployment: 'vcptcore_stable', by: 'agent-one', note: 'observed once', at: '2026-09-16T01:00:00Z' });
+  confirm(dir, r.id, { deployment: 'vcptcore_stable', by: 'agent-two', note: 'observed again, separately', at: '2026-09-16T02:00:00Z' });
   const trust = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
   assert.equal(trust.kinds.observation, 2);
   assert.equal(trust.level, 'confirmed');
@@ -246,7 +246,7 @@ test('two readings by the same author are one reading twice, and do not confirm'
 test('rows written before authorship was recorded keep counting as separate, so nothing is re-graded', () => {
   const dir = makeBase();
   const r = capture(dir, { ...CLAIM, deployment: 'vcptcore_stable' });
-  confirm(dir, r.id, { deployment: 'vcptcore_stable', at: '2026-09-16T01:00:00Z' });
+  confirm(dir, r.id, { deployment: 'vcptcore_stable', note: 'watched it happen on the stand', at: '2026-09-16T01:00:00Z' });
   // Strip the author the tool now stamps, leaving the shape the corpus actually holds.
   const { abs } = loadEntry(dir, r.id);
   writeFileSync(abs, readFileSync(abs, 'utf8').split(NL).filter((l) => !/^\s+by: /.test(l)).join(NL));

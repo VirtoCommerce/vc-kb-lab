@@ -9,7 +9,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -151,4 +151,44 @@ test('a row marked unattested is kept and does not count as a party', () => {
 
   // Absent or true both vote. Only an explicit false is a judgement somebody made.
   assert.equal(partiesOf([{ by: 'session:aaaa' }, { by: 'session:bbbb', attested: true }]), 2);
+});
+
+// A CONFIRMATION MUST DESCRIBE SOMETHING. `dispute` has required `--note` since it was written, on
+// the grounds that a contradiction nobody described cannot be resolved; `confirm` made the same
+// claim on agreement and never asked. Round four's arm confirmed an entry about order timestamps
+// at the end of a pricing task, and nothing in the row could show that nothing was seen.
+test('confirm refuses without a note, and says why in terms of what the count buys', async () => {
+  const { capture, confirm, CaptureRefused } = await import('../src/capture.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'kb-confirm-note-'));
+  mkdirSync(join(dir, 'derived-entries'), { recursive: true });
+  writeFileSync(join(dir, 'kb.json'), JSON.stringify({ namespace: 'KB', idWidth: 8 }));
+  writeFileSync(join(dir, 'derived-index.json'), JSON.stringify({ byId: {}, terms: {} }));
+
+  const { id } = capture(dir, {
+    subject: 'a claim somebody may agree with',
+    question: 'does this hold',
+    claim: 'It holds.',
+    refutableBy: 'observation',
+    anchors: ['GET /api/example'],
+    appliesTo: ['surface=rest'],
+    deployment: 'localhost',
+    at: '2026-09-16T00:00:00Z',
+  });
+
+  assert.throws(
+    () => confirm(dir, id, { deployment: 'localhost' }),
+    (e) => e instanceof CaptureRefused
+      && /--note is required/.test(e.message)
+      && /confirmed/.test(e.message)
+      && /--source/.test(e.message),
+    'the refusal has to name what the count buys the next reader, not just the missing flag',
+  );
+
+  // With a note it goes through, and the note is on the row rather than only in the console.
+  const r = confirm(dir, id, { deployment: 'localhost', note: 'saw the same 200 and the same body' });
+  assert.ok(r.confirmations >= 1);
+  const written = readFileSync(join(dir, 'captured', `${id}.md`), 'utf8');
+  assert.match(written, /note: saw the same 200 and the same body/);
+
+  rmSync(dir, { recursive: true, force: true });
 });

@@ -185,7 +185,7 @@ test('the lifecycle verbs work on a flow without being told it is one', () => {
   const dir = makeBase();
   const { id } = capture(dir, ORDER_FLOW);
 
-  const c = asAnotherParty(() => confirm(dir, id, { deployment: 'vcptcore_stable' }));
+  const c = asAnotherParty(() => confirm(dir, id, { deployment: 'vcptcore_stable', note: 'walked it again end to end' }));
   assert.equal(c.confirmations, 2, 'walking a flow again is a confirmation like any other');
   assert.equal(c.stamp.source, 'pin', 'and it is stamped with the version it was walked on');
 

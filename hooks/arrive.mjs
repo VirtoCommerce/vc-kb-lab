@@ -69,7 +69,7 @@ function main() {
     // Said here rather than left implicit: an experiential entry is one agent's belief until a
     // second agent says otherwise, and confirming is the step every run so far has skipped.
     ...(hits.some((h) => h.plane === 'experiential')
-      ? ['An agent-written entry is one observation until someone else confirms it. If it holds, `kb confirm <id> --deployment <name>`; if it does not, `kb dispute`.']
+      ? ['An agent-written entry is one observation until someone else confirms it. If it holds, `kb confirm <id> --deployment <name> --note "<what you saw>"`; if it does not, `kb dispute`.']
       : []),
   ];
 

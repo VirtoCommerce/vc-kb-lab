@@ -732,7 +732,7 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
         `  existing question: ${existing.data.question}\n` +
         `  confirmations    : ${confirmationsOf(existing.data)}${isDisputed(existing.data) ? `, disputed (${disputesOf(existing.data)})` : ''}\n` +
         `  Read ${existing.rel}, then say which this is:\n` +
-        `    kb confirm ${existing.data.id} --deployment <env>   (your observation agrees)\n` +
+        `    kb confirm ${existing.data.id} --deployment <env> --note "<what you saw>"   (your observation agrees)\n` +
         `    kb dispute ${existing.data.id} --deployment <env> --note "<what you saw instead>"\n` +
         `  If it is neither, your scope is wider than your claim: capture again with the axis that separates them.`,
       { collidesWith: existing.data.id, fingerprint: fp, path: existing.rel },
@@ -864,6 +864,26 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
   }
 
   const source = input.source ? sourceRef(base, input.source, sourceTools) : null;
+
+  // A CONFIRMATION MUST SAY WHAT WAS SEEN. `dispute` has required this since it was written, on the
+  // grounds that a contradiction nobody described cannot be resolved by anyone; the same argument
+  // applies to agreement and the verb did not make it. Round four's arm confirmed an entry about
+  // order timestamps at the end of a pricing task, in a batch of three one second apart, and the
+  // row was indistinguishable from a sighting — provenance was tool-set and honest, `by` proved who
+  // wrote it, and nothing could show that nothing was observed. The entry read `confirmed` and the
+  // round-five register would have licensed the next agent to act on it unverified.
+  //
+  // `--source` is exempt: a source row already names the module, the installed version and the path
+  // that was read, which is what a note would have said.
+  if (!source && !input.note) {
+    throw new CaptureRefused(
+      'confirm refused: --note is required — say what you saw that agrees with this entry. A row '
+        + 'that records agreement and describes nothing is a sighting nobody can check, and it '
+        + 'counts toward the `confirmed` level that lets the next reader act without re-verifying. '
+        + 'If you read the code rather than watching it happen, pass --source <Module.Id>:<path>.',
+    );
+  }
+
   const stamp = source ? { pin: null, platformVersion: null, source: 'read-from-source' } : stampOf(base, input);
   entry.data.evidence = [...entry.data.evidence, evidenceRow({
     deployment: input.deployment,
@@ -872,6 +892,7 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
     by: input.by ?? sessionParty(),
     from: transcriptionSource(input.from),
     at: input.at ?? now(),
+    note: input.note,
     source,
   })];
   writeEntry(base, entry.data, entry.body);

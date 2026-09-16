@@ -99,7 +99,7 @@ test('amending does not raise the confirmation count', () => {
 
   // Somebody ELSE walks it. The same session confirming its own capture is one party twice, and
   // `confirmationsOf` has counted parties rather than rows since 2026-09-16.
-  asAnotherParty(() => confirm(dir, id, { deployment: 'vcptcore_stable' }));
+  asAnotherParty(() => confirm(dir, id, { deployment: 'vcptcore_stable', note: 'walked the flow again and step 3 checked out on /cart' }));
   assert.equal(confirmationsOf(loadEntry(dir, id).data), was + 1, 'confirming still does exactly what it did');
   drop(dir);
 });

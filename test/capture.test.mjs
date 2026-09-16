@@ -98,8 +98,8 @@ test('two agents recording one fact in different words produce ONE entry, and th
 test('three agents in independent sessions collapse to one entry with three confirmations', () => {
   const dir = makeBase();
   const { id } = capture(dir, ADMIN_TOKEN);
-  confirm(dir, id, { deployment: 'vcptcore-stable', platformVersion: '3.1007.26', by: 'agent-2', at: '2026-09-03T00:00:00Z' });
-  confirm(dir, id, { deployment: 'localhost', platformVersion: '3.1068.0', by: 'agent-3', at: '2026-09-04T00:00:00Z' });
+  confirm(dir, id, { deployment: 'vcptcore-stable', platformVersion: '3.1007.26', by: 'agent-2', note: 'the password grant returned a JWT here too', at: '2026-09-03T00:00:00Z' });
+  confirm(dir, id, { deployment: 'localhost', platformVersion: '3.1068.0', by: 'agent-3', note: 'same form post, same access_token shape', at: '2026-09-04T00:00:00Z' });
 
   const corpus = readCaptured(dir);
   assert.equal(corpus.length, 1, 'one entry on disk');
@@ -328,7 +328,7 @@ test('a captured fact is retrievable, cited, and carries its trust into the deli
   // A SECOND PARTY, named explicitly. The tool now stamps the writing session onto every row, so
   // a confirmation written in the same session as the capture is the same party twice -- which is
   // the correction, not an accident of the fixture.
-  confirm(dir, id, { deployment: 'vcptcore-stable', platformVersion: '3.1007.26', by: 'a-second-agent', at: '2026-09-03T00:00:00Z' });
+  confirm(dir, id, { deployment: 'vcptcore-stable', platformVersion: '3.1007.26', by: 'a-second-agent', note: 'reproduced on the stable stand', at: '2026-09-03T00:00:00Z' });
 
   const d = deliver(dir, 'how do I obtain a platform bearer token');
   assert.equal(d.hit, true);
@@ -395,7 +395,7 @@ test('a capture that lands on a retired fingerprint is refused against the survi
 test('both remedies a refusal names actually work on what it named', () => {
   const dir = makeBase();
   const { survivor } = retireInto(dir);
-  assert.equal(asAnotherParty(() => confirm(dir, survivor, { deployment: 'localhost' })).confirmations, 2);
+  assert.equal(asAnotherParty(() => confirm(dir, survivor, { deployment: 'localhost', note: 'the surviving entry still holds' })).confirmations, 2);
   assert.equal(dispute(dir, survivor, { deployment: 'localhost', note: 'observed otherwise' }).disputes, 1);
   drop(dir);
 });
@@ -505,7 +505,7 @@ test('an entry observed on the deployment the base describes is not flagged', ()
 test('one confirmation on the right deployment is enough to stop the flag', () => {
   const dir = withPin(makeBase(), 'vcptcore_stable');
   const { id } = capture(dir, ADMIN_TOKEN);
-  confirm(dir, id, { deployment: 'vcptcore_stable' });
+  confirm(dir, id, { deployment: 'vcptcore_stable', note: 'seen again on the stand' });
   const d = deliver(dir, 'How do I obtain a platform bearer token for the admin API?');
   assert.doesNotMatch(d.block, /OBSERVED ELSEWHERE/, 'it has now been seen here, whatever else it was seen on');
   drop(dir);
@@ -633,7 +633,7 @@ test('a base with no pin has nothing to stamp from and says so rather than inven
 test('confirm stamps too, so observedOn can range over versions rather than over one name', () => {
   const dir = PINNED(makeBase());
   const { id } = capture(dir, ADMIN_TOKEN); // localhost, unversioned
-  const r = confirm(dir, id, { deployment: 'vcptcore_stable' });
+  const r = confirm(dir, id, { deployment: 'vcptcore_stable', note: 'observed on the pinned stand' });
   assert.equal(r.stamp.source, 'pin');
   const rows = r.observedOn.filter((o) => o.platformVersion === '3.1007.26');
   assert.equal(rows.length, 1, 'the confirmation carries a version even though the original could not');
