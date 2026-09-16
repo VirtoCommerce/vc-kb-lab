@@ -16,12 +16,26 @@ than a plausible non-answer.* The independent review's **D4** said it drifts as 
 and demonstrated it on `kb how`. The flow side was fixed the same day
 (`measurements/kb-flowmiss-2026-09/`). This is the `ask` side.
 
+> **Corrected 2026-09-16, after the second independent review.** This page was written against corpus
+> `5c1c744`. Ninety minutes later `KB-1B18B821` was captured, and its `question` field is one of this
+> bar's negatives VERBATIM — because `kb todo` instructs a writer to word a capture exactly as the
+> demand row it closes. The bar therefore docked every candidate for serving the right answer, for a
+> day, and nobody noticed. That negative is retired (it cannot be moved to the positives either: an
+> entry whose `question` was copied from the query would score as a hit for the wrong reason). The
+> bar now carries `VALID_AT` and re-validates itself through `checkStale` before the sweep prints.
+>
+> **What this bar still cannot show.** The `anchors lost / 34` column is ranking stability against a
+> 2026-09-14 snapshot, not usefulness: six of the 34 rows are marked `NOT-USED`, three `UNANSWERED`,
+> two questions appear twice so a loss there counts double, and the anchor is baseline rank 1, which
+> this page already says was wrong on four rows. The conclusion that no rule pays may still be right;
+> this column cannot establish it.
+
 **The base's own demand log records eight questions it refused. It answers seven of them today, and
 six of those seven answers are adjacent rather than right.**
 
 | question the base once refused | what it serves now | verdict |
 |---|---|---|
-| how is tax calculated on orders in this deployment | `KB-D60012DB` — discountAmountWithTax is always zero | wrong subject |
+| ~~how is tax calculated on orders in this deployment~~ | **retired from the bar 2026-09-16** — `KB-1B18B821` was captured 90 minutes after this page was written and answers it correctly | see below |
 | sign in to the Admin platform UI | platform GraphiQL, Login on behalf, the Status picker | three entries about other things |
 | create a percentage-off promotion in the Admin Marketing module | the REST route table + two unrelated entries | it is a **procedure** |
 | create a promotion with a coupon code | the same route table + cart facts | it is a **procedure** |
@@ -64,7 +78,7 @@ that is not served today; each can only refuse more. Three independent guards.
 **A gate on the best hit refuses everything, including the right answer.** The one shape the
 earlier goal-rule measurement did not try: not "does this entry deserve slot three" but "does this
 base have anything to say at all" — if the best-scoring entry's own `subject` and `question` share
-nothing with what was asked, return MISS. At two goal terms it refuses all four negatives, which is
+nothing with what was asked, return MISS. At two goal terms it refuses all three negatives, which is
 the only candidate that does. It also refuses the one question the corpus genuinely answers:
 *"how does the platform decide which promotions combine best reward policy"* is answered by
 `KB-5ADBFB34`, whose own question reads *"why did only one promotion apply when two were active, in
@@ -77,7 +91,7 @@ retrieval the base is actually used for: `df ≤ 5` refuses three of four and lo
 thirty-four entries real runs read and acted on. There is no setting where it pays.
 
 **A raw-score threshold was measured and rejected without being swept.** The per-term BM25 score of
-the four negatives is 25.2–40.3 and of the positives 30.2–61.3; a cut at 30 separates most of them.
+the negatives is 25.2–40.3 and of the positives 30.2–61.3; a cut at 30 separates most of them.
 It is not offered as a candidate because a BM25 score is not comparable across corpus versions — a
 constant tuned to today's index is guaranteed to drift exactly as the contract it is meant to
 protect has drifted, and this project has a standing rule against constants chosen for no reason the
@@ -100,7 +114,7 @@ procedure ever goes missing, the row fails.
 
 ## What did not get fixed, stated plainly
 
-**Two of the four negatives still get answered:** *"how is tax calculated on orders in this
+**Two of the negatives still get answered:** *"how is tax calculated on orders in this
 deployment"* and *"sign in to the Admin platform UI"*. Nothing measured here refuses them at a price
 worth paying. Two of the three positives are also still wrong — the coupon GraphQL entries and
 `KB-35A09C64` remain buried under experiential entries with broader bodies.

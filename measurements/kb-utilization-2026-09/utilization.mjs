@@ -43,7 +43,13 @@ for (const [dir, plane] of Object.entries(planes)) {
 
 // --- every entry ever SERVED, from every kb journal
 const kbLogs = [];
+// THE AUTHOR IS NOT ANYBODY. Three directories here are the tool-building sessions of 2026-09-10
+// and -11 -- the person who wrote the corpus, using it while writing it. Counting them made 210 of
+// the replayed calls and 3 of the retrievals the author own audience. The second independent review
+// found it; the headline barely moves and the principle does.
+const AUTHORS_OWN = (d) => d.startsWith(String.fromCharCode(98,117,105,108,100) + String.fromCharCode(45) + String.fromCharCode(115,101,115,115,105,111,110));
 for (const d of readdirSync(join(LAB, 'MEASUREMENT-archive'))) {
+  if (AUTHORS_OWN(d)) continue;
   const p = join(LAB, 'MEASUREMENT-archive', d);
   for (const f of readdirSync(p)) if (/^kb-log-.*\.jsonl$/.test(f)) kbLogs.push(join(p, f));
 }
@@ -64,6 +70,7 @@ for (const p of kbLogs) {
 // --- every entry that would ever have ARRIVED, over all 22 tool logs
 const toolLogs = [];
 for (const d of readdirSync(join(LAB, 'MEASUREMENT-archive'))) {
+  if (AUTHORS_OWN(d)) continue;
   const p = join(LAB, 'MEASUREMENT-archive', d);
   const f = readdirSync(p).find((x) => /^tool-log-.*\.jsonl$/.test(x));
   if (f) toolLogs.push(join(p, f));

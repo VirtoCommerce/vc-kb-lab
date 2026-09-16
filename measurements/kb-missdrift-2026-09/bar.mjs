@@ -9,13 +9,40 @@
 // be a bar built to be met. These are questions a working agent typed, and a contemporaneous
 // refusal by the tool under test.
 
-// Should be refused. Nothing in the corpus answers these, verified by reading what is served today.
-export const SHOULD_MISS = [
+// A NEGATIVE IS A PROPERTY OF THE CORPUS, AND THE CORPUS CHANGES. "Nothing here answers this" was
+// true when it was written and stopped being true ninety minutes later, when an entry was captured
+// that answers the tax question exactly. Nobody re-validated, so every candidate in the sweep was
+// docked a point for serving the right answer. The second independent review found it.
+//
+// Two things guard it now: this stamp, and `checkStale` below, which the sweep runs before it
+// reports anything.
+export const VALID_AT = {
+  corpus: '5c1c744',
+  when: '2026-09-16T11:16+04:00',
+  note: 'the corpus commit these negatives were read against. A sweep run against a later corpus '
+    + 'must re-validate them, which `checkStale` does.',
+};
+
+// RETIRED FROM THE BAR, kept visible because deleting it would hide why the table changed.
+//
+// It was a negative because no entry described tax calculation. On 2026-09-16 at 12:14 local,
+// ninety minutes after this file was written, KB-1B18B821 was captured -- and its `question`
+// field is this sentence VERBATIM, because `kb todo` tells a writer to word a capture exactly as
+// the demand row it closes. So the row is not merely stale: it cannot be moved to SHOULD_SERVE
+// either, because an entry whose question field was copied from the query would be scored a hit
+// for the wrong reason, and any future measurement of "does matching on `question` help" would
+// inherit that. The loop that produced it will produce more; see the review, finding 2.
+export const RETIRED_NEGATIVES = [
   {
     q: 'how is tax calculated on orders in this deployment',
-    because: 'no entry describes tax calculation. Today this is answered with KB-D60012DB, which is '
-      + 'about discountAmountWithTax on a discount row being zero -- adjacent, and not the question.',
+    retiredAt: '2026-09-16',
+    because: 'answered by KB-1B18B821, captured 90 minutes after this bar was written, whose '
+      + '`question` field is this query verbatim.',
   },
+];
+
+// Should be refused. Nothing in the corpus answers these, verified by reading what is served today.
+export const SHOULD_MISS = [
   {
     q: 'sign in to the Admin platform UI',
     because: 'no entry describes signing in to Admin. Today this is answered with platform GraphiQL '
@@ -64,3 +91,45 @@ export const SHOULD_SERVE = [
       + 'entry, the promotion blade\'s save gate, and discount labels. WRONG TODAY.',
   },
 ];
+
+// --- re-validation ----------------------------------------------------------------------------
+//
+// THE BAR CHECKS ITSELF BEFORE IT IS USED. A negative says "nothing in the corpus answers this",
+// which is a claim about a corpus that changes every time anybody captures. This one went stale in
+// ninety minutes and stayed stale for a day, and every candidate the sweep scored was docked for
+// serving the right answer.
+//
+// The cheap, exact check: has anybody since written an entry whose `question` field IS the query?
+// That is the shape `kb todo` manufactures, so it is both the likeliest way a negative dies and the
+// one that most distorts a measurement.
+
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+export function checkStale(base) {
+  const dir = join(base, 'captured');
+  if (!existsSync(dir)) return [];
+  const byQuestion = new Map();
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.md')) continue;
+    const txt = readFileSync(join(dir, f), 'utf8');
+    if (/^status: retired$/m.test(txt)) continue;
+    const m = txt.match(/^question: (.*)$/m);
+    if (m) byQuestion.set(norm(m[1]), f.replace('.md', ''));
+  }
+  return SHOULD_MISS
+    .map((row) => ({ row, id: byQuestion.get(norm(row.q)) }))
+    .filter((x) => x.id);
+}
+
+export function renderStale(stale) {
+  if (!stale.length) return null;
+  return [
+    `BAR IS STALE: ${stale.length} negative(s) are now answered by an entry whose question field is the query.`,
+    ...stale.map((s) => `  "${s.row.q}"  ->  ${s.id}`),
+    `The bar was read against corpus ${VALID_AT.corpus} (${VALID_AT.when}). Every candidate below is`,
+    'being docked for serving the right answer. Retire the row or re-word it before quoting this table.',
+  ].join('\n');
+}

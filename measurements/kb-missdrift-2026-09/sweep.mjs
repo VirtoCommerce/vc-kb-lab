@@ -33,13 +33,14 @@
  *               harness scores them: an anchor lost is a regression, whatever else improved. Plus
  *               the two blind graders' off-topic and wanted lists from grader-bar.mjs.
  */
+const NL = String.fromCharCode(10);
 import { readFileSync } from 'node:fs';
 
 import { openBase, openFlows, FUNCTION_WORDS, relevanceFloor, aboutGoal } from '../../src/resolve.mjs';
 import { tokenize, SEARCH_OPTIONS } from '../../src/index-build.mjs';
 import { QUESTIONS } from '../kb-retrieval-2026-09/questions.mjs';
 import { BAR } from '../kb-retrieval-2026-09/grader-bar.mjs';
-import { SHOULD_MISS, SHOULD_SERVE } from './bar.mjs';
+import { SHOULD_MISS, SHOULD_SERVE, checkStale, renderStale } from './bar.mjs';
 
 const argv = process.argv.slice(2);
 const base = argv.includes('--base') ? argv[argv.indexOf('--base') + 1] : (process.env.KB_BASE ?? 'C:/_VIRTO/vc-knowledge');
@@ -129,7 +130,12 @@ function serve(q, limit, cand) {
 }
 
 console.log(`base ${base}\n`);
-console.log('candidate                                      refused/4  answered/3  anchors lost/34  off-topic  wanted');
+// THE BAR IS CHECKED BEFORE IT IS USED. It went stale in ninety minutes once and nothing noticed for
+// a day; a table printed from a stale bar docks every candidate for being right.
+const stale = checkStale(base);
+if (stale.length) console.log(renderStale(stale) + NL);
+
+console.log(`candidate                                      refused/${SHOULD_MISS.length}  answered/${SHOULD_SERVE.length}  anchors lost/34  off-topic  wanted`);
 const detail = [];
 for (const cand of CANDIDATES) {
   let refused = 0; let answered = 0; let lost = 0; let junk = 0; let wanted = 0;
