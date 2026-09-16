@@ -15,6 +15,7 @@ import { mintId } from './canonical.mjs';
 import { normalizeAnchor, namespaceOf, LOOKS_LIKE_A_MENU_PATH, LOOKS_LIKE_A_LOCAL_PATH } from './anchors.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, fingerprint, buildCapturedArtifacts } from './capture.mjs';
 import { DERIVED_ENTRIES, DERIVED_INDEX, DERIVED_CATALOG } from './planes.mjs';
+import { catalogBudgetNotice } from './catalog-budget.mjs';
 
 const REQUIRED = ['id', 'subject', 'plane', 'question', 'status', 'refutableBy'];
 
@@ -460,6 +461,17 @@ export function validate(base) {
           + 'proof it works, and it may be permission-gated; check the platform rather than the sentence.');
       }
     }
+  }
+
+  // THE CATALOG IS MEANT TO BE HANDED OVER WHOLE, so its size is a property of the design and not
+  // an accident. The gate asks the question so that nobody has to remember to.
+  for (const catalogFile of [CAPTURED_CATALOG, FLOWS_CATALOG]) {
+    const abs = join(base, catalogFile);
+    if (!existsSync(abs)) continue;
+    const text = readFileSync(abs, 'utf8');
+    const rows = text.split(/\r?\n/).filter((l) => /^\| *\[?`?KB-/.test(l)).length;
+    const n = catalogBudgetNotice({ rows, bytes: Buffer.byteLength(text), label: catalogFile });
+    if (n) notice(n);
   }
 
   return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, flows: flowFiles.length, problems, notices };
