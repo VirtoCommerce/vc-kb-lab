@@ -65,6 +65,7 @@ const predicted = new Set([...sealed.matchAll(/^\| `(KB-[0-9A-F]{8})`/gm)].map((
 
 // --- what the arm did -----------------------------------------------------------------------------
 const engaged = new Map();
+let truncated = 0;
 const note = (id, how) => {
   if (!where.has(id)) return;               // written during the run, or not in the register at all
   if (!engaged.has(id)) engaged.set(id, new Set());
@@ -78,12 +79,25 @@ for (const f of readdirSync(logDir)) {
       let r; try { r = JSON.parse(line); } catch { continue; }
       if ((r.verb === 'confirm' || r.verb === 'dispute') && r.exit === 0 && r.wrote?.id) note(r.wrote.id, 'confirmed');
       if (r.verb === 'show') for (const s of r.served ?? []) note(s.id, 'opened');
+      // AN OPEN IS A FILENAME, WHEREVER IT SITS IN THE COMMAND. The first rule required
+      // `captured/KB-xxxxxxxx.md` as a single token. Round four's call 307 was
+      // `cd .../captured && cat KB-AD1FA66B.md; echo …; cat KB-35A09C64.md` — the directory and the
+      // filenames separated by `&& cat` — so two of the three opens were invisible and the run was
+      // published as "1 open, 7 used without opening". Match the filename itself.
       const target = String(r.target ?? '');
-      if (/captured[\\/]KB-[0-9A-F]{8}\.md/.test(target)) for (const m of target.matchAll(/KB-[0-9A-F]{8}/g)) note(m[0], 'opened');
+      for (const m of target.matchAll(/KB-[0-9A-F]{8}(?=\.md)/g)) note(m[0], 'opened');
+      if (target.length >= 200) truncated += 1;
     }
   }
   if (/REPORT\.md$/i.test(f)) {
-    for (const m of readFileSync(join(logDir, f), 'utf8').matchAll(/KB-[0-9A-F]{8}/g)) note(m[0], 'cited');
+    // A CITATION IS PROSE, NOT BOOKKEEPING. The first rule counted an id anywhere in the report, and
+    // the report ends with a "Register work" table naming every confirm — so every confirmed entry
+    // was a citation by construction. `KB-7E35E6BC` appeared in that table and nowhere else and was
+    // counted as reasoning. Table rows are listed separately and do not count as use.
+    for (const line of readFileSync(join(logDir, f), 'utf8').split(/\r?\n/)) {
+      const how = /^\s*\|/.test(line) ? 'listed' : 'cited';
+      for (const m of line.matchAll(/KB-[0-9A-F]{8}/g)) note(m[0], how);
+    }
   }
 }
 
@@ -112,13 +126,15 @@ const unpredictedUsed = [...used].filter((id) => !predicted.has(id));
 const missed = [...predicted].filter((id) => !used.has(id));
 const positions = rows.map(([id]) => where.get(id).position);
 const cited = [...engaged].filter(([, h]) => h.has('cited')).length;
+const listedOnly = [...engaged].filter(([, h]) => h.has('listed') && !h.has('cited')).length;
 const openedCount = [...engaged].filter(([, h]) => h.has('opened')).length;
 
 console.log('');
-console.log(`register entries used : ${used.size} of ${order.length}`);
-console.log(`  cited in the report : ${cited}`);
-console.log(`  confirmed or disputed: ${[...engaged].filter(([, h]) => h.has('confirmed')).length}`);
-console.log(`  opened as a file    : ${openedCount}`);
+console.log(`register entries touched: ${used.size} of ${order.length}`);
+console.log(`  cited in the body     : ${cited}`);
+console.log(`  named only in a table : ${listedOnly}   (bookkeeping, not reasoning)`);
+console.log(`  confirmed or disputed : ${[...engaged].filter(([, h]) => h.has('confirmed')).length}`);
+console.log(`  opened as a file      : ${openedCount}${truncated ? `   (a floor: ${truncated} of the log's targets are cut at 200 chars)` : ''}`);
 console.log('');
 console.log(`predicted and used    : ${relevantUsed.length} of ${predicted.size}   ${relevantUsed.join(', ')}`);
 console.log(`used but not predicted: ${unpredictedUsed.length}   ${unpredictedUsed.join(', ')}`);
@@ -127,5 +143,10 @@ console.log('');
 console.log(`deepest row reached   : ${Math.max(...positions)} of ${order.length}`);
 console.log(`sections reached      : ${[...new Set(rows.map(([id]) => where.get(id).section))].join(', ')}`);
 console.log('');
-console.log(`Entries used WITHOUT being opened: ${used.size - openedCount}. That number is the whole treatment —`);
-console.log('a one-line claim in front of the reader was enough, and no query was involved.');
+console.log(`Cited in the body without being opened: ${cited - [...engaged].filter(([, h]) => h.has('cited') && h.has('opened')).length}.`);
+console.log('That is the largest number this script is entitled to print about the treatment, and it is');
+console.log('still not the result. Whether a citation CHANGED anything is a judgement about prose, and no');
+console.log('rule here can make it: an entry cited "only as context, which I did not re-verify" scores');
+console.log('exactly like one an observation was built against. Read the report for the substantive');
+console.log('count, and say which of these numbers it is. A confirm with no --note is a sighting nobody');
+console.log('described; the tool cannot presently record one, so confirms are unattested by construction.');

@@ -496,3 +496,150 @@ Executable refutations after the run, not before: agree, for the reason you give
 No objections. Disputed first within a section is right. The budget is labelled a guess where it
 is defined and where it is read, which is the correct way to hold a number nobody has measured. The
 one entry left `unfiled` rather than given an eighth topic is the honest choice.
+
+---
+---
+
+# Part three — reply to `REVIEWER-RUN4-2026-09-16.md`
+
+Everything below was read from `C:/_VIRTO/_comparison-logs/round4/arm-C-catalog/` (tool log, kb
+journal, `REPORT.md`, `CLAUDE.md.as-handed`) and from `measurements/kb-run4-2026-09/`. The scorer
+was run as documented and reproduces its own table. `addressing.mjs` reproduces every number in
+commit `8d8c48c` (3,621 calls; 6.7% and 33.2%; 244 → 152 → 81 → 32). Nothing ran against the
+deployment.
+
+First, credit where the page earned it: the task namespace was chosen by a rule that never reads
+`captured/`, the relevance list was committed twelve minutes before the arm started, the protocol
+text changed, the hook was off, and the page leads with its own confound. Those were the four
+conditions and they were met. What follows is what the numbers on the page do not survive.
+
+## The scorer is wrong in both directions, and the headline is the casualty — verified
+
+**"Opened as a file: 1" is 3.** Tool-log call 307 (12:23:00Z) is:
+
+```
+cd C:/_VIRTO/vc-knowledge/captured && cat KB-AD1FA66B.md; echo "=========="; cat KB-35A09C64.md
+```
+
+The scorer's open rule matches `captured/KB-xxxxxxxx.md` as one token; here the directory and the
+filenames are separated by `&& cat`, so two opens are missed. Opens are 3, and "used without ever
+being opened" is **5, not 7**. Forty-five of 357 targets are also cut at 200 characters, so 3 is a
+floor.
+
+**The showpiece was built from the opened body, not from the one-liner.** The page's strongest
+claim is that the sharpest finding was made "by contradicting `KB-AD1FA66B`, an entry it had not
+verified", from the one-line claim alone. Call 307 reads that entry in full at 12:23; section 5 of
+the report, which quotes the entry's body ("recomputing every figure the storefront shows"), was
+written after. The contradiction is real and good. It is not evidence for the one-line mechanism.
+
+**"Cited in the report: 7" counts the bookkeeping table.** The scorer counts any occurrence of an
+id anywhere in `REPORT.md`. The report ends with a "Register work" table listing every confirm, so
+every confirmed id is a citation by construction. `KB-7E35E6BC` appears nowhere else in the report.
+Body citations are 6.
+
+**One of the three confirms has no observation behind it.** `KB-7E35E6BC` is "Admin renders order
+timestamps in local time while the API returns UTC". The report is about pricing and never mentions
+a timestamp. The arm confirmed it at 12:29:23 in a batch of three, one second apart. Provenance is
+now tool-set and honest — `by: session:8ec21246` — and that is exactly why this matters: the tool
+can now prove who wrote the row and still cannot tell that nothing was observed. A confirm should
+carry a `--note` naming what was seen, or it should not count as a confirmation.
+
+**Two citations violate the protocol the page says worked.** The brief says one-confirmation
+entries are leads and must be verified. `KB-1B18B821` (1 confirmation as handed) and `KB-F027283D`
+(1) are cited "only as context, which I did not re-verify" and "consistent with", in the arm's own
+words. `KB-5F7C8FC4` (3) is the only one the protocol permitted to be cited unverified. The page
+reports "four entries were acted on without re-verification" as the protocol working. For two of the
+four, it was the protocol being ignored.
+
+**One real use the scorer does not see.** `KB-6824BC2B` (platform GraphiQL runs anonymous and takes
+a query in the URL) was opened at call 22, two minutes into the run, and the report lists "platform
+GraphiQL at `/ui/graphiql` (anonymous)" as a surface read. That is the register changing what the
+arm did, early, with no citation; the scorer marks it "opened" and nothing more.
+
+### The honest table
+
+| | page | verified |
+|---|---|---|
+| register entries touched | 8 | 8 |
+| opened | 1 | **3** |
+| confirmed with an observation stated | 3 | **2** (`KB-35A09C64`, `KB-F1542157`) |
+| cited in the body of the report | 7 | 6 |
+| used substantively — changed what the arm did or wrote, with an observation | — | **4**: `KB-F1542157` reproduced, `KB-35A09C64` held, `KB-AD1FA66B` contradicted after reading, `KB-6824BC2B` acted on |
+| used without opening | 7 | 5, of which 2 are "context I did not re-verify" |
+
+## Answer to question 1 — does the citation count stand?
+
+**No, but not for the reason the page offers.** The instruction to cite is fine; it standardises
+recording and cannot manufacture a use. The count falls because the scorer counts bookkeeping as
+citation and file reads as non-reads. The number that survives is **4 substantive uses, 3 opens, 2
+observed confirms** — and that is a better result than "8 used, 7 unopened" because every one of the
+four has an observation next to it. Say it that way.
+
+Two fixes to the scorer: exclude the register-work table from "cited", and match an open as "any
+tool call whose text contains `KB-xxxxxxxx.md`, or a `kb show`". And one to the tool: `confirm`
+without a `--note` records a sighting nobody described.
+
+## Two things the page reports lightly that are not light
+
+**Seven of eight round-four evidence rows carry a version the deployment is not running.** The arm
+observed platform 3.1007.27; `derived/pin.json` says 3.1007.26; every stamped row this run wrote
+(`KB-055845A3`, `KB-1834ABE5`, `KB-28579C5B`, `KB-ADFD93AB`, and the confirms on `KB-35A09C64`,
+`KB-F1542157`, `KB-7E35E6BC`) says 3.1007.26. The page says "that row was left unstamped rather than
+given the pin's version"; the unstamped row is `KB-6D5E2CD1`, unstamped because of the hyphen key,
+not by choice. This is the project's own first rule — pin the source, not the value — failing at the
+door: the stamp copies a file nobody re-extracted after the stand moved. `kb check --env` exists to
+catch this and evidently was not in the pre-flight. Either the stamp reads the live version at
+capture time, or `kb check` is a gate before every run and a red check stops it.
+
+**Writing is still end-loaded.** All twelve kb-journal rows sit in calls 339–351 of 357, 12:26 to
+12:29 of a run that started 11:49. The register was read at call 22 and call 307; nothing was
+written until the report was being assembled. The treatment changed how the corpus is *read*. It did
+not change the shape `src/demand.mjs` complains about in its header — one supersede in that final
+window is the arm correcting a claim it had typed four minutes earlier, which is good, and also
+shows the writing happened from memory at the end.
+
+## Answer to question 2 — what the next run holds constant
+
+The residue of commissioning in round four is not the namespace; it is the **questions**. Questions
+3 and 5 of `TASK.md` ("what happens when a promotion also applies", "one thing the contract would
+lead you to expect") were written by the person who knows the register has 19 promotion entries, and
+the sealed list predicts five of them for question 3. Predicted and used: 5 of 8. That is a smaller
+version of the same reflection.
+
+So: **freeze the five questions as a template** parameterised only by namespace and store. They are
+already generic — which objects exist and apply; one object across two surfaces; interaction with
+promotions; organization-specific behaviour; one surprise. Then the next run is the same template on
+the namespace `pick-task.mjs` ranks as **most** walked, chosen by the same rule inverted. Covered
+ground, no author-written question, and the sealed list is still a real prediction because the
+template was fixed before the namespace was picked.
+
+Hold constant: the template, the one-line settings diff, the protocol text, the model, and the
+hook off. **Add arm A on the same task.** The page says "no control arm, and it was not built to
+show a difference"; a second session costs one afternoon and turns "the arm used the register" into
+"the arm used the register and the other arm rediscovered four of the same facts", which is the
+incidental-rediscovery number section 2 of part two asked for and which now has a task that can
+produce it honestly.
+
+## Answer to question 3 — executable refutations, now, narrowly
+
+**Build them now, for exactly the entries the protocol lets an agent act on unverified.** That is
+the set with two or more independent confirmations and no dispute — fifteen entries in the handed
+register — and the case for it was made twice by this run without anyone noticing: the deployment
+moved a patch under the corpus and nothing detected it, and an agent was told it may act on
+`confirmed` claims that nobody has re-observed since the stand changed. A refutation is what makes
+"act without re-verifying" safe, and it is the only mechanical answer to a confirm that names no
+observation. Start with the entries in that set whose scope is `rest`, `graphql` or
+`storefront-xapi`; UI entries stay prose. One session is thin evidence for building a retrieval
+mechanism; it is not thin evidence that facts acted on unverified need a re-verification path,
+because that argument does not rest on the run at all.
+
+## Noted and not disputed
+
+* Zero source calls — no `raw.githubusercontent.com`, no source MCP — for the first time in any
+  arm. Plausibly the task (pricing is configuration, not C#) rather than the register. Not evidence
+  either way at n = 1; worth watching in the next run.
+* Deepest row reached 78 of 92: attention did not fall off at this size. Agreed, with the caveat
+  that the scorer's "reached" means "an id at that position was touched", which is one data point
+  per section.
+* The self-supersede (`KB-28579C5B` → `KB-055845A3`) is the best thing in the run and needs no
+  scorer to see it.
