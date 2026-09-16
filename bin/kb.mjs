@@ -14,6 +14,7 @@ import {
   readCaptured, confirmationsOf, evidenceKinds, disputesOf, isDisputed, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
 } from '../src/capture.mjs';
 import { consolidate, renderConsolidation, MergeRefused } from '../src/consolidate.mjs';
+import { plan, renderPlan } from '../src/todo.mjs';
 import { experientialNeighbours } from '../src/coordinates.mjs';
 import { record } from '../src/journal.mjs';
 import {
@@ -685,6 +686,15 @@ async function main() {
     return {
       code: 0,
       outcome: { detail: { derived, anchors, active: active.length, retired: captured.length - active.length } },
+    };
+  }
+
+  if (cmd === 'todo') {
+    const p = plan(base);
+    console.log(renderPlan(p));
+    return {
+      code: 0,
+      outcome: { detail: { open: p.rows.length, check: p.check.length, procedure: p.procedure.length, source: p.source.length, stand: p.stand.length } },
     };
   }
 

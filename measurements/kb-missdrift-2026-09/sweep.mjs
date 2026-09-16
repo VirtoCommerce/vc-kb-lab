@@ -93,6 +93,15 @@ for (const k of [1, 2, 3, 5, 8, 12, 20]) {
   });
 }
 CANDIDATES.push({ name: 'coverage: half the question\'s terms matched', pass: (h, t) => exact(h, t).length >= Math.ceil(t.size / 2), redirect: false });
+// A GATE ON THE BEST HIT, not a filter on every hit -- the one shape the earlier goal-rule
+// measurement did not try. The question is not "does this entry deserve slot three", it is "does
+// this base have anything to say at all". If the best-scoring entry's own SUBJECT and QUESTION --
+// the fields that say what it claims to answer -- share nothing with what was asked, then the
+// ranking has nothing to rank and the honest answer is MISS.
+for (const k of [1, 2, 3]) {
+  CANDIDATES.push({ name: `gate: best hit carries >= ${k} goal term(s)`, pass: () => true, redirect: false, gate: k });
+}
+CANDIDATES.push({ name: 'gate: best hit >= 2 goal terms + flow redirect', pass: () => true, redirect: true, gate: 2 });
 CANDIDATES.push({ name: 'flow redirect only', pass: () => true, redirect: true });
 CANDIDATES.push({ name: 'rarity df <= 5 + flow redirect', pass: (h, t) => exact(h, t).some((x) => df(x) <= 5), redirect: true });
 CANDIDATES.push({ name: 'rarity df <= 8 + flow redirect', pass: (h, t) => exact(h, t).some((x) => df(x) <= 8), redirect: true });
@@ -105,13 +114,18 @@ function serve(q, limit, cand) {
     ...opened.derived.search(q, SEARCH_OPTIONS),
     ...(opened.captured ? opened.captured.search(q, SEARCH_OPTIONS) : []),
   ];
-  const ids = raw
+  const kept = raw
     .filter((h) => exact(h, terms).length >= floor)
     .filter((h) => cand.pass(h, terms))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map((h) => h.id);
-  return { ids, redirected: false };
+    .sort((a, b) => b.score - a.score);
+  if (cand.gate) {
+    const best = kept[0];
+    const goals = best
+      ? Object.entries(best.match).filter(([t, f]) => terms.has(t) && f.some((x) => x === 'subject' || x === 'question')).length
+      : 0;
+    if (goals < Math.min(cand.gate, terms.size)) return { ids: [], redirected: false };
+  }
+  return { ids: kept.slice(0, limit).map((h) => h.id), redirected: false };
 }
 
 console.log(`base ${base}\n`);

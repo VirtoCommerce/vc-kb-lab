@@ -55,8 +55,22 @@ that is not served today; each can only refuse more. Three independent guards.
 | df ≤ 8 | 2 | 1 | **10** | 0/7 | 1/10 |
 | df ≤ 20 | 0 | 1 | 7 | 0/7 | 0/10 |
 | half the question's terms matched | 0 | 1 | 1 | 0/7 | 2/10 |
+| gate: best hit carries ≥1 goal term | 1 | **0** | 2 | 0/7 | 1/10 |
+| gate: best hit carries ≥2 goal terms | **4** | **0** | 6 | 0/7 | 1/10 |
+| gate: best hit carries ≥3 goal terms | 4 | **0** | 10 | 0/7 | 1/10 |
 | **flow redirect** | **2** | **1** | **1** | **0/7** | **1/10** |
 | df ≤ 5 + flow redirect | 4 | 1 | 16 | 0/7 | 1/10 |
+
+**A gate on the best hit refuses everything, including the right answer.** The one shape the
+earlier goal-rule measurement did not try: not "does this entry deserve slot three" but "does this
+base have anything to say at all" — if the best-scoring entry's own `subject` and `question` share
+nothing with what was asked, return MISS. At two goal terms it refuses all four negatives, which is
+the only candidate that does. It also refuses the one question the corpus genuinely answers:
+*"how does the platform decide which promotions combine best reward policy"* is answered by
+`KB-5ADBFB34`, whose own question reads *"why did only one promotion apply when two were active, in
+scope and neither is exclusive"* — the same fact, and not one word of goal vocabulary in common.
+That is the whole problem in one row: **a correct entry can be phrased entirely differently from the
+question it answers, and BM25 over bodies finds it while every goal-field rule throws it away.**
 
 **Rarity works and costs far too much.** Any threshold that refuses the negatives destroys the
 retrieval the base is actually used for: `df ≤ 5` refuses three of four and loses sixteen of the
@@ -91,7 +105,9 @@ deployment"* and *"sign in to the Admin platform UI"*. Nothing measured here ref
 worth paying. Two of the three positives are also still wrong — the coupon GraphQL entries and
 `KB-35A09C64` remain buried under experiential entries with broader bodies.
 
-So the honest position after this work: **the drift is real, half of it had a principled fix, and
+**Thirteen candidates across three axes now** — term count, term rarity, and goal-field gating.
+Every one of them either leaves the bad answers in or throws the good ones out. So the honest
+position after this work: **the drift is real, half of it had a principled fix, and
 the other half is a ranking problem that a term-count floor is the wrong instrument for.** What it
 probably needs is a notion of what an entry *claims to answer* carrying more weight than what its
 body happens to mention — the entry schema already has that field, `question`, and the goal rule
@@ -100,3 +116,15 @@ costs 19 of 34 anchors at majority and 7 at `min(2)`, so it needs a shape nobody
 
 That is written down rather than attempted, because a fourth thing tuned against these same
 thirty-four rows would be tuning against the only held-out set this project has.
+
+## What to do instead, which the measurement points at
+
+**Fill the base.** An adjacent answer only appears where there is no real one: every question above
+that gets a wrong answer is a question the corpus has nothing for. Sixteen of the twenty-four rows
+the planner flags for review turn out to be answered correctly, and none of those is a problem. The
+drift is not a retrieval bug that happens to hurt — it is what a corpus with holes looks like from
+the outside, and more retrieval tuning cannot close a hole.
+
+`kb todo` exists for that: it sorts the open demand loop by what closing each row would take, and
+it prints what a served entry CLAIMS to answer beside what was asked, because no rule measured here
+can make that judgement and a reader can make it in a second.
