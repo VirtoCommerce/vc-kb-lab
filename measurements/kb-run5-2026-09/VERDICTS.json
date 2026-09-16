@@ -1,0 +1,52 @@
+{
+  "_": "Written by hand from REPORT.md after the run, because `acted` and `re-verified` are the same shape in a log. Arm C's report carries its own 'Register bookkeeping' section naming which entries it cited without re-verifying and which it verified, so these verdicts are its words, not an inference from traces.",
+
+  "KB-6AA0D7FB": {
+    "verdict": "acted",
+    "held": true,
+    "evidence": "Named in 'Cited without re-verifying (confirmed entries, per the session protocol)'. Used substantively at line 115: 'FixedRate/Ground is recorded on the shipment and priced 0.00 because the per-option Rate setting is unset @kb(KB-6AA0D7FB)'. The arm observed the 0.00 and took the entry's explanation for it rather than establishing the mechanism itself. Held in the weak sense that what it saw agrees; it did not test the mechanism."
+  },
+  "KB-5ADBFB34": {
+    "verdict": "acted",
+    "held": true,
+    "evidence": "Off this round's ground but licensed. 'The register carries this as confirmed by three independent runs @kb(KB-5ADBFB34); per protocol I cite it rather than re-running it.' It did verify the PREMISE directly (CombinePolicy = BestReward) without re-running the two-promotion experiment, which is the licence used exactly as written."
+  },
+
+  "KB-0C102D97": {
+    "verdict": "re-verified",
+    "held": true,
+    "evidence": "'verified again here: CO260915-00001 is Cancelled, PI260915-00001 is Cancelled with cancelledState: Completed, and SH260915-00001 is status: New, isCancelled: false'. Licensed and attested, so the protocol permitted acting; the arm checked anyway."
+  },
+  "KB-0DD47BD1": {
+    "verdict": "re-verified",
+    "held": true,
+    "evidence": "In 'Verified myself this session and confirmed'. A confirm row with a note is in the kb journal."
+  },
+  "KB-4982C91F": {
+    "verdict": "re-verified",
+    "held": true,
+    "evidence": "Line 108: 'discountAmount: 241.9455 on the order vs discountTotal: 241.95 — the unrounded and rounded copies split @kb(KB-4982C91F); the second order repeats it at 34.899 vs 34.90'. Reproduced on two orders."
+  },
+
+  "KB-6E98AA17": {
+    "verdict": "untouched",
+    "held": null,
+    "evidence": "Scored conservatively. It appears once, as a parenthetical: '(Related to the stale-tree behaviour already recorded @kb(KB-6E98AA17))', attached to a NEW finding about deep links. Nothing rested on it and it was not checked. The verdict vocabulary has no 'mentioned in passing', and inventing one after seeing the result would be moving the bar, so it is counted as not used — which is the reading that flatters the treatment least."
+  },
+  "KB-4CCC2DD6": {
+    "verdict": "untouched",
+    "held": null,
+    "evidence": "Does not appear in REPORT.md. Predicted used; the prediction was wrong."
+  },
+  "KB-FF7E4D5B": {
+    "verdict": "untouched",
+    "held": null,
+    "evidence": "Does not appear in REPORT.md. Predicted used; the prediction was wrong. The arm states it had no coupon-bearing order and no line-level promotion to compare, which is the case this entry is about."
+  },
+
+  "KB-F1542157": { "verdict": "re-verified", "held": true, "evidence": "Off-ground, licensed, in 'Verified myself this session and confirmed'." },
+  "KB-CA4C93E4": { "verdict": "re-verified", "held": true, "evidence": "Off-ground, licensed, in 'Verified myself this session and confirmed'." },
+  "KB-358A70CB": { "verdict": "re-verified", "held": true, "evidence": "Off-ground, licensed. Used at line 71 to explain why the storefront omits shipment number/status, and confirmed." },
+  "KB-5F7C8FC4": { "verdict": "re-verified", "held": true, "evidence": "Off-ground, licensed, opened AND confirmed. The duplicate-typeName cause of the empty tax-provider grid went into its confirmation note rather than a new entry." },
+  "KB-AFB2D3C5": { "verdict": "untouched", "held": null, "evidence": "A flow, opened only. Nothing in the report rests on it." }
+}
