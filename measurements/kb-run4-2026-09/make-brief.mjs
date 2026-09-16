@@ -20,6 +20,16 @@ const base = at('--base', process.env.KB_BASE ?? 'C:/_VIRTO/vc-knowledge');
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const out = at('--out', join(HERE, 'BRIEF-arm-C-catalog.md'));
 
+// THE DEPLOYMENT KEY IS READ FROM THE PIN, NEVER TYPED. Round four's brief typed
+// `vcptcore-stable` with a hyphen; the pin and all 137 existing evidence rows use
+// `vcptcore_stable` with an underscore. The tool behaved correctly — it warned that it could not
+// stamp a version onto an observation from a deployment it has no pin for — but the arm could not
+// fix it either, because `supersede` will not reuse a subject, so one entry is now in the corpus
+// with an unstampable key. A value copied into a page drifts from its source with nothing to
+// notice; a value read from the source cannot.
+const pin = JSON.parse(readFileSync(join(base, 'derived', 'pin.json'), 'utf8'));
+const deployment = pin.deployment;
+
 const captured = readFileSync(join(base, 'captured-catalog.md'), 'utf8');
 const flows = readFileSync(join(base, 'flows-catalog.md'), 'utf8');
 const rows = captured.split(/\r?\n/).filter((l) => /^\| \[`KB-/.test(l)).length;
@@ -72,7 +82,7 @@ This is the protocol, and it is different from previous rounds. Read it carefull
 * An entry with **one confirmation**, or any **disputed** entry, is a lead and not a finding. Verify
   it before you rely on it, and say in your report what you saw.
 * Reality still outranks the register. If what you observe contradicts an entry, that observation
-  wins, and \`node C:/_VIRTO/vc-kb-lab/bin/kb.mjs dispute <id> --deployment vcptcore-stable
+  wins, and \`node C:/_VIRTO/vc-kb-lab/bin/kb.mjs dispute <id> --deployment ${deployment}
   --note "<what you saw>"\` records it.
 
 ### The loop
@@ -82,7 +92,7 @@ nothing about the ground you are working on — write it:
 
 \`\`\`
 node C:/_VIRTO/vc-kb-lab/bin/kb.mjs capture --subject "…" --question "…" --claim "…" \\
-  --anchor "<a route, a page, a GraphQL type>" --scope "surface=…" --deployment vcptcore-stable
+  --anchor "<a route, a page, a GraphQL type>" --scope "surface=…" --deployment ${deployment}
 \`\`\`
 
 \`node C:/_VIRTO/vc-kb-lab/bin/kb.mjs capture --help\` explains what belongs in each field. If something in the register
