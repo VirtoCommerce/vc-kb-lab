@@ -218,6 +218,18 @@ The most useful half of this record. Each was measured, and the measurement said
   guess at what a button called. One `reanchor` each, once somebody observes them.
 * Configurable products do not exist on this deployment; two demand rows stand open because of it.
 
+* **`how` answered by the least-bad flow, and did so for anything (D4 of the 2026-09-16 review).**
+  With three flows in the plane, `how "cancel an order"` returned the order-placement flow and
+  `how "log in to admin"` returned it plus a promotion flow: a flow's steps mention every noun of a
+  journey, and two words in a body clear a floor of two. A flow is identified by its goal, so it is
+  now served by its goal -- a strict majority of the question's content terms must land in
+  `subject` or `question`. Measured on a copy of the live base: every wrong answer above is a MISS
+  that names the refused goal; every flow's own question and the ordinary phrasings still hit; the
+  cost is a synonym (`how "checkout"` is a MISS). The same rule was measured for `ask` and rejected
+  -- it loses the first-ranked entry on 19 of 34 held-out rows -- and the one `ask` row that
+  motivated trying, "sign in to the Admin platform UI", still returns three entries about other
+  things. Open.
+
 ---
 
 ## Conventions that were paid for

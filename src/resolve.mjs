@@ -67,6 +67,41 @@ function contentMatches(hit, queryTerms) {
 // The number of exact content terms a hit must carry to be served at all.
 export const relevanceFloor = (queryTerms) => Math.min(3, queryTerms.size);
 
+// Which of those exact content matches landed in a GOAL field -- `subject` or `question` -- rather
+// than somewhere in the body. For a fact this distinction is weak: a fact's body IS its content.
+// For a flow it is the whole question, see `aboutGoal`.
+function goalMatches(hit, queryTerms) {
+  return Object.entries(hit.match)
+    .filter(([t, fields]) => queryTerms.has(t) && fields.some((f) => f === 'subject' || f === 'question'))
+    .map(([t]) => t);
+}
+
+// A FLOW IS SERVED ONLY WHEN ITS GOAL ACCOUNTS FOR MOST OF THE QUESTION.
+//
+// The word-count floor above cannot do this job for a procedure, and the independent review of
+// 2026-09-16 named the consequence as defect D4: `kb how "cancel an order"` returned the
+// order-placement flow, `how "log in to admin"` returned it plus a promotion flow. With three flows
+// in the plane, `how` returned the least-bad of three for almost anything, because a flow's STEPS
+// mention every noun of a journey -- `cancel`, `Admin`, `log in` -- and two words in a body clear a
+// floor of two. The floor measures whether a result is about the question's WORDS. A flow is
+// identified by its GOAL (capture.mjs: `fingerprint`), so the question to ask is whether the goal
+// is what was asked.
+//
+// Strict majority, measured on 2026-09-16 against a copy of the live base: every wrong answer
+// above becomes MISS; "place an order on the storefront", "how do I place an order", "create a
+// promotion with a coupon code", "apply a coupon on the storefront" and each flow's own question
+// still return their flow; and a question that names two flows' vocabulary ("how do I put a coupon
+// on a promotion and apply it to a cart?") now returns one instead of two. The cost is recall on a
+// synonym: `how "checkout"` is a MISS, because no flow's goal says checkout. That is the trade this
+// contract makes on purpose -- a MISS costs a lookup, a confident wrong procedure costs the run.
+//
+// NOT APPLIED TO `ask`. The same rule was measured over the 34 held-out questions three runs
+// asked (measurements/kb-retrieval-2026-09/): a majority rule loses the first-ranked entry on 19
+// rows, `min(2, size)` on 7, and even one goal term on 2 -- and none of them fixes the one `ask`
+// row that motivated trying ("sign in to the Admin platform UI"). A fact's body is its content, so
+// a rule about goal fields is a rule about the wrong thing there.
+export const aboutGoal = (goalTerms, queryTerms) => goalTerms.length > queryTerms.size / 2;
+
 const PROTOCOL =
   'The base is a lens, never ground truth. Reality outranks it. Cite @kb(id) for load-bearing use, ' +
   'and verify in proportion to blast radius.';
@@ -232,22 +267,26 @@ export function how(base, question, { limit = 2 } = {}) {
   const queryTerms = new Set(
     tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
   );
-  const raw = opened.flows ? opened.flows.search(question, SEARCH_OPTIONS) : [];
-  const floor = relevanceFloor(queryTerms);
-  const hits = raw
-    .filter((h) => contentMatches(h, queryTerms).length >= floor)
-    .sort((a, b) => b.score - a.score);
+  const { hits, nearGoals, floor } = flowHits(opened, question, queryTerms);
 
   if (!hits.length) {
+    // A flow whose steps mention the words but whose goal is something else is NOT the nearest
+    // answer with a caveat; it is a different procedure. Its goal is named so the reader can see
+    // what was refused and why, and can tell this MISS from an empty plane.
+    const byWords = nearGoals.length
+      ? `${nearGoals.length} flow${nearGoals.length === 1 ? '' : 's'} mention${nearGoals.length === 1 ? 's' : ''} these words in ` +
+        `${nearGoals.length === 1 ? 'its' : 'their'} steps but ${nearGoals.length === 1 ? 'has' : 'have'} a different goal ` +
+        `(${nearGoals.map((g) => `"${g}"`).join('; ')}). A flow is served only when its goal is what you asked. `
+      : `No flow matches ${floor} content term${floor === 1 ? '' : 's'} of this question. `;
     return {
       miss: true,
       question,
       searched: ['flow'],
       results: [],
       degraded: null,
+      nearGoals,
       note: opened.flows
-        ? `No flow matches ${floor} content term${floor === 1 ? '' : 's'} of this question. ` +
-          'If you work one out, record it with `kb capture --flow` so the next run walks it instead of finding it.'
+        ? byWords + 'If you work one out, record it with `kb capture --flow` so the next run walks it instead of finding it.'
         : 'This base holds no flows yet. Record one with `kb capture --flow`.',
     };
   }
@@ -270,11 +309,22 @@ export function flowsMatching(base, question) {
   const queryTerms = new Set(
     tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
   );
+  return flowHits(opened, question, queryTerms).hits.map((h) => ({ id: h.id, subject: h.subject }));
+}
+
+// The one place a flow is judged against a question. `how` serves what this returns and
+// `flowsMatching` points at it; two copies of the filter is how the pointer would come to name a
+// flow the verb then refuses.
+function flowHits(opened, question, queryTerms) {
+  const raw = opened.flows ? opened.flows.search(question, SEARCH_OPTIONS) : [];
   const floor = relevanceFloor(queryTerms);
-  return opened.flows.search(question, SEARCH_OPTIONS)
-    .filter((h) => contentMatches(h, queryTerms).length >= floor)
-    .sort((a, b) => b.score - a.score)
-    .map((h) => ({ id: h.id, subject: h.subject }));
+  const byWords = raw.filter((h) => contentMatches(h, queryTerms).length >= floor);
+  const hits = byWords
+    .filter((h) => aboutGoal(goalMatches(h, queryTerms), queryTerms))
+    .sort((a, b) => b.score - a.score);
+  const served = new Set(hits.map((h) => h.id));
+  const nearGoals = byWords.filter((h) => !served.has(h.id)).sort((a, b) => b.score - a.score).map((h) => h.subject);
+  return { hits, nearGoals, floor };
 }
 
 export function ask(base, question, { limit = 3 } = {}) {

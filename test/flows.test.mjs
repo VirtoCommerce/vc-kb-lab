@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { buildIndex } from '../src/index-build.mjs';
 import { validate } from '../src/validate.mjs';
-import { ask, how, flowsMatching } from '../src/resolve.mjs';
+import { ask, how, flowsMatching, aboutGoal } from '../src/resolve.mjs';
 import {
   capture, confirm, retire, reanchor, CaptureRefused, loadEntry, readFlows, readCaptured,
   fingerprint, rebuildCapturedArtifacts,
@@ -267,4 +267,81 @@ test('an empty flow plane is a legitimate state, on an otherwise empty base', ()
   assert.equal(how(dir, 'how do I place an order').miss, true);
   assert.ok(!existsSync(join(dir, FLOWS_CATALOG)), 'nothing is written until something is recorded');
   drop(dir);
+});
+
+// --- the MISS contract for a procedure ------------------------------------------------------------
+//
+// Defect D4 of the 2026-09-16 review: with three flows in the plane, `how` returned the least-bad
+// of three for almost anything, because a flow's STEPS mention every noun of a journey and two
+// words in a body clear a floor of two. The four probes below are the ones verified against a copy
+// of the live base that day. A flow is identified by its goal, so it is served by its goal.
+
+// Shaped like the live KB-AFB2D3C5: the steps say `cancelled` and `Admin` without the flow being
+// about either.
+const LONG_ORDER_FLOW = {
+  flow: true,
+  subject: 'an order placed on the storefront and read back in Admin',
+  question: 'how do I place an order on this storefront, from finding a product to reading it back in Admin',
+  claim: 'Log in to Admin first, then open More, then Orders. An order is placed ON THE CART PAGE: choose a delivery method, a payment method, then Place order. The order lands at /account/orders. An order cannot be deleted once placed - only cancelled; Cancel document is on the order blade.',
+  refutableBy: 'observation',
+  anchors: ['/cart', '/account/orders'],
+  appliesTo: ['surface=storefront-ui'],
+  deployment: 'vcptcore_stable',
+  at: '2026-09-14T00:00:00Z',
+};
+
+// Shaped like the live KB-EB228603: the QUESTION names Admin, the steps say `log in`.
+const PROMO_FLOW = {
+  flow: true,
+  subject: 'create a percentage-off promotion and see it apply on the storefront',
+  question: 'create a percentage-off promotion in the Admin Marketing module',
+  claim: 'Log in to Admin. Marketing is not on the left rail: open More, then Marketing, then Promotions, then Add. Create stays disabled until the promotion has a name, an eligibility criterion and a reward.',
+  refutableBy: 'observation',
+  anchors: ['POST /api/marketing/promotions', '/cart'],
+  appliesTo: ['surface=admin-ui'],
+  deployment: 'vcptcore_stable',
+  at: '2026-09-14T00:00:00Z',
+};
+
+test('`how "cancel an order"` is a MISS, not the order-placement flow', () => {
+  const dir = makeBase();
+  const order = capture(dir, LONG_ORDER_FLOW);
+  capture(dir, PROMO_FLOW);
+  const res = how(dir, 'cancel an order');
+  assert.equal(res.miss, true, 'the steps mention cancelling; the goal is placing');
+  assert.deepEqual(res.nearGoals, [LONG_ORDER_FLOW.subject], 'the refused flow is named by its goal, so the reader can see what was refused');
+  assert.match(res.note, /different goal/);
+  assert.deepEqual(flowsMatching(dir, 'cancel an order'), [], 'the pointer `ask` uses must not name what `how` refuses');
+  assert.ok(order.id);
+  drop(dir);
+});
+
+test('`how "log in to admin"` is a MISS, not two flows that happen to start in Admin', () => {
+  const dir = makeBase();
+  capture(dir, LONG_ORDER_FLOW);
+  capture(dir, PROMO_FLOW);
+  const res = how(dir, 'log in to admin');
+  assert.equal(res.miss, true);
+  assert.equal(res.nearGoals.length, 2, 'both flows matched by words, and both are named as refused');
+  drop(dir);
+});
+
+test('a question that IS a flow\'s goal still gets the flow, and only that flow', () => {
+  const dir = makeBase();
+  const order = capture(dir, LONG_ORDER_FLOW);
+  const promo = capture(dir, PROMO_FLOW);
+  assert.deepEqual(how(dir, 'place an order on the storefront').results.map((r) => r.id), [order.id]);
+  assert.deepEqual(how(dir, 'how do I place an order').results.map((r) => r.id), [order.id]);
+  assert.deepEqual(how(dir, 'create a percentage-off promotion').results.map((r) => r.id), [promo.id],
+    'before the goal rule this returned both flows: the order flow mentions promotions in passing');
+  drop(dir);
+});
+
+test('the goal rule is a strict majority of the question\'s content terms', () => {
+  // Two terms, one in the goal: `order` is, `cancel` is not. Half is not a majority.
+  assert.equal(aboutGoal(['order'], new Set(['cancel', 'order'])), false);
+  assert.equal(aboutGoal(['place', 'order'], new Set(['place', 'order', 'storefront'])), true);
+  // A one-term question has to be about the goal outright: `checkout` is not in any flow's goal.
+  assert.equal(aboutGoal([], new Set(['checkout'])), false);
+  assert.equal(aboutGoal(['order'], new Set(['order'])), true);
 });

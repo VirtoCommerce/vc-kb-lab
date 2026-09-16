@@ -145,3 +145,18 @@ test('typographic punctuation splits, except the em dash', () => {
   // the em dash is not a separator here, and a spaced one is dropped by processTerm instead
   assert.deepEqual(tokenize('one—two'), ['one—two']);
 });
+
+// Verified 2026-09-16 against a copy of the live base, while fixing the flow plane's MISS contract:
+// this question already returns MISS, on the floor alone. The discount-row entry it was reported
+// to return matches `tax` and `orders` and never `calculated`, and two of three is not the floor.
+// Pinned so the floor cannot quietly drop to two and start serving it.
+test('a tax question is not answered by an entry that mentions tax about something else', () => {
+  const dir = baseWith([
+    { id: 'KB-88888888', subject: 'discount-row-withtax-is-never-written', body: 'Is discountAmountWithTax on an order discount row safe to read instead of discountAmount? The discount row discountAmountWithTax is always 0 whatever the store tax configuration; orders on a store with an active 20 percent tax provider still read 0.' },
+    { id: 'KB-99999999', subject: 'gql-type-ordershipmenttype', body: 'OrderShipmentType: price, priceWithTax, total, totalWithTax, tax details for orders.' },
+  ]);
+  const r = ask(dir, 'how is tax calculated on orders', { limit: 3 });
+  assert.equal(r.miss, true);
+  assert.match(r.note, /3 content terms/);
+  drop(dir);
+});
