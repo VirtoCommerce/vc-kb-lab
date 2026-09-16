@@ -87,6 +87,7 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
 Supporting:
 
   kb confirm     <id> --deployment … --note … a repeat observation; raises the count, writes no second entry
+  kb refute      [--baseline]                  do licensed claims still stand on published coordinates
   kb extract     [--env <name>]               regenerate the derived plane from a deployment
   kb check       [--env <name>]               regenerate in memory and byte-compare
   kb validate                                 gate the corpus on disk; needs no deployment
@@ -138,6 +139,7 @@ function args(argv) {
     const a = argv[i];
     if (a === '--json') out.json = true;
     else if (a === '--flow') out.flow = true;
+    else if (a === '--baseline') out.baseline = true;
     else if (a === '--merge') out.merge = String(argv[++i]).split(/[,\s]+/).filter(Boolean);
     else if (FLAGS[a]) {
       const key = FLAGS[a];
@@ -750,6 +752,46 @@ async function main() {
     const f = rebuildCapturedArtifacts(base, 'flow');
     console.log(`             ${f.active} active flow(s), ${f.retired} retired`);
     return { code: 0, outcome: { detail: { active: r.active, retired: r.retired, flows: f.active } } };
+  }
+
+  // TIER ONE OF EXECUTABLE REFUTATION: does the ground a licensed claim stands on still exist?
+  // Read-only against the corpus and the contract, and it touches no deployment — the half that
+  // needs a request is a separate, authorized action. `--baseline` records what resolves today so
+  // that a later extract losing a coordinate reads as ROT rather than as a coverage gap.
+  if (cmd === 'refute') {
+    const { refute, writeBaseline, readBaseline } = await import('../src/refute.mjs');
+    if (a.baseline) {
+      const doc = writeBaseline(base);
+      const n = Object.keys(doc.entries).length;
+      console.log(`baseline written — ${n} licensed entr(ies) with at least one resolving anchor, against ${doc.contractCoordinates} contract coordinates`);
+      console.log('  Re-take it only after a `kb extract` you have read. A baseline refreshed blindly');
+      console.log('  turns every rotted anchor into a new normal, which is the failure it exists to catch.');
+      return { code: 0, outcome: { detail: { baselined: n } } };
+    }
+    const r = refute(base);
+    if (!readBaseline(base)) {
+      console.error('refute: no baseline. Run `kb refute --baseline` first, on a contract you trust.');
+      console.error('  Without one, an anchor that never resolved and an anchor that stopped resolving');
+      console.error('  are the same picture, and they are opposite findings.');
+      return 2;
+    }
+    console.log(`refute — ${r.results.length} licensed entr(ies), baseline taken ${r.baseline.takenAt}`);
+    console.log('');
+    for (const e of r.results) {
+      if (e.verdict === 'holds') continue;
+      console.log(`  ${e.verdict.padEnd(11)} ${e.id}  ${e.subject}`);
+      for (const c of e.lost) console.log(`              lost coordinate: ${c}`);
+    }
+    const rotted = r.counts.ROTTED ?? 0;
+    console.log('');
+    console.log(`  holds ${r.counts.holds ?? 0} · ROTTED ${rotted} · unprojected ${r.counts.unprojected ?? 0}`);
+    if (rotted) {
+      console.log('');
+      console.log('A ROTTED entry is still licensed and an agent may still be told to act on it without');
+      console.log('re-verifying. Re-observe it or dispute it; this verb will not do either for you,');
+      console.log('because a coordinate disappearing says the ground moved, not what is true now.');
+    }
+    return { code: rotted ? 1 : 0, outcome: { detail: r.counts } };
   }
 
   if (cmd === 'stat') {
