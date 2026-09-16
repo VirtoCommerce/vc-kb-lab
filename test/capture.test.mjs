@@ -324,7 +324,10 @@ test('a MISS delivered to a consumer is explicit, never an empty block', () => {
 test('a captured fact is retrievable, cited, and carries its trust into the delivered block', () => {
   const dir = makeBase();
   const { id } = capture(dir, ADMIN_TOKEN);
-  confirm(dir, id, { deployment: 'vcptcore-stable', platformVersion: '3.1007.26', at: '2026-09-03T00:00:00Z' });
+  // A SECOND PARTY, named explicitly. The tool now stamps the writing session onto every row, so
+  // a confirmation written in the same session as the capture is the same party twice -- which is
+  // the correction, not an accident of the fixture.
+  confirm(dir, id, { deployment: 'vcptcore-stable', platformVersion: '3.1007.26', by: 'a-second-agent', at: '2026-09-03T00:00:00Z' });
 
   const d = deliver(dir, 'how do I obtain a platform bearer token');
   assert.equal(d.hit, true);

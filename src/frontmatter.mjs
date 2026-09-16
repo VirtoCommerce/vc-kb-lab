@@ -31,8 +31,15 @@ export const FIELD_ORDER = [
   //
   // Measured 2026-09-16 before this field existed: agents landed on `/sign-in` 19 times across the
   // archived logs and nothing ever arrived, while four entries that answer sign-in questions sat in
-  // the corpus anchored elsewhere. Adding delivery coordinates to nine entries on a copy moved
-  // total arrivals from 295 to 316 over 4,038 calls.
+  // the corpus anchored elsewhere.
+  //
+  // WHAT NINE DELIVERY ADDRESSES ACTUALLY BOUGHT: NOTHING MEASURABLE, so far. Raw arrivals over
+  // the 22 archived logs went 295 -> 316, and that is the number this comment used to quote. The
+  // replay's own honesty rule counts only entries that existed BEFORE the run being replayed, and
+  // by that rule the figure is 244 -> 244: every one of the 21 new arrivals is on an entry written
+  // the same afternoon. The second independent review found this. The idea may still be right --
+  // a fact is needed where you meet the symptom, not where it is about -- but nothing has yet been
+  // shown to arrive by delivery address that would not have arrived anyway.
   //
   // It is deliberately NOT part of the fingerprint. Identity is (anchors, scope); a delivery address
   // must never be able to collide two facts, or the cheapest possible improvement -- saying where a

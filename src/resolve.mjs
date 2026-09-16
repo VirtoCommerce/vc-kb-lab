@@ -18,6 +18,7 @@ import { parseEntry } from './frontmatter.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin, evidenceKinds } from './capture.mjs';
 import { DERIVED_INDEX } from './planes.mjs';
 import { sourceDoor, renderSourceDoor } from './source-door.mjs';
+import { partiesOf } from './provenance.mjs';
 
 // Function words carry no evidence that a result is about the question. Without excluding them,
 // "how do I bake sourdough bread" returns /api/sitemaps at top trust, because `do` matched
@@ -188,9 +189,14 @@ function experientialTrust(data) {
   // permissive and it is what keeps this from re-grading the corpus: 121 of the 124 evidence rows
   // written before 2026-09-16 carry no author, so their levels are untouched. The rule only ever
   // tightens, and only for rows that say who wrote them.
+  // A TRANSCRIBED ROW IS THE ARTEFACT'S OBSERVATION, NOT THE TYPIST'S. Fifteen rows in the live
+  // corpus said `by: round2-arm-B` when no arm ever ran a writing verb -- the author had typed the
+  // witness's name. Three entries stood at `confirmed` on that. `partiesOf` counts `from` (a path
+  // that exists and can be opened) ahead of `by` (who typed it), so one author transcribing three
+  // reports is three parties and one author writing three rows unaided is one.
   const independent = (wantSource) => {
     const rows = (data.evidence ?? []).filter((e) => !e.contradicts && ((e.method === 'source') === wantSource));
-    return new Set(rows.filter((r) => r.by).map((r) => r.by)).size + rows.filter((r) => !r.by).length;
+    return partiesOf(rows);
   };
   const repeated = Math.max(independent(false), independent(true)) > 1;
   const both = kinds.observation > 0 && kinds.source > 0;

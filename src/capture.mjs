@@ -33,6 +33,7 @@ import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX,
 // here. Its home moved to break an import cycle, not its meaning.
 export { normalizeAnchor } from './anchors.mjs';
 import { normalizeAnchor, LOOKS_LIKE_A_LOCAL_PATH, MSYS_REMEDY } from './anchors.mjs';
+import { sessionParty, transcriptionSource } from './provenance.mjs';
 
 // Re-exported: callers have always found these here, and their home moved to planes.mjs so that
 // both planes are named in one place rather than as literals scattered across six modules.
@@ -448,7 +449,7 @@ export function stampNotice(stamp) {
   return null;
 }
 
-export function evidenceRow({ deployment, pin, platformVersion, by, at, contradicts, note, source }) {
+export function evidenceRow({ deployment, pin, platformVersion, by, at, from, contradicts, note, source }) {
   // A CLAIM READ OUT OF CODE IS NOT A CLAIM READ OFF A RUNNING DEPLOYMENT, and the corpus must be
   // able to tell them apart. Every one of the 124 evidence rows in this base said
   // `method: observation`, because that was the only method the door could write -- so a corpus
@@ -474,6 +475,7 @@ export function evidenceRow({ deployment, pin, platformVersion, by, at, contradi
     if (source.url) row.url = source.url;
     row.at = at;
     if (by) row.by = by;
+    if (from) row.from = from;
     if (contradicts) row.contradicts = true;
     if (note) row.note = note;
     return row;
@@ -483,6 +485,7 @@ export function evidenceRow({ deployment, pin, platformVersion, by, at, contradi
   if (platformVersion) row.platformVersion = platformVersion;
   row.at = at;
   if (by) row.by = by;
+  if (from) row.from = from;
   if (contradicts) row.contradicts = true;
   if (note) row.note = note;
   return row;
@@ -713,7 +716,8 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
       deployment: input.deployment,
       pin: stamp.pin,
       platformVersion: stamp.platformVersion,
-      by: input.by,
+      by: input.by ?? sessionParty(),
+      from: transcriptionSource(input.from),
       at: input.at ?? now(),
       source,
     })],
@@ -814,7 +818,8 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
-    by: input.by,
+    by: input.by ?? sessionParty(),
+    from: transcriptionSource(input.from),
     at: input.at ?? now(),
     source,
   })];
@@ -850,7 +855,8 @@ export function dispute(base, id, input, { now = () => new Date().toISOString() 
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
-    by: input.by,
+    by: input.by ?? sessionParty(),
+    from: transcriptionSource(input.from),
     at: input.at ?? now(),
     contradicts: true,
     note: input.note,

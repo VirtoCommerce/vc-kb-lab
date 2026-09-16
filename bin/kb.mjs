@@ -111,7 +111,15 @@ const FLAGS = {
   '--source': 'source',
   // `kb demand buried --entry <id>`: the entry that should have been served and was not.
   '--entry': 'entry',
-  '--by': 'by', '--at': 'at', '--note': 'note', '--reason': 'reason',
+  // `--by` and `--at` USED TO BE HERE and are refused now. Fifteen rows in the live corpus said
+  // `by: round2-arm-B` with a timestamp rounded to the minute the arm ran; no arm ever ran a
+  // writing verb, so every one was the author typing a witness name. The tool sets both fields.
+  //
+  // `--from` is what those rows should have said: the report the claim was READ OUT OF, as a path
+  // that has to exist. A reader can open it and disagree, which is the property a typed author
+  // name never had, and it is what `partiesOf` counts for independence.
+  '--from': 'from',
+  '--note': 'note', '--reason': 'reason',
   '--superseded-by': 'supersededBy',
   // reanchor. `--now` is the corrected coordinate and never a timestamp: nothing in this CLI takes
   // a clock reading, and the pair reads as a sentence at the point of use -- was X, now Y.
@@ -384,6 +392,18 @@ async function main() {
     };
   }
 
+  for (const banned of ['--by', '--at']) {
+    if (rest.includes(banned)) {
+      console.error(`${banned} refused: the tool writes who wrote a row and when, and a writer cannot type either.`);
+      console.error('  Fifteen rows in this corpus once said `by: round2-arm-B`, timestamped to that arm run.');
+      console.error('  No arm ever ran a writing verb; the author had typed the witness. Three entries reached');
+      console.error('  `confirmed` on it, and the arrival replay read those rows as help that existed before the run.');
+      console.error('');
+      console.error('  If you are transcribing a claim out of a report, say so: --from <path to the report>.');
+      return 2;
+    }
+  }
+
   if (cmd === 'capture') {
     // The one consumer call site: the door reads the base before it writes to it.
     //
@@ -428,7 +448,7 @@ async function main() {
       const r = capture(base, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
         anchors: a.anchor, arrivesAt: a.arrivesAt, appliesTo: a.scope, flow: a.flow,
-        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
+        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, from: a.from, source: a.source,
       });
       console.log(`${a.flow ? 'FLOW ' : ''}CAPTURED ${r.id}`);
       for (const d of closeQuestions(base, { question: a.question, id: r.id })) {
@@ -518,7 +538,7 @@ async function main() {
       const r = supersede(base, oldId, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
         anchors: a.anchor, arrivesAt: a.arrivesAt, appliesTo: a.scope, reason: a.reason,
-        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
+        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, from: a.from, source: a.source,
       });
       console.log(`SUPERSEDED ${r.superseded} -> ${r.id}`);
       console.log(`  path        : ${r.path}`);
@@ -635,7 +655,7 @@ async function main() {
     try {
       const r = amend(base, id, {
         step: a.step, note: a.note,
-        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
+        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, from: a.from, source: a.source,
       });
       console.log(`AMENDED ${r.id}  step ${r.step}`);
       console.log(`  flows       : ${r.artifacts.active} active, ${r.artifacts.retired} retired`);

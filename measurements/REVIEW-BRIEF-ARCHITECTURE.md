@@ -108,7 +108,7 @@ subjects they went for**, an entry that answers that subject would have arrived 
 calls before two arms that had no base at all. The other six were mechanism in C#, which the corpus
 did not hold.
 
-**Adding eleven good entries today moved the arrival rate by two calls in 4,013.** The mechanism
+**Adding eleven good entries today moved the arrival rate by nothing.** It was reported as two calls in 4,013; both of the two were a single entry transcribed from an arm report and dated to when that arm ran, so the replay counted it as help that existed before the run. With the timestamp corrected the figure is 244 before and 244 after. The mechanism
 pays only for entries anchored on coordinates agents actually stand on, and the new entries are
 anchored on what their claims are *about*. Of the 22 most-visited coordinates across every log, 14
 have an entry and 8 do not; the largest gap is `/sign-in` at 20 visits, which is also the subject of
@@ -152,7 +152,7 @@ invented for a unit test. That ratio is better than any of the fourteen rules ac
 3. **Anchors served two masters** — "what this fact is about" and "where it should arrive" — and
    that is now split: `arrivesAt` is a delivery address, outside the fingerprint and outside the
    cross-plane index, retrofitted onto existing entries by `kb arrives`. Nine were applied and
-   arrivals over the 22 archived logs went 295 → 316. **We are not confident this is the right
+   raw arrivals over the 22 archived logs went 295 → 316 — but **pre-existing arrivals, the only kind this project counts, went 244 → 244.** Every new arrival is on an entry written that same afternoon. **We are not confident this is the right
    shape**: it adds a field to a schema whose closedness is load-bearing, and the alternative — that
    arrival should not match coordinates at all — is question 3 below.
 4. **Confirmation has no notion of independence beyond an author string.** We added one today after

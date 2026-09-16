@@ -17,6 +17,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+const NL = String.fromCharCode(10);
+
 import { buildIndex } from '../src/index-build.mjs';
 import { stringifyFrontmatter, parseEntry } from '../src/frontmatter.mjs';
 import { capture, confirm, evidenceKinds, CaptureRefused, loadEntry } from '../src/capture.mjs';
@@ -132,11 +134,11 @@ test('an observation does not confirm a source reading', () => {
   drop(dir);
 });
 
-test('a second reading of the SAME kind does confirm', () => {
+test('a second reading of the SAME kind does confirm, when it is a second party', () => {
   const dir = makeBase();
   const r = capture(dir, { ...CLAIM, source: SOURCE });
-  confirm(dir, r.id, { deployment: 'vcptcore_stable', at: '2026-09-16T01:00:00Z' });
-  confirm(dir, r.id, { deployment: 'vcptcore_stable', at: '2026-09-16T02:00:00Z' });
+  confirm(dir, r.id, { deployment: 'vcptcore_stable', by: 'agent-one', at: '2026-09-16T01:00:00Z' });
+  confirm(dir, r.id, { deployment: 'vcptcore_stable', by: 'agent-two', at: '2026-09-16T02:00:00Z' });
   const trust = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
   assert.equal(trust.kinds.observation, 2);
   assert.equal(trust.level, 'confirmed');
@@ -245,6 +247,9 @@ test('rows written before authorship was recorded keep counting as separate, so 
   const dir = makeBase();
   const r = capture(dir, { ...CLAIM, deployment: 'vcptcore_stable' });
   confirm(dir, r.id, { deployment: 'vcptcore_stable', at: '2026-09-16T01:00:00Z' });
+  // Strip the author the tool now stamps, leaving the shape the corpus actually holds.
+  const { abs } = loadEntry(dir, r.id);
+  writeFileSync(abs, readFileSync(abs, 'utf8').split(NL).filter((l) => !/^\s+by: /.test(l)).join(NL));
   const t = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
   assert.equal(t.level, 'confirmed', '121 of 124 rows in the live corpus carry no author; the rule must not touch them');
   drop(dir);
