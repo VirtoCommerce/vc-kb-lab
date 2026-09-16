@@ -785,6 +785,13 @@ async function main() {
     const rotted = r.counts.ROTTED ?? 0;
     console.log('');
     console.log(`  holds ${r.counts.holds ?? 0} · ROTTED ${rotted} · unprojected ${r.counts.unprojected ?? 0}`);
+    // A VERDICT THAT DOES NOT NAME ITS BLIND SPOT IS READ AS A GUARANTEE. Both of these were found
+    // by a reviewer trying to make the rot test fail, not by the author.
+    console.log('');
+    console.log('  `holds` means the coordinate is still published. It does NOT mean the claim is still');
+    console.log('  true — behaviour can change under a coordinate that never moves, which is tier two and');
+    console.log('  needs the deployment. It also cannot see a contract change confined to a parameter');
+    console.log('  segment: /{id}, /{orderId} and /{id}-GONE are one coordinate to the normalizer.');
     if (rotted) {
       console.log('');
       console.log('A ROTTED entry is still licensed and an agent may still be told to act on it without');

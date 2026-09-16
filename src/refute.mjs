@@ -22,6 +22,19 @@
 //
 // So the verdicts are:
 //
+// TWO THINGS `holds` DOES NOT COVER, both found by the second review while trying to make the rot
+// test fail, and neither disclosed by the verdict until now:
+//
+//   1. A contract change confined to a PARAMETER SEGMENT is invisible. `normalizeAnchor` collapses
+//      the segment, so `/customerOrders/{id}`, `/customerOrders/{orderId}` and even
+//      `/customerOrders/{id}-GONE` are one coordinate. That collapse is deliberate and right for
+//      identity -- two writers spelling the same parameter differently must not mint two entries --
+//      and it means tier one cannot see a rename inside the braces. Renaming a FIXED segment is
+//      caught.
+//   2. Editing an entry's OWN anchor to something unpublished also reads `holds`, because the
+//      baseline is keyed by entry id and compared against the contract, not against the entry's
+//      current anchors. That is `validate`'s job and it does it.
+//
 //   holds       every anchor that resolved at baseline still resolves
 //   ROTTED      an anchor resolved at baseline and does not now  -> the claim needs re-observing
 //   unprojected never resolved, at baseline or now  -> a coverage gap, not a finding

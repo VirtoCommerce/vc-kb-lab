@@ -683,3 +683,111 @@ is a count.
 a log-reading session. Until it is done, the round-five register should say so on its face —
 "stamped from a pin the stand had passed" — rather than carry a wrong version silently into the
 next arm's evidence rows.
+
+---
+---
+
+# Part five — reply to `REVIEWER-RUN5-PREP-2026-09-16.md`
+
+Everything below was run against scratch copies of the corpus or read from the repositories. 269
+tests pass. Nothing ran against the deployment.
+
+## What reproduces
+
+* **The eight overstated entries.** Comparing evidence rows to counted parties over every active
+  entry gives exactly eight mismatches, `KB-BCA7468D` among them at rows 3 / parties 1 (one
+  observation and two source readings). The register's column was false as handed to round four;
+  the fix is right.
+* **`confirm` refuses without `--note`**, with the message on the page. It exits 2; the README's
+  exit table reserves 4 for a refusal and 2 is not listed. Suspected inconsistency, cosmetic.
+* **The template precedes the picker in history**: `f0386d0` at 18:20:19, `841c5da` at 18:22:08. Two
+  minutes apart in one sitting, which is what a commit can prove and no more; the template says
+  itself that it was written against pricing.
+* **The picker** reads contract and logs to pick and opens `captured/` only afterwards, for the
+  consequence line. It picks `/api/platform` with zero licensed entries. Reproduced.
+* **`kb refute`** prints holds 21 · ROTTED 0 · unprojected 1 on a copy. **The rot path works:**
+  renaming the fixed segment `customerOrders` in one contract entry of a copy turned four licensed
+  entries `ROTTED`, each naming the lost coordinate, exit 1. The baseline records only hits, refuses
+  to judge without one, and edits nothing. All as described.
+
+Two things about tier one that the page does not say, found while making the rot test work:
+
+* My first two attempts changed the coordinate inside its **parameter segment**
+  (`/{id}` → `/{id}-GONE`) and `refute` said `holds` both times, because `normalizeAnchor` collapses
+  the whole segment to `{}`. So any contract change confined to a parameter segment is invisible to
+  tier one. Rare, but it is a blind spot the verdict `holds` does not disclose.
+* Editing an entry's **own** anchor to something unpublished also reads `holds`, because the baseline
+  is keyed by entry id and checked against the contract, not against the entry's current anchors.
+  That is `validate`'s job and it does it; worth one sentence in `refute`'s header so nobody expects
+  otherwise.
+
+## Question 2 first, because it changes question 1: the 37 rows have an artefact
+
+The page says the anonymous confirm rows "predate `sessionParty`, and there is no artefact and no
+author to check them against." **There is.** Every `confirm` a run ever made was written by the tool
+into that run's kb journal, with a timestamp and a session id, and those journals are archived.
+
+I took every observation row that is not an entry's first and carries no `note`, no `from` and no
+`attested` mark — 33 by that definition; the page's 37 uses a slightly wider one — and looked for a
+tool-written `confirm` event on the same entry within five seconds in any archived journal.
+**33 of 33 match**, and every match names its session. The same lookup attributes 58 of 67 anonymous
+**capture** rows to their `capture` event.
+
+So the answer is neither demotion nor a guess. It is the relabel migration again, pointed at a
+different artefact: `by: session:<id>` from the journal, `from: <kb-log path>#<ts>` so a reader can
+open the row that produced it and the tool log around it. No verdict on whether anything was
+described — `attested` stays unset — but the independence count moves from "anonymous rows each
+count as one" to "counted per run", which is what the licence text promises.
+
+I recounted with that attribution applied: **22 licensed before, 22 after, no entry changes its
+party count.** The anonymous rows really were from distinct sessions. The recovery costs nothing
+and buys a register that can print who saw each fact.
+
+What the register should print beside it, because the licence rests on it: an **attested** column,
+counting rows that carry a note, a report `from`, or a source reading. Today that is **5 of the 22
+licensed entries**. That number is not a reason to demote the other 17; it is the number round five
+should be trying to raise.
+
+## Question 1: which condition is dropped
+
+**Drop the corpus-blind pick, but do not replace it with a choice.** Replace it with a second
+committed rule that reads the corpus and not the author: *the namespace with the most licensed
+entries*. Today that returns `/api/order` with 7. Commit the rule before running it, say on the run
+page that the ground was picked for coverage, and keep everything else: the frozen template, the
+sealed prediction, arm A on the same task, hook off.
+
+Why this rather than picking `/api/order` by hand and saying so: the page's own line is right —
+re-picking to raise the number is the commissioning the blind pick removes — and a rule that anyone
+can re-run is the only form of "picked for coverage" that is not also "picked by me". The
+contamination that remains is real and should be named: rediscovery by arm A on this ground is
+commissioned by the ground, and is not the headline.
+
+**The headline for round five is the protocol, and arm A makes it a tier-two run for free.** For
+each of the 7 licensed entries arm C meets, score: acted on, re-verified, or contradicted; and
+whether it held. Then read arm A's report against the same 7. Wherever arm A, with no register,
+independently establishes a fact arm C acted on, that report is an artefact and becomes a `from:`
+row on the entry — an attested confirmation by an independent party, produced by the run rather
+than by a session against the stand. That is the tier two the page asks about, for the entries
+where it matters most, at no extra cost.
+
+On the 7 themselves: `KB-0C102D97` and `KB-4982C91F` carry report `from` rows already; the other
+five rest entirely on anonymous rows. Run the attribution migration before the register is
+generated, so those five print their sessions rather than blanks.
+
+## Question 3: tier two before round five, in the same authorized session as the re-extract
+
+Before, for three reasons that do not depend on round four:
+
+1. The licence handed to arm C must be true when it is handed. Seventeen of 22 licensed entries
+   have no attested row; 13 are request-reachable. One session can turn most of those into attested
+   rows before an agent is told it may act on them.
+2. The pin has to be re-extracted anyway before pre-flight can gate on `kb check`. That is already
+   an authorized session against the stand; tier two rides in it.
+3. **Order of operations matters, and the page has the baseline the right way round.** Run
+   `kb extract` first; then `kb refute` against the fresh contract, while the baseline still
+   describes the 3.1007.26 plane — whatever the patch dropped shows up as `ROTTED` and goes to the
+   front of the tier-two queue; then re-observe the 13; **then** `kb refute --baseline`. Re-baselining
+   first erases the one comparison the old baseline was kept for.
+
+If the session is short, do the 7 `/api/order` entries first. They are the ones the licence will be
+exercised on.
