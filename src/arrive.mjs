@@ -26,6 +26,15 @@ import { arrivalIndex } from './coordinates.mjs';
 // (`POST /api/members/search`). Bare type names still match, but only when the text names them
 // with a boundary on both sides -- `CartType` in a GraphQL document body, not `cartTypeId` in a
 // query string.
+// WHAT MAKES A COORDINATE SAFE TO MATCH IN FREE TEXT: a slash, a dot or a space.
+// `GET /api/members/{id}`, `CartType.total`, `POST /api/carts` cannot appear in a sentence by
+// accident; `promotion` can.
+//
+// A compound type name like `OrderDiscountType` is safe too, and `ask` accepts one — but the test
+// for it CANNOT LIVE HERE, because `normalizeAnchor` lowercases every coordinate before it reaches
+// this index, so the internal capital that makes a compound name a name is gone by now. It belongs
+// on the asker's own spelling, and it is in `derivedByCoordinate` in resolve.mjs. Tried here first
+// on 2026-09-16: the rule could never fire, and a rule that cannot fire reads like a live one.
 const isStructured = (coordinate) => /[/.]/.test(coordinate) || coordinate.includes(' ');
 
 // A NAMESPACE IS NOT A PLACE. `POST /api` is a real coordinate -- the derived plane's root entry
@@ -117,7 +126,15 @@ export function textOf(value, depth = 0) {
  * and rebuilding a 3400-coordinate index from 602 files each time would make the agent wait on the
  * base -- which is the one thing that would guarantee this gets turned off.
  */
-export function arrivalsFor(text, index, { limit = 3 } = {}) {
+/**
+ * Coordinates from `index` that a piece of text actually NAMES, most specific first.
+ *
+ * Exported because `ask` needs exactly this rule and must not grow a second one. Structure is
+ * required — a coordinate has to carry a `/`, a `.` or a space — which is the whole defence against
+ * the obvious failure of coordinate lookup: `Promotion` is a GraphQL type name and also an ordinary
+ * English word, and a question containing it is not a question about `PromotionType`.
+ */
+export function structuredMatches(text, index) {
   const hay = String(text ?? '').toLowerCase();
   if (!hay) return [];
   const hits = [];
@@ -131,7 +148,12 @@ export function arrivalsFor(text, index, { limit = 3 } = {}) {
   }
   // Longest coordinate first: `POST /api/members/search` says more than `/api/members`, and if only
   // one line is going to be read it should be the specific one.
-  hits.sort((a, b) => b.coordinate.length - a.coordinate.length);
+  return hits.sort((a, b) => b.coordinate.length - a.coordinate.length);
+}
+
+export function arrivalsFor(text, index, { limit = 3 } = {}) {
+  const hits = structuredMatches(text, index);
+  if (!hits.length) return [];
 
   // WITHIN one coordinate the order used to be whatever order the files were read in, and that was
   // invisible until a coordinate held more than the hook could show. `/sign-in` holds four entries;

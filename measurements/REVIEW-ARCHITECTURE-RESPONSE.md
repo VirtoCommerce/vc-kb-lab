@@ -365,3 +365,134 @@ corrections, and it is evidence of exactly the limit it names — a party that c
 arithmetic and cannot audit its own categories. The remedy is not more re-derivation. It is the
 first change above: stop letting the author's hand into the data, so that the categories the
 scripts encode are not the author's to set.
+
+---
+---
+
+# Part two — reply to `REVIEWER-UPDATE-2026-09-16.md`
+
+Same reviewer, same rules. Everything marked **verified** was run against the live base read-only
+(scripts that use neither `ask` nor `how`) or against a fresh copy. Tests: 252 pass, not the 240 the
+update says; more landed after it was written.
+
+## The three things you asked for
+
+### 1. `partiesOf` — accept, with two conditions and one inconsistency to fix
+
+Accept the artefact rule. Three arms observing the same store on the same day are three
+observations; one person copying them is a recording defect, not a party count. The three entries
+may stay at `confirmed`. Two conditions:
+
+* **`from` must name a section, not a file.** `RESTATED` in `rediscovery.mjs` cites `section 4`,
+  `section 2`; the fifteen corpus rows cite `…/round2/arm-B/report.md` whole. The README's promise
+  that "a row is disputed by opening that section" is kept by the script's table and not by the
+  corpus. Write `from: <path>#<section>` and make `transcriptionSource` check the anchor exists.
+  **Verified** by reading both.
+* **A `from` whose artefact was produced by the writing session is not a second party.** Today
+  `from ?? by` lets one session count twice: once for a row it typed unaided, once for its own
+  report. Not present in the data now; one line to prevent.
+
+The inconsistency: `src/coordinates.mjs` lines 66 and 123 still count independence as distinct
+`by` plus anonymous rows. After relabelling, all fifteen rows carry `by: session:09e39416`, so the
+arrival index ranks `KB-5F7C8FC4` as one party while `ask` reports three. Two notions of
+independence in one base is the thing `partiesOf` was written to end. Import it there.
+**Verified** by grep; the uncommitted `arrive.mjs` diff does not touch it.
+
+### 2. Section 3, attacked — the fifteen events are the oracle reflected back
+
+The README says the armless number is one "no design decision of this project can flatter". The
+task design did. Every one of the fifteen events is an oracle item the author chose **because the
+corpus held it**, and the oracles say so themselves:
+
+| round | oracle line | entry counted as "rediscovered" |
+|---|---|---|
+| 2 | `ORACLE-EXPLAIN.md` coverage table: item 2 "shipping 0.00 — `KB-6AA0D7FB` states it exactly — **direct**" | `KB-6AA0D7FB` (r2 A, r2 B) |
+| 2 | item 4 "shipment stays New — states it exactly — **direct**" | `KB-4CCC2DD6` (r2 A, r2 B) |
+| 2 | item 5 "`paymentTotal` vs `sum` — `KB-0DD47BD1` states it exactly — **direct**" | `KB-0DD47BD1` (r2 A, r2 B) |
+| 3 | `ORACLE-MEMBERS.md` items 5, 6, 7: invited user, Active column reports contact status, one field is not enough | `KB-4D082C89`, `KB-27B4CD10`, `KB-4B889114` (r3 A, r3 B) |
+| 1 | `ORACLE.md` "verify 7 values", shipping cost and discount among them | `KB-6AA0D7FB` (r1 A, r1 B), `KB-4982C91F` (r1 B) |
+
+Round two's oracle even opens with "Coverage, measured before writing the task" and maps each item
+to the entry that answers it. An armless arm that answers the task establishes those facts by
+construction. **Fifteen of fifteen are commissioned; incidental rediscoveries — facts an armless arm
+established that were not asked of it — number zero in `RESTATED`.** Verified by reading the three
+oracles against the table.
+
+The measure's shape is still the right one. Its current value is not a demand signal; it is the
+oracle's coverage table read back through the reports. Two changes:
+
+* Split `RESTATED` into `commissioned` (an oracle item) and `incidental`, and headline the second.
+* For the next run, draw the oracle from somewhere other than the corpus, or the number is
+  manufactured again.
+
+**The second population has the number worth quoting, and the update left it out.** 34 events, 22
+served first — so **12 events where a run held the base, the base held the fact, never served it,
+and the run established it and then confirmed it by id**: run 02 (1), run 05 (3), run 08 (2),
+run 09 (4), run 10 (2). That is the count of "held and never offered", which is the retrieval and
+arrival failure measured on parties that could have been helped. Verified from `--why`.
+
+Also on this population: a `confirm` in a run's journal is counted as "paid to learn it again". A
+confirm is the loop you have been asking runs to close. Counting it as waste means the better the
+loop works, the worse this number looks. Keep the 12; drop the 22 from the waste column.
+
+### 3. The birth rule fails silently on exactly the copy your own hard rule tells a reviewer to use
+
+Against the live base: `15 dated by git (added after 2026-09-14), 77 by earliest evidence row`.
+Against a copy made with `cp` or `git archive` — the two ways the prompt tells a reviewer to probe
+without writing — `0 dated by git (added after null), 92 by earliest evidence row`. One
+informational line, no refusal, and every entry falls back to the typed field the rule exists to
+distrust. Today the relabelling makes the two runs agree (15 / 7, 34 / 22, 244); a day ago they
+would not have. `describeBirths` should refuse, or print in capitals, when git is absent for a
+corpus that has entries added after day one. **Verified** by running against both.
+
+## Two things in the update that do not reproduce from a committed script
+
+* **Section 4 has no script.** "1.8% of calls", "33.7%", "3,392 archived tool calls", "292 events
+  to 37" appear in the update and in a comment at the top of `src/topics.mjs`, and nowhere else.
+  `grep` over `measurements/` and `src/` finds no `.mjs` producing them; `kb-arrival-2026-09/` holds
+  only `replay-logs.mjs` and its README, neither of which has a topic mode or the three filters.
+  The uncommitted diffs in `arrive.mjs` and `resolve.mjs` are the coordinate-lookup change, not
+  this. Until the script is committed, 37 is a number with nothing behind it, and this project has
+  written down what happens to those. **Verified.**
+* The update's table row "parties that had the base | 34 | 22, of which 22 were served first"
+  reads as though the 22 distinct facts were all served first. They are two different 22s: 22
+  distinct facts, and 22 of 34 events served first. Say which.
+
+## On the uncommitted `resolve.mjs` change
+
+The shape is the one I asked for and I have no objection to it. Three notes before it lands:
+
+* The new comment repeats "its wide type tables are what adjacent answers were made of — a tax
+  question answered with a discount row, a sign-in question with platform GraphiQL". Finding 3 of
+  part one showed those adjacent answers were eight written entries and one derived one. Do not
+  carry the conflation into the code that outlives the brief.
+* The retrieval harness will report **7 of 34 anchors LOST**: r1.1, r1.3, r1.4, r2.1, r3.2, r3.3,
+  r7.3 — derived anchors the question does not name by coordinate. That is the trade measured in
+  part one, not a regression. Re-baseline once with `--write` and record the reason in the commit;
+  do not override seven rows one at a time.
+* `derivedByCoordinate` reads every derived entry on each coordinate-naming `ask`. Fine for a CLI.
+  Do not let the hook grow the same call.
+
+## The run's design — the ordering is right, four conditions
+
+Catalog in the prompt, no `kb ask`, refutations afterwards: agree. Conditions, or the run measures
+what the last three measured:
+
+1. **The oracle is not drawn from the corpus** (section 2 above). Choose the task first, then seal a
+   list of the catalog entries you believe relevant to it, before the arm runs. Score opens as
+   relevant-opened, irrelevant-opened, relevant-missed. That replaces a post-hoc `RESTATED` table,
+   which is the same person judging after reading the report.
+2. **Arm C's protocol text changes for `confirmed` entries**: they may be acted on and cited without
+   re-verification; `single-observation` entries are verified. Without this, finding 7 of part one
+   repeats and the run cannot show acting. Measure per opened entry: acted on, or re-established.
+3. Record the catalog **position and section** of every open, as planned; the section is what the
+   sections were built to test.
+4. **Arrival hook off** in this arm. One treatment per run.
+
+Executable refutations after the run, not before: agree, for the reason you give.
+
+## Sections and the budget
+
+No objections. Disputed first within a section is right. The budget is labelled a guess where it
+is defined and where it is read, which is the correct way to hold a number nobody has measured. The
+one entry left `unfiled` rather than given an eighth topic is the honest choice.

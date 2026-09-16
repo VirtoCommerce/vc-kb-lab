@@ -18,6 +18,8 @@ import { parseEntry } from './frontmatter.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin, evidenceKinds } from './capture.mjs';
 import { DERIVED_INDEX } from './planes.mjs';
 import { sourceDoor, renderSourceDoor } from './source-door.mjs';
+import { coordinateIndex } from './coordinates.mjs';
+import { structuredMatches } from './arrive.mjs';
 import { partiesOf } from './provenance.mjs';
 
 // Function words carry no evidence that a result is about the question. Without excluding them,
@@ -378,6 +380,58 @@ function flowHits(opened, question, queryTerms) {
   return { hits, nearGoals, floor };
 }
 
+// A question only reaches the contract plane by NAMING a coordinate, and this is the cheap guard
+// that decides whether it is worth opening 590 files to find out. A coordinate carries a slash
+// followed by a path character, or a dotted `Type.field`. Most questions carry neither, and for
+// those `ask` never builds the index at all.
+const NAMES_A_COORDINATE = /[/][A-Za-z{]|\b[A-Za-z][A-Za-z0-9]*[.][A-Za-z]|\b[A-Za-z][a-z0-9]+[A-Z][A-Za-z0-9]*\b/;
+
+/**
+ * Contract entries whose coordinate the question actually names.
+ *
+ * This is the whole of what the derived plane does for `ask` since it left the ranked list: it is
+ * an address book, and you reach an address book by knowing the address. The matching rule is the
+ * arrival hook's, imported rather than rewritten, and it requires structure — without that,
+ * `Promotion` in an ordinary sentence would resolve to `PromotionType`, which is the obvious way
+ * coordinate lookup goes wrong and the reason the review warned about it.
+ *
+ * Score is a sentinel: these are not ranked against BM25 scores, they are placed ahead of them.
+ */
+function derivedByCoordinate(base, question) {
+  if (!NAMES_A_COORDINATE.test(String(question ?? ''))) return [];
+  const full = coordinateIndex(base);
+  const derivedOnly = new Map();
+  for (const [coordinate, rows] of full) {
+    const contract = rows.filter((r) => r.plane === 'derived-first');
+    if (contract.length) derivedOnly.set(coordinate, contract);
+  }
+  const seen = new Set();
+  const out = [];
+  const take = (coordinate, entries) => {
+    for (const e of entries ?? []) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      out.push({ id: e.id, path: e.path, subject: e.subject, plane: e.plane, score: Infinity, namedCoordinate: coordinate });
+    }
+  };
+
+  // Routes and dotted fields: the hook's rule, shared.
+  for (const { coordinate, entries } of structuredMatches(question, derivedOnly)) take(coordinate, entries);
+
+  // A BARE TYPE NAME, judged on THE ASKER'S SPELLING and not on the stored coordinate.
+  //
+  // `normalizeAnchor` lowercases everything before it reaches the index, so `OrderDiscountType` is
+  // `orderdiscounttype` there and the internal capital that makes a name a name is gone. It survives
+  // in the question. `OrderDiscountType` and `CartTotalType` are not words anybody writes by
+  // accident; `Promotion` is, and a single capitalised word never qualifies — which is exactly the
+  // failure the review warned about when it suggested coordinate lookup.
+  for (const m of String(question ?? '').matchAll(/\b[A-Za-z][a-z0-9]+[A-Z][A-Za-z0-9]*\b/g)) {
+    const key = m[0].toLowerCase();
+    if (derivedOnly.has(key)) take(key, derivedOnly.get(key));
+  }
+  return out;
+}
+
 export function ask(base, question, { limit = 3 } = {}) {
   const opened = openBase(base);
   if (opened.degraded) {
@@ -424,12 +478,40 @@ export function ask(base, question, { limit = 3 } = {}) {
         + 'question\'s nouns is not an answer to it.',
     };
   }
+  // THE CONTRACT PLANE IS AN ADDRESS BOOK AND NOT A SEARCH CORPUS, as of 2026-09-16.
+  //
+  // It is 88% of the corpus by count and 15% of it has ever been used, and its wide type tables are
+  // what "adjacent" answers were made of -- a tax question answered with a discount row, a sign-in
+  // question with platform GraphiQL. Fourteen ranking rules were swept against that and every one
+  // either left the bad answers in or threw good ones out, because the failure is vocabulary and
+  // BM25 cannot bridge vocabulary.
+  //
+  // The second independent review put the reason better than the utilisation number does: free-text
+  // search over the contract solves a problem the reader does not have. An agent asking what fields
+  // `CartTotalType` carries ALREADY KNOWS THE COORDINATE -- introspection or one swagger fetch
+  // answers it authoritatively, and the derived entry is a cached copy of that. What the plane is
+  // uniquely good for is RESOLVING: module and installed version for a MISS, the cross-plane
+  // contradiction check, anchor reachability. All three are keyed lookups.
+  //
+  // So it leaves the ranked list and stays reachable by exact coordinate. Nothing is deleted; the
+  // source door, the gate and `kb check` read it exactly as before.
   const search = (index) => (index ? index.search(question, SEARCH_OPTIONS) : []);
-  const raw = [...search(opened.derived), ...search(opened.captured)];
   const floor = relevanceFloor(queryTerms);
-  const hits = raw
-    .filter((h) => contentMatches(h, queryTerms).length >= floor)
-    .sort((a, b) => b.score - a.score);
+  // Kept BEFORE the floor is applied. A MISS has to be able to say "entries matched, and fewer than
+  // three of your content terms" rather than "nothing covers this" — those are different facts and
+  // the reader acts differently on them. Filtering here and reusing the filtered list below lost
+  // that distinction for one commit.
+  const writtenRaw = search(opened.captured);
+  const written = writtenRaw.filter((h) => contentMatches(h, queryTerms).length >= floor);
+
+  // A coordinate NAMED in the question outranks term overlap, and bypasses the relevance floor: a
+  // question that says `Mutations.addItem` has told us what it is about far more precisely than any
+  // count of shared words could. `structuredMatches` is the arrival hook's rule, shared rather than
+  // reimplemented, and it REQUIRES STRUCTURE -- a `/`, a `.` or a space. That is what stops `kb ask
+  // "does a promotion apply"` resolving to `PromotionType` because `Promotion` is both a type name
+  // and an ordinary word.
+  const named = derivedByCoordinate(base, question);
+  const hits = [...named, ...written.sort((a, b) => b.score - a.score)];
 
   if (!hits.length) {
     // An uncovered question returns an explicit MISS. It does not return the nearest thing with
@@ -440,6 +522,12 @@ export function ask(base, question, { limit = 3 } = {}) {
     // floor are not answers and are not served; their `appliesTo` still names the module this
     // question sits in and the version of it installed here. See src/source-door.mjs for why that
     // is worth saying and why it is not a source plane.
+    // The contract plane is still SEARCHED here, and still not served. It left the ranked list on
+    // 2026-09-16; it did not leave the base. A near-miss on a type table is the signal the source
+    // door is built on — its `appliesTo` names the owning module and the version installed here —
+    // so taking the plane out of the near-miss pass as well would have removed the one thing it was
+    // measured to be good for on the same day it stopped being an answer.
+    const raw = [...search(opened.derived), ...writtenRaw];
     const nearMisses = raw
       .map((h) => ({ ...h, evidence: contentMatches(h, queryTerms).length }))
       .filter((h) => h.evidence >= 1)

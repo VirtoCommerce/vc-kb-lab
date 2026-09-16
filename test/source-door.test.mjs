@@ -20,7 +20,7 @@ function baseWith(entries) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-door-'));
   writeFileSync(join(dir, 'kb.json'), JSON.stringify({ namespace: 'KB', idWidth: 8 }));
   mkdirSync(join(dir, DERIVED_ENTRIES), { recursive: true });
-  const docs = entries.map(({ id, subject, body, module: mod, version }) => {
+  const docs = entries.map(({ id, subject, body, module: mod, version, coordinate }) => {
     const path = `${DERIVED_ENTRIES}/${id}.md`;
     const question = `What is the contract of ${subject}?`;
     writeFileSync(join(dir, path), `${stringifyFrontmatter({
@@ -31,7 +31,10 @@ function baseWith(entries) {
       status: 'active',
       refutableBy: 'derivation',
       appliesTo: mod ? [{ module: mod, version }] : [],
-      anchors: [{ coordinate: subject }],
+      // A REAL coordinate, not the subject slug. Since the contract plane left the ranked list
+      // its entries are reached by naming one, and `rest-api-taxes` is an internal slug that
+      // carries no structure and that nobody types.
+      anchors: [{ coordinate: coordinate ?? subject }],
       evidence: [{ method: 'extraction', deployment: 'vcptcore_stable', pin: '0000000000000000' }],
     })}\n\n${body}\n`);
     return { id, subject, question, text: body, path };
@@ -44,6 +47,7 @@ const drop = (dir) => rmSync(dir, { recursive: true, force: true });
 const ORDERS = {
   id: 'KB-D0000001',
   subject: 'rest-api-order-customerorders',
+  coordinate: 'GET /api/order/customerOrders',
   module: 'VirtoCommerce.Orders',
   version: '3.1000.4',
   body: 'Order routes: search, get, update, delete customer orders, invoice, payments.',
@@ -51,6 +55,7 @@ const ORDERS = {
 const TAXES = {
   id: 'KB-D0000002',
   subject: 'rest-api-taxes',
+  coordinate: 'GET /api/taxes',
   module: 'VirtoCommerce.Tax',
   version: '3.1000.0',
   body: 'Tax provider routes: evaluate, search, activate a tax provider for a store.',
@@ -118,7 +123,11 @@ test('the version is the one the deployment reports, never a branch', () => {
 
 test('a HIT carries no door, because the base answered', () => {
   const dir = baseWith([ORDERS, TAXES]);
-  const r = ask(dir, 'rest-api-taxes', { limit: 3 });
+  // NAMED, not searched. The contract plane left the ranked list on 2026-09-16 and its entries are
+  // reached by naming a coordinate. This asked `rest-api-taxes` until then — an internal subject
+  // slug, carrying no structure, that nobody would type at a base. What the test is about, that a
+  // door is a property of a MISS and not a decoration on an answer, is unchanged.
+  const r = ask(dir, 'GET /api/taxes', { limit: 3 });
   assert.equal(r.miss, false);
   assert.equal(r.source, undefined, 'a door is what a MISS says, not a decoration on an answer');
   drop(dir);
