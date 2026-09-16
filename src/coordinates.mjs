@@ -17,6 +17,7 @@
 // `capture` refuses instead of merging and `consolidate` proposes instead of applying.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { partiesOf } from './provenance.mjs';
 import { join } from 'node:path';
 
 import { parseEntry } from './frontmatter.mjs';
@@ -63,8 +64,12 @@ export function coordinateIndex(base) {
       const evidence = d.evidence ?? [];
       const disputes = evidence.filter((e) => e.contradicts).length;
       const supporting = evidence.filter((e) => !e.contradicts);
-      const independent = new Set(supporting.filter((e) => e.by).map((e) => e.by)).size
-        + supporting.filter((e) => !e.by).length;
+      // ONE NOTION OF INDEPENDENCE IN THE BASE. This counted distinct `by` values inline until
+      // 2026-09-16, which stopped agreeing with `ask` the moment fifteen transcribed rows were
+      // relabelled: they all carry one session id and three different `from` artefacts, so the
+      // hook ranked KB-5F7C8FC4 as one party while `ask` reported three. Two notions of
+      // independence in one base is what `partiesOf` exists to end. Found by the second review.
+      const independent = partiesOf(supporting);
       const row = {
         id: d.id,
         subject: d.subject,
@@ -120,8 +125,7 @@ export function arrivalIndex(base) {
         plane: d.plane ?? plane,
         path: `${dir}/${file}`,
         disputed: evidence.some((e) => e.contradicts),
-        independent: new Set(supporting.filter((e) => e.by).map((e) => e.by)).size
-          + supporting.filter((e) => !e.by).length,
+        independent: partiesOf(supporting),
         delivery: true,
       };
       for (const at of d.arrivesAt) {

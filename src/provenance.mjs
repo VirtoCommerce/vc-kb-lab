@@ -73,9 +73,20 @@ export function transcriptionSource(from, { root = process.cwd() } = {}) {
  * their own party, which is what they have always done.
  */
 export function partiesOf(rows) {
+  // A SESSION CANNOT VOTE TWICE BY CITING ITSELF. Condition set by the second review when it
+  // accepted the artefact rule: `from ?? by` let one session count once for a row it typed unaided
+  // and again for a row citing an artefact it had produced. Not present in the data when the rule
+  // landed; one line to keep it that way.
+  //
+  // The test is deliberately crude — a session that wrote an unaided row on an entry gets no extra
+  // party for also citing an artefact on it. It over-corrects where the artefact is genuinely
+  // somebody else's, and that is the safe direction: this project has already published three
+  // `confirmed` entries that rested on one party.
+  const unaided = new Set(rows.filter((r) => r.by && !r.from).map((r) => r.by));
   const named = new Set();
   let anonymous = 0;
   for (const r of rows) {
+    if (r.from && r.by && unaided.has(r.by)) continue;
     const key = r.from ?? r.by;
     if (key) named.add(key); else anonymous += 1;
   }

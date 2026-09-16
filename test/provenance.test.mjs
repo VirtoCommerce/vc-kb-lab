@@ -114,3 +114,20 @@ test('the CLI refuses a typed author or a typed timestamp', () => {
     assert.match(err, /--from/, 'a refusal that does not name what to do instead is a wall');
   }
 });
+
+// Condition set by the second review when it accepted the artefact rule.
+test('a session cannot vote twice by citing an artefact it produced', () => {
+  const rows = [
+    { by: 'session:aaaa' },
+    { by: 'session:aaaa', from: 'logs/its-own-report.md' },
+  ];
+  assert.equal(partiesOf(rows), 1,
+    '`from ?? by` counted this session once for the unaided row and again for its own report');
+
+  // Unchanged where the session did NOT also write unaided: a transcriber citing two reports is
+  // still two observations badly recorded, which is the whole point of the artefact rule.
+  assert.equal(partiesOf([
+    { by: 'session:aaaa', from: 'logs/round2/arm-B/report.md' },
+    { by: 'session:aaaa', from: 'logs/round2/arm-C/report.md' },
+  ]), 2);
+});

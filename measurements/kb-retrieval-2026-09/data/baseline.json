@@ -1,19 +1,21 @@
 {
   "base": "C:/_VIRTO/vc-knowledge",
-  "at": "2026-09-14T13:05:06.546Z",
+  "at": "2026-09-16T11:23:17.036Z",
   "rows": [
     {
       "row": "r1.1",
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "how do I create a percentage-discount promotion in the Virto Commerce Admin SPA?",
       "served": [
-        "KB-C0B7076C",
-        "KB-A3CE7FBA"
+        "KB-A3CE7FBA",
+        "KB-FF7E4D5B"
       ],
       "miss": false
     },
@@ -22,6 +24,8 @@
       "held": "HELD",
       "want": "KB-D61E2FFA",
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
@@ -37,13 +41,15 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
       "served": [
-        "KB-C941FAA3",
-        "KB-7A3E98A3"
+        "KB-7A12CF52",
+        "KB-0C163966"
       ],
       "miss": false
     },
@@ -52,13 +58,15 @@
       "held": "NOT-USED",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
       "served": [
-        "KB-C941FAA3",
-        "KB-7A3E98A3"
+        "KB-7A12CF52",
+        "KB-0C163966"
       ],
       "miss": false
     },
@@ -67,13 +75,15 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "Mutations.addItem InputAddItemType",
       "served": [
         "KB-C941FAA3",
-        "KB-7A3E98A3"
+        "KB-43B830B8"
       ],
       "miss": false
     },
@@ -82,13 +92,15 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "which mutation changes the quantity of a line item already in the cart?",
       "served": [
         "KB-A1B35892",
-        "KB-17361565"
+        "KB-AD1FA66B"
       ],
       "miss": false
     },
@@ -97,13 +109,15 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "InputChangeCartItemQuantityType fields",
       "served": [
         "KB-0181473A",
-        "KB-E3B2F107"
+        "KB-17361565"
       ],
       "miss": false
     },
@@ -112,13 +126,15 @@
       "held": "UNANSWERED",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "what fields does CartTotalType have?",
       "served": [
         "KB-93BB76C6",
-        "KB-D61E2FFA"
+        "KB-35A09C64"
       ],
       "miss": false
     },
@@ -127,13 +143,15 @@
       "held": "UNANSWERED",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 2,
       "question": "what fields does CartTotalType have?",
       "served": [
         "KB-93BB76C6",
-        "KB-D61E2FFA"
+        "KB-35A09C64"
       ],
       "miss": false
     },
@@ -142,14 +160,16 @@
       "held": "UNANSWERED",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "how does a percentage discount appear on a CustomerOrder in Virto Commerce",
       "served": [
-        "KB-746B7535",
         "KB-FF7E4D5B",
-        "KB-A646D086"
+        "KB-4982C91F",
+        "KB-D60012DB"
       ],
       "miss": false
     },
@@ -158,6 +178,8 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -165,7 +187,7 @@
       "served": [
         "KB-FF7E4D5B",
         "KB-59E4B5FC",
-        "KB-D1F02657"
+        "KB-AB35BCDC"
       ],
       "miss": false
     },
@@ -174,14 +196,16 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "OrderDiscountType fields",
       "served": [
         "KB-3BD60965",
-        "KB-C37E5F51",
-        "KB-12CEF821"
+        "KB-4982C91F",
+        "KB-358A70CB"
       ],
       "miss": false
     },
@@ -190,22 +214,22 @@
       "held": "NOT-USED",
       "want": null,
       "anchor": null,
-      "because": null,
-      "by": null,
+      "procedural": "KB-EB228603",
+      "procedureServed": true,
+      "because": "a question about how to reach a goal belongs to `kb how`, which answers it with the Admin promotion flow. `ask` answering it with a route table is the plane separation holding on the corpus side and failing on the question side",
+      "by": "the author of the flow-redirect change, 2026-09-16",
       "limit": 3,
       "question": "how do I create a percentage discount promotion in the marketing module",
-      "served": [
-        "KB-C0B7076C",
-        "KB-FF7E4D5B",
-        "KB-35A09C64"
-      ],
-      "miss": false
+      "served": [],
+      "miss": true
     },
     {
       "row": "r2.5",
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -222,14 +246,16 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "OrderLineItemType discount fields",
       "served": [
         "KB-12CEF821",
-        "KB-C85CD432",
-        "KB-AB35BCDC"
+        "KB-AB35BCDC",
+        "KB-59E4B5FC"
       ],
       "miss": false
     },
@@ -238,6 +264,8 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -254,6 +282,8 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -261,7 +291,7 @@
       "served": [
         "KB-996BDF08",
         "KB-E7790BF6",
-        "KB-FF7E4D5B"
+        "KB-5ADBFB34"
       ],
       "miss": false
     },
@@ -270,14 +300,16 @@
       "held": "HELD",
       "want": "KB-D4A064A5",
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "how many decimal places does a promotion discount amount have on the cart",
       "served": [
         "KB-D4A064A5",
-        "KB-C495274F",
-        "KB-A3CE7FBA"
+        "KB-A3CE7FBA",
+        "KB-AD1FA66B"
       ],
       "miss": false
     },
@@ -286,12 +318,15 @@
       "held": "NOT-USED",
       "want": null,
       "anchor": "KB-35A09C64",
+      "procedural": null,
+      "procedureServed": null,
       "because": "this row is NOT-USED: the run asked and did nothing with the answer, so rank 1 records nothing anybody acted on. What the raised floor removed from it was three entries whose whole evidence was the word 'cart', leaving the one entry that matches every content term of the question",
       "by": "the author of the floor change, 2026-09-12",
       "limit": 3,
       "question": "when are promotions re-evaluated on a cart",
       "served": [
-        "KB-35A09C64"
+        "KB-35A09C64",
+        "KB-EF925925"
       ],
       "miss": false
     },
@@ -300,13 +335,15 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "What roles can a member of an organization have in the B2B storefront, and what does each one allow?",
       "served": [
-        "KB-02238DE5",
         "KB-BAEBCDA7",
+        "KB-02238DE5",
         "KB-4D082C89"
       ],
       "miss": false
@@ -316,14 +353,16 @@
       "held": "HELD",
       "want": "KB-6FE58084",
       "anchor": "KB-6FE58084",
+      "procedural": null,
+      "procedureServed": null,
       "because": "rank 1 was rest-api-order-customerorders, which pass 1 called 'off-topic' and pass 2 'the Admin REST order API, the wrong surface'. Neither grader could see the other's answer or mine. The entry run 03 actually cited by id is KB-6FE58084",
       "by": "both blind graders, independently",
       "limit": 3,
       "question": "How does the storefront xAPI decide whether an order query returns only my orders or the whole organization’s orders?",
       "served": [
-        "KB-6FE58084",
         "KB-59E4B5FC",
-        "KB-360127D0"
+        "KB-360127D0",
+        "KB-CC195687"
       ],
       "miss": false
     },
@@ -332,14 +371,16 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "Which GraphQL mutations let a storefront user invite, lock, unlock a member or change an organization contact’s role?",
       "served": [
-        "KB-F59E629F",
-        "KB-3C99FC76",
-        "KB-0B6067F8"
+        "KB-0B6067F8",
+        "KB-B769C7B1",
+        "KB-06409954"
       ],
       "miss": false
     },
@@ -348,6 +389,8 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -364,6 +407,8 @@
       "held": "NOT-USED",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -380,14 +425,16 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "What fields does InputCreateWishlistType have?",
       "served": [
         "KB-9A07ABAA",
-        "KB-48EC33A6",
-        "KB-DEEEFD73"
+        "KB-D6C3B99A",
+        "KB-E367DA11"
       ],
       "miss": false
     },
@@ -396,14 +443,15 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "What arguments does Query.wishlists take and what does its scope argument do?",
       "served": [
-        "KB-EAA7BA2F",
         "KB-89E15DD5",
-        "KB-5B7569EF"
+        "KB-EAA7BA2F"
       ],
       "miss": false
     },
@@ -412,13 +460,15 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "Does Query.sharedWishlist require the caller to be signed in, and what can the holder of a sharingKey do with the list?",
       "served": [
-        "KB-7A12CF52",
         "KB-8F43AA9F",
+        "KB-7A12CF52",
         "KB-6824BC2B"
       ],
       "miss": false
@@ -428,6 +478,8 @@
       "held": "HELD",
       "want": "KB-27B4CD10",
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -444,6 +496,8 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -451,7 +505,7 @@
       "served": [
         "KB-A1B35892",
         "KB-59E4B5FC",
-        "KB-57A0330B"
+        "KB-0C163966"
       ],
       "miss": false
     },
@@ -460,14 +514,16 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "which REST route searches catalog products by product type",
       "served": [
         "KB-C440D4E3",
-        "KB-55319E5A",
-        "KB-23239079"
+        "KB-3113CBC1",
+        "KB-7AB0B13E"
       ],
       "miss": false
     },
@@ -476,14 +532,16 @@
       "held": "HELD",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "which money fields does an order line item carry with and without tax",
       "served": [
-        "KB-12CEF821",
         "KB-AB35BCDC",
-        "KB-4D26A022"
+        "KB-4D26A022",
+        "KB-1B18B821"
       ],
       "miss": false
     },
@@ -492,14 +550,16 @@
       "held": "NOT-USED",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
       "question": "does the admin order screen show the same totals the storefront charged",
       "served": [
         "KB-0DD47BD1",
-        "KB-4982C91F",
-        "KB-FA724D31"
+        "KB-7E35E6BC",
+        "KB-4982C91F"
       ],
       "miss": false
     },
@@ -508,6 +568,8 @@
       "held": "NOT-USED",
       "want": null,
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,
@@ -524,6 +586,8 @@
       "held": "HELD",
       "want": "KB-4869F834",
       "anchor": null,
+      "procedural": null,
+      "procedureServed": null,
       "because": null,
       "by": null,
       "limit": 3,

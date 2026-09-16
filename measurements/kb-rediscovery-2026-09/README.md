@@ -1,86 +1,88 @@
-# Rediscovery — the first outcome measure in this project that is not null
+# Rediscovery — and the headline this page had to retract within a day
 
 ```
-node measurements/kb-rediscovery-2026-09/rediscovery.mjs [--base <copy>] [--why]
+node measurements/kb-rediscovery-2026-09/rediscovery.mjs [--base <copy WITH its .git>] [--why]
 ```
 
 Read-only. Touches no deployment. Proposed by the second independent review after three controlled
-rounds found no capability difference on tool calls.
+comparisons found no capability difference on tool calls.
 
 ## Why this instead of call counts
 
-The base's own protocol tells its reader to treat it as *a lens, never ground truth* and to verify
-in proportion to blast radius. **A corpus that instructs re-verification cannot save its reader
-calls.** Three rounds measured a quantity the design forbids the base from moving. Round three arm C
-is the clean demonstration: it asked at call 2, was served `KB-27B4CD10`, and then spent six source
-calls and a bundle download establishing the same fact — rational under the protocol as written.
+The base's own protocol tells its reader to treat it as *a lens, never ground truth* and to verify in
+proportion to blast radius. **A corpus that instructs re-verification cannot save its reader calls.**
+Round three arm C is the clean demonstration: it asked at call 2, was served `KB-27B4CD10`, then
+spent six source calls and a bundle download establishing the same fact — rational under the protocol
+as written. What a corpus *can* do is stop a fact from being discovered twice.
 
-What a corpus *can* do is stop a fact from being discovered twice. That is computable from the
-archive today, with no run.
+---
 
-## The result
+## RETRACTED: "15 events, 7 facts — the one number no design decision can flatter"
 
-| population | events | distinct facts |
-|---|---|---|
-| **parties that never had the base** | **15** | **7** |
-| parties that had the base | 34 | 22 |
+That is what this page said. **The task design flattered it.**
 
-### The seven, and who paid to find them again
+`ORACLE-EXPLAIN.md` opens with a section headed *"Coverage, measured before writing the task"* and
+maps each oracle item to the corpus entry that answers it — `KB-6AA0D7FB` "states it exactly",
+`KB-0DD47BD1` "states it exactly". `ORACLE-MEMBERS.md` does the same for the Active column and the
+pending invitation. The tasks asked for those facts **because the corpus held them**, so an armless
+arm that answers the task establishes them by construction.
 
-| fact | found again by |
+| armless events | 15 |
 |---|---|
-| `KB-6AA0D7FB` fixed rate shipping method option pricing | **4** — r1 A, r1 B, r2 A, r2 B |
-| `KB-4CCC2DD6` what Cancel document on an order actually cancels | 2 — r2 A, r2 B |
-| `KB-0DD47BD1` the amount a payment is for is not the payment's total | 2 — r2 A, r2 B |
-| `KB-27B4CD10` storefront members Active column reads contact status | 2 — r3 A, r3 B |
-| `KB-4B889114` company members Active column vs account locked state | 2 — r3 A, r3 B |
-| `KB-4D082C89` a pending invitation is a locked account with no status | 2 — r3 A, r3 B |
-| `KB-4982C91F` order-discount-amount-rounding-split | 1 — r1 B |
+| **commissioned** — an oracle item chosen because the corpus held it | **15** |
+| **incidental** — established without being asked | **0** |
 
-One fact was re-established by four separate parties across two rounds. **Seven facts, fifteen
-payments to learn them.** These parties could not have consulted the base whatever it looked like,
-so no design decision of this project can flatter the number.
+The shape of the measure is right. That value was the oracle's own coverage table read back through
+the reports. Found by the second review; the script now prints the split and the headline is gone.
 
-Every one of the seven is a **deployment-specific surprise** — a thing the contract and the code
-would lead you to expect otherwise. None is derivable by reading a schema.
+**Fixed for the next run by run condition 1:** draw the oracle from outside the corpus, and seal a
+relevance list before the arm runs.
 
-## Rediscovery is not convergent discovery, and the difference is the whole point
+---
 
-The review cites `KB-5ADBFB34` as rediscovered by three arms. It is not in the table above, and
-should not be: that entry was **born after all three rounds ran**, written out of their reports.
-Three parties independently *discovered* it. That is evidence a fact is worth holding; it is not
-evidence that holding it paid.
+## The number that is worth quoting
 
-The birth filter removes this class mechanically — the same rule as the arrival replay, shared from
-`../lib/birth.mjs`. `KB-0C102D97`, `KB-132A40B3` and `KB-BF730613` are excluded for the same reason.
-Counting them would credit the base for facts it learned from the party it is being measured
-against.
+| parties that had the base | |
+|---|---|
+| events | 34 over 22 distinct facts |
+| the base **served** the fact first, and the party confirmed it | 22 |
+| **held and never offered** — the base had it, put it in front of nobody, the party established it and then confirmed it by id | **12** |
 
-## What the second population says
+```
+run-02  KB-D4A064A5  promotion discount rounding on the cart
+run-05  KB-27B4CD10  storefront members Active column reads contact status not account state
+run-05  KB-4B889114  company members Active column vs account locked state
+run-05  KB-06409954  three independent fields represent a blocked organization member
+run-08  KB-0DD47BD1  the amount a payment is for is not the payment's total
+run-08  KB-4CCC2DD6  what Cancel document on an order actually cancels
+run-09  KB-35A09C64  promotion re-evaluation on cart read
+run-09  KB-4982C91F  order-discount-amount-rounding-split
+run-09  KB-4CCC2DD6  what Cancel document on an order actually cancels
+run-09  KB-6E98AA17  admin order operations tree staleness after cancel
+run-10  KB-996BDF08  cart-level promotion reward placement
+run-10  KB-35A09C64  promotion re-evaluation on cart read
+```
 
-34 events over 22 facts, by parties that **had** the base — and in 22 of the 34 the base had already
-served the entry before the party went and established it anyway. That is not a defect in the
-retrieval: it is the protocol working exactly as written. It is also the clearest statement yet of
-why no round moved a call count, and it will not change until confirmation is strong enough for the
-protocol to say *act on a `confirmed` entry without re-checking*.
+**A confirm that follows a serve is the loop closing, not waste.** Counting those 22 as waste would
+mean the better the loop works, the worse this reads — the review's correction, and it is right. The
+retrieval-and-arrival failure is the other column: the fact was in the base, nothing put it in front
+of anybody, and somebody paid for it anyway. No oracle commissioned that one.
 
-## How each row is judged, and how to dispute one
+## How each row is judged
 
-Two sources, neither of them free-text matching:
-
-* **`from:` rows in the corpus.** An evidence row naming the report it was read out of. These were
-  relabelled on 2026-09-16; before that they said `by: round2-arm-B`, naming a witness that had
-  never written anything.
-* **`RESTATED` in the script.** A judgement table: party, entry, the report section, and what that
-  section says. Each row was read out of the named section and checked against the entry's own
-  claim. Disputing one means opening that section and disagreeing — which is why the section is
-  named rather than summarised.
+* **`from:` rows in the corpus** — an evidence row naming the report a claim was read out of.
+  Relabelled 2026-09-16; before that they said `by: round2-arm-B`, naming a witness that had never
+  written anything.
+* **`RESTATED` in the script** — party, entry, report section, what that section says, and the oracle
+  item that commissioned it. A row is disputed by opening that section.
+* **journals** — a `confirm` written by the tool, not by the party.
 
 ## Limits
 
 * **Every number is a floor.** A party that rediscovered a fact and did not write it into its report
-  leaves no trace here.
-* **The judgement table was built by one person**, the same one who built everything else. The
-  reports are on disk and each row cites a section; that is the only defence offered.
-* **The two populations are not a controlled comparison.** Rounds differ in task, and n = 1 per arm.
-  What the number establishes is that rediscovery happens and is measurable — not its rate.
+  leaves no trace.
+* **The judgement table was built by one person**, the same one who built everything else.
+* **The two populations are not a controlled comparison.** n = 1 per arm, different tasks.
+* **Run it against a copy that keeps its `.git`.** Without history the birth rule refuses outright
+  rather than falling back to the typed `at:` field, which is the field it exists to distrust. Pass
+  `--trust-typed-dates` only if you mean it.

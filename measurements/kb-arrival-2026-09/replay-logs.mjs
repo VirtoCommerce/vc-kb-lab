@@ -55,7 +55,7 @@ import { fileURLToPath } from 'node:url';
 
 import { buildArrivalIndex, arrivalsFor, textOf } from '../../src/arrive.mjs';
 import { CAPTURED_DIR, FLOWS_DIR } from '../../src/planes.mjs';
-import { birthDates, describeBirths } from '../lib/birth.mjs';
+import { birthDates, describeBirths, BirthDatesRefused } from '../lib/birth.mjs';
 
 const HERE = fileURLToPath(new URL('../..', import.meta.url));
 const args = process.argv.slice(2);
@@ -91,7 +91,13 @@ const RUNS = [
 
 // The birth-date rule lives in ../lib/birth.mjs: it was wrong once, and a rule that decides what
 // counts as pre-existing help must have exactly one copy.
-const births = birthDates(base);
+let births;
+try {
+  births = birthDates(base, { allowTypedDates: args.includes('--trust-typed-dates') });
+} catch (e) {
+  if (e instanceof BirthDatesRefused) { console.error(e.message); process.exit(4); }
+  throw e;
+}
 const { bornAt } = births;
 console.log(describeBirths(births));
 

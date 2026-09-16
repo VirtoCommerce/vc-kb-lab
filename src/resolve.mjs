@@ -480,11 +480,14 @@ export function ask(base, question, { limit = 3 } = {}) {
   }
   // THE CONTRACT PLANE IS AN ADDRESS BOOK AND NOT A SEARCH CORPUS, as of 2026-09-16.
   //
-  // It is 88% of the corpus by count and 15% of it has ever been used, and its wide type tables are
-  // what "adjacent" answers were made of -- a tax question answered with a discount row, a sign-in
-  // question with platform GraphiQL. Fourteen ranking rules were swept against that and every one
-  // either left the bad answers in or threw good ones out, because the failure is vocabulary and
-  // BM25 cannot bridge vocabulary.
+  // It is 88% of the corpus by count and 15% of it has ever been used.
+  //
+  // THIS IS NOT WHAT FIXES THE ADJACENT ANSWERS, and an earlier draft of this comment said it was.
+  // The second review counted them: of the nine adjacent answers the drift measurement names, eight
+  // are WRITTEN entries and one is derived. `ask "sign in to the Admin platform UI"` still returns
+  // three unrelated entries after this change; they are simply all written now. The drift is a
+  // vocabulary problem between written entries, fourteen ranking rules failed on it because BM25
+  // cannot bridge vocabulary, and the thing aimed at it is the catalog in context — not this.
   //
   // The second independent review put the reason better than the utilisation number does: free-text
   // search over the contract solves a problem the reader does not have. An agent asking what fields

@@ -10,11 +10,16 @@
 // Sections do not make the list shorter; they make the part you must read short. That is why this
 // exists, and it is why the catalog budget's row threshold matters less than it looks.
 //
-// A TOPIC IS NOT AN ADDRESS. Measured 2026-09-16 against 3,392 archived tool calls: arrival keyed on
-// a topic fires on 33.7% of calls against 1.8% for the exact coordinate, and surfaces five more
-// distinct entries for nineteen times the interruptions. A mechanism that fires on one call in three
-// is wallpaper. Topics organise the list a reader chooses from; coordinates decide what is pushed at
-// somebody unasked. Do not wire this module into `arrive.mjs`.
+// A TOPIC IS NOT AN ADDRESS. `measurements/kb-arrival-2026-09/addressing.mjs`, over 3,621 archived
+// tool calls: arrival keyed on a topic fires on 33.2% of calls and surfaces 18 distinct entries;
+// keyed on the exact coordinate it fires on 6.7% and surfaces 33. **Topics lose on both axes** — five
+// times the interruptions for half the reach. A mechanism that fires on one call in three is
+// wallpaper and gets tuned out inside a run. Topics organise the list a reader CHOOSES from;
+// coordinates decide what is pushed at somebody who did not ask. Do not wire this into `arrive.mjs`.
+//
+// These figures replace ones quoted here and in a letter to the reviewer before any script produced
+// them: "1.8%", "33.7%", "3,392", "292 to 37". They came from throwaway one-liners with different
+// definitions of an event and were wrong. The reviewer asked where the script was; there wasn't one.
 //
 // DERIVED, NOT DECLARED, and the trade is deliberate. A `topic:` field on each entry would be
 // auditable but needs a schema change and 78 edits before a run we want to hold. Deriving keeps the
