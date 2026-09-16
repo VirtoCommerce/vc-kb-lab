@@ -24,6 +24,9 @@ const CMP = 'C:/_VIRTO/_comparison-logs';
 const planes = { 'derived/entries': 'derived', captured: 'captured', flows: 'flow' };
 const all = new Map();
 const subjects = new Map();
+// A retired entry is unused BY DESIGN -- it was superseded. Counting it as dead weight overstates
+// the dead share, so the shape table keeps it in its own row.
+const retired = new Set();
 for (const [dir, plane] of Object.entries(planes)) {
   const abs = join(base, dir);
   if (!existsSync(abs)) continue;
@@ -31,8 +34,10 @@ for (const [dir, plane] of Object.entries(planes)) {
     if (!f.endsWith('.md')) continue;
     const id = f.replace('.md', '');
     all.set(id, plane);
-    const m = readFileSync(join(abs, f), 'utf8').match(/^subject: (.*)$/m);
+    const txt = readFileSync(join(abs, f), 'utf8');
+    const m = txt.match(/^subject: (.*)$/m);
     subjects.set(id, m ? m[1].trim() : '');
+    if (/^status: retired$/m.test(txt)) retired.add(id);
   }
 }
 
@@ -84,6 +89,7 @@ for (const p of toolLogs) {
 // The SHAPE of an entry, read off its subject the way the extractor mints it. This is the unit the
 // derived plane is built in, so it is the unit any decision about what to store has to be made in.
 const shapeOf = (id, plane) => {
+  if (plane === 'captured') return retired.has(id) ? 'captured-retired' : 'captured';
   if (plane !== 'derived') return plane;
   const subj = subjects.get(id) ?? '';
   const m = subj.match(/^(gql-type|gql-query|gql-mutations|gql-subscriptions|rest-api)/);
@@ -106,6 +112,9 @@ const everyEither = [...all].filter(([id]) => served.has(id) || arrived.has(id))
 console.log(`ALL       ${String(all.size).padStart(5)}   ${String(served.size).padStart(11)}   ${String(arrived.size).padStart(12)}   ${String(everyEither).padStart(6)}   ${String(all.size - everyEither).padStart(13)}`);
 console.log('');
 console.log(`share of the corpus never served to anyone and never anchored on a coordinate anyone touched: ${((all.size - everyEither) / all.size * 100).toFixed(1)}%`);
+const liveIds = [...all.keys()].filter((id) => !retired.has(id));
+const liveDead = liveIds.filter((id) => !served.has(id) && !arrived.has(id)).length;
+console.log(`  excluding the ${retired.size} retired entries, which are unused by design: ${(liveDead / liveIds.length * 100).toFixed(1)}%`);
 
 // --- what shape is the dead weight, and what shape earns its place ------------------------------
 const shapes = new Map();

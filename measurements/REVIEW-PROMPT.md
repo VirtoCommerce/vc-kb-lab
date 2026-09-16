@@ -58,6 +58,9 @@ own author; a review that flatters it is worth nothing to us.
 * The brief was written on 2026-09-16 and states the corpus at 78 active entries, 232 tests. If more
   than a few days pass, re-run `node bin/kb.mjs stat` and `npm test` and correct those two numbers,
   or the reviewer's first act will be to find the discrepancy and wonder what else is stale.
+* **If the brief already went out, send `ERRATUM-2026-09-16.md` after it.** Four numbers in the
+  brief did not reproduce against their own scripts and are corrected; two of the four had
+  flattered the project. The reviewer finding them unaided costs more than the erratum does.
 * Send the second brief and the first together. The first one carries the outcome history the second
   assumes and does not repeat.
 * Give read access to `C:/_VIRTO/_comparison-logs/` as well. Half the measurements replay it, and a

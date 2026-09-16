@@ -9,7 +9,7 @@
  *
  * TWO QUESTION SETS, kept apart because one is evidence and the other is mine.
  *
- *   RECORDED   the eight questions that really returned MISS, read out of the corpus's own
+ *   RECORDED   the questions that really returned MISS, read out of the corpus's own
  *              demand.jsonl. Nobody wrote them for this measurement.
  *   ORACLE     round two's eight oracle items, phrased as a question. I wrote the phrasing, so
  *              these are reported separately and never folded into a headline.
@@ -70,11 +70,16 @@ const ORACLE = [
 ];
 
 const score = (label, questions) => {
-  let miss = 0, withDoor = 0, inside = 0, outside = 0;
+  let miss = 0, withDoor = 0, inside = 0, outside = 0, redirected = 0;
   const rows = [];
   for (const q of questions) {
     const r = ask(base, q, { limit: 3 });
     if (!r.miss) { rows.push(['HIT     ', '', q]); continue; }
+    if ((r.procedural ?? []).length) {
+      redirected += 1;
+      rows.push(['REDIRECT', `-> ${r.procedural.map((f) => f.id).join(' ')}`, q]);
+      continue;
+    }
     miss += 1;
     const doors = r.source ?? [];
     if (!doors.length) { rows.push(['MISS    ', '(no door)', q]); continue; }
@@ -85,7 +90,8 @@ const score = (label, questions) => {
     rows.push([hitsNeeded.length ? 'MISS+door' : 'MISS+far ', doors.map((d) => `${d.module.replace('VirtoCommerce.', '')}@${d.version}`).join(' '), q]);
   }
   console.log(`\n${label}: ${questions.length} questions`);
-  console.log(`  MISS                                   ${miss}`);
+  console.log(`  answered by a flow instead (redirect)  ${redirected}`);
+  console.log(`  MISS, so the door had an occasion      ${miss}`);
   console.log(`  of those, a door names a module        ${withDoor}`);
   console.log(`  door names a module the arms read      ${inside}`);
   console.log(`  door names only modules they did not   ${outside}`);

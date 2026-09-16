@@ -16,7 +16,7 @@ marked as such. If the honest answer is that this architecture cannot work, say 
 |---|---|
 | the tool | `C:/_VIRTO/vc-kb-lab` — `src/` (19 modules), `bin/kb.mjs`, 232 tests |
 | the corpus | `C:/_VIRTO/vc-knowledge` — 590 derived, 78 captured, 3 flows, 127 evidence rows |
-| the measurements | `measurements/` — nine directories, each a README plus a runnable script |
+| the measurements | `measurements/` — ten directories. Eight carry a README plus a runnable script; `kb-comparison` and `kb-live` carry dated result pages instead |
 | every archived run | `MEASUREMENT-archive/` (12 runs) and `C:/_VIRTO/_comparison-logs/` (10 arms) |
 
 Both repositories are git. Everything in this brief reproduces from a script that is committed.
@@ -55,7 +55,7 @@ project had published. Since then, in one working day:
 |---|---|
 | `kb how` returned the least-bad of three flows for almost anything | fixed: a flow is served only when its **goal** accounts for a majority of the question. Measured on 88 real questions: false hits **17 → 0**, at a cost of 2 false misses |
 | `ask` answered procedural questions with facts | fixed: `ask` refuses a question a flow's goal matches and names the verb that serves it |
-| a MISS on a code question said nothing | fixed: it now names the owning module, the **installed** version and a fetchable URL |
+| a MISS on a code question said nothing | shipped: a MISS now names the owning module, the **installed** version and a fetchable URL. **Measured at zero firings** — see measurement 5 |
 | the corpus could not say a claim was read from code | fixed: `method: source`, with the version resolved from the derived plane rather than typed |
 | the two planes were never compared | fixed: a written claim that the contract refutes is now a notice |
 | the demand loop had two outcomes and needed three | fixed: `kb demand buried` records "the answer existed and retrieval did not serve it" |
@@ -80,11 +80,13 @@ retrievals, **or** ever anchored on a coordinate touched in any of 4,223 logged 
 | `gql-type` | 303 | **11%** |
 | `gql-mutations` | 101 | **15%** |
 | `rest-api` | 94 | **29%** |
-| **captured (agent-written)** | 78 | **69%** |
+| **captured (agent-written, active)** | 78 | **73%** |
+| captured (retired, unused by design) | 11 | 27% |
 | **flow** | 3 | **100%** |
 
 **The plane that is free to generate is the dead one.** 590 derived entries were projected in
-minutes; 15% have ever been used. 81 were written by agents at a cost of twelve runs; 70% have.
+minutes; 15% have ever been used. 78 active entries were written by agents at a cost of twelve runs;
+73% have. Excluding the 11 retired entries changes the 78.0% headline by one tenth of a point.
 
 ### 2. The MISS contract stopped holding, and fourteen candidate rules could not restore it
 
@@ -100,19 +102,35 @@ answers, because a correct entry can be phrased entirely differently from the qu
 
 ### 3. Arrival would have landed first on one subject in nine
 
-`measurements/kb-arrival-2026-09/`. Replayed over all 22 archived logs (4,038 calls), counting only
+`measurements/kb-arrival-2026-09/`. Replayed over all 22 archived logs (4,013 calls), counting only
 entries that existed before each run: six arms ever went to platform source, and on **3 of the 9
 subjects they went for**, an entry that answers that subject would have arrived first — 5 and 6
 calls before two arms that had no base at all. The other six were mechanism in C#, which the corpus
 did not hold.
 
-**Adding eleven good entries today moved the arrival rate by two calls in 4,038.** The mechanism
+**Adding eleven good entries today moved the arrival rate by two calls in 4,013.** The mechanism
 pays only for entries anchored on coordinates agents actually stand on, and the new entries are
 anchored on what their claims are *about*. Of the 22 most-visited coordinates across every log, 14
 have an entry and 8 do not; the largest gap is `/sign-in` at 20 visits, which is also the subject of
 three of the four questions still open in the demand loop.
 
-### 4. Filling the base is the only lever that has moved anything
+### 4. The source door has never had an occasion to open
+
+`measurements/kb-sourcedoor-2026-09/`. Across all fifteen questions this project has on record —
+seven the demand log really refused, eight from round two's oracle — the door fired **zero**
+times. Not zero useful pointers: zero occasions.
+
+Thirteen are answered outright, and measurement 2 shows six of those answers are adjacent rather
+than right. The remaining two are procedural, and `ask` now hands them to a flow that genuinely
+answers them. **A mechanism that fires only on a MISS cannot be exercised by a base that has
+stopped missing — the drift and the silent door are one finding, not two.**
+
+We are not claiming the door is useless: the class it was built for is what round two went to
+source for six times, and none of those six has ever been asked of the base. We are claiming it is
+**unmeasured, and unmeasurable by replay**. Only a run that asks something the base genuinely
+cannot answer will settle it.
+
+### 5. Filling the base is the only lever that has moved anything
 
 The eleven entries mined out of the arm reports lead **5 of the 88 questions runs really asked**, and
 every one of the 5 is a question they answer. They displaced exactly one answer, on a question
@@ -157,6 +175,14 @@ invented for a unit test. That ratio is better than any of the fourteen rules ac
 * **A coverage probe written for this brief gave the wrong answer twice** before it was right, both
   times in the reassuring direction, because it normalised route parameters differently from the
   index. It was caught only by spot-checking a result that looked too bad to be true.
+* **This brief did not reproduce on its first reading.** A pass that ran every committed script as
+  a reviewer would, hours after the brief was written, found four numbers that disagreed with their
+  own scripts: the corpus utilisation of the live plane (stated 69% and 70% in two places, actually
+  73%), the arrival denominator (4,038 vs 4,013 calls), an inventory line that miscounted its own
+  directories, and a shipped mechanism presented as a fix whose script scores it at zero. All four
+  are corrected above and listed in `ERRATUM-2026-09-16.md`. Two of the four moved in the direction
+  that flatters the project. **The lesson we take is not that the numbers were close enough — it is
+  that a page nobody re-ran drifted from its own scripts within a day.**
 * **n = 1 per arm per round**, three rounds. The noise band on comparable work is 83–319 tool calls.
 * **No run has ever been executed with the arrival hook enabled.** Every comparison measured
   unprompted recall of a tool, which is near zero for everything.

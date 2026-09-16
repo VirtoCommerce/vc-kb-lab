@@ -30,7 +30,7 @@ something is the **order of two events in one run**:
 
 ## What was replayed
 
-All twenty-two archived logs, **4,038 calls**: runs 01–12 and the ten completed arms of rounds
+All twenty-two archived logs, **4,013 calls**: runs 01–12 and the ten completed arms of rounds
 one to three. Round one's aborted arm-B attempt and round three's quarantined contamination log are
 excluded and named.
 
@@ -45,7 +45,7 @@ Three honesty rules, two of them new:
    person.** The judgement is data in the script (`SOURCE_SUBJECTS`), so the number is reproducible
    and any row can be disputed by editing it.
 
-Limit of the logs: `target` is cut at 200 characters (669 of 4,038 calls). Coordinates past the cut
+Limit of the logs: `target` is cut at 200 characters (669 of 4,013 calls). Coordinates past the cut
 are invisible, so arrivals are under-counted, if anything.
 
 ## The result
@@ -106,7 +106,7 @@ meant: the hook pays where work touches routes.
    of the index is now skipped (`src/arrive.mjs`); `/cart` and `/search`, one segment each and
    prefixing nothing, still fire.
 2. **Writing about a coordinate looks like touching one.** Already named in the first version;
-   quantified here as the `kb-calls` column (311 of 4,038 calls) and excluded. The same class fired
+   quantified here as the `kb-calls` column (310 of 4,013 calls) and excluded. The same class fired
    this hook on every edit of this page while it was written.
 
 ## The rehearsed moment (Task 3)
