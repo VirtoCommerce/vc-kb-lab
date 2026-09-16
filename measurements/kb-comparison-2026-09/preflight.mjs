@@ -186,6 +186,25 @@ check('no earlier arm material is readable from the working directory', (pass, f
     : pass(`nothing from an earlier arm is reachable${byName ? '' : ' (checked by order number; this repository has reports of its own)'}`);
 });
 
+// AN ARM FOLDER MUST ONLY EVER BE WRITTEN BY ITS ARM. The QA repository's settings.local.json was
+// left pointing VC_MEASURE_OUT at _comparison-logs/round3/arm-B after round three, and the next
+// session to open that repository -- the independent reviewer -- logged its own 30 calls into arm B's
+// folder. Nobody noticed until the reviewer found their own log there and reported it. The restore
+// step existed in RUNNING.md and was not run; the backup it names was itself taken from an already
+// instrumented file, so restoring it would not have helped either.
+check('no OTHER working directory is logging into an arm folder', (pass, fail) => {
+  const p = `${REPO}/.claude/settings.local.json`;
+  if (!existsSync(p)) return pass('the repository carries no local settings');
+  let out;
+  try { out = readJson(p).env?.VC_MEASURE_OUT; } catch (e) { return fail(`unreadable: ${e.message}`); }
+  if (!out) return pass('VC_MEASURE_OUT unset');
+  const isThisArm = arm === 'B' && /[\/]arm-B$/.test(out);
+  if (isThisArm) return pass(`arm B, logging to its own folder: ${out}`);
+  if (/[\/]arm-[ABC]2?$/.test(out))
+    return fail(`the repository logs into ${out}, which is an arm folder and not this arm's. Any session opened there contaminates a recorded run.`);
+  pass(`logs to ${out}, which is not an arm folder`);
+});
+
 // ---- the instrument actually writes ---------------------------------------------------------
 check('the logging hook runs and is fail-open', (pass, fail) => {
   const r = spawnSync(process.execPath, [`${LAB}/vendor/agent-log/tool-log.mjs`], {

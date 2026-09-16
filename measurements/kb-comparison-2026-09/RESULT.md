@@ -48,15 +48,14 @@ produced, and it is a fact about measurement, not about knowledge.
 | B | QA repository | "Candidate defect, not confirmed — I couldn't establish whether 0 is intended" |
 | B2 | QA repository | "I can't test this under a non-zero rate — there's no tax provider on this store" |
 | A | nothing | "Unknown: whether that pair is intentional or a data-population defect — these three surfaces can't settle it, so I'm not guessing" |
-| **C** | **the base** | served `KB-A646D086`, written **2026-09-10** by a different run, stating the behaviour and warning that reading the field as the discount reports no discount at all |
+| **C** | **the base** | **CORRECTED — see below.** It was NOT served `KB-A646D086`. It called the zero a "REST-internal inconsistency" and wrote that with tax at zero the two figures "should equal" — the same false coupling the entry carried, reached without the entry |
 
-**Three arms said "I cannot settle this". One did not have to.** The difference was one tool call
-against an entry somebody else wrote five days earlier.
+**STRUCK. This sentence was false.** See the correction below: all four arms failed to settle it,
+and the arm with the base named the wrong mechanism.
 
 Discovery was universal — every arm, with or without context, found the anomaly. **Resolution was
-not.** That is what a knowledge base is for, and it is the only thing in this comparison that no
-caveat touches: it does not depend on call counts, on sample size, on which products an arm chose, or
-on the residue it met.
+universal too, and universally absent.** What this page originally claimed here — that the base
+resolved what no other arm could — is withdrawn in full. See the correction below.
 
 ## What the base did NOT do
 
@@ -114,3 +113,52 @@ Three to five runs per condition, not one. That is six to fifteen sessions and i
 piece of work — proposed after the demo, now that there is a reason to want it. Today's answer to
 "is the base faster" is **unknown, and measured to be unknown**, which is worth more than a 16%
 that would not have survived arm A.
+
+
+---
+
+# CORRECTION, 2026-09-16 — the central claim of this page was false
+
+Found by the **independent review** commissioned on 2026-09-15, not by anyone who ran the comparison.
+Verified against the logs before being accepted.
+
+## The arm with the base was never served the entry
+
+This page said arm C was served `KB-A646D086` and therefore did not have to settle the
+`discountAmountWithTax` question by itself. **It was not served that entry.**
+`_comparison-logs/arm-C/kb-log-2b83612d.jsonl` records eight consultations serving ten distinct ids:
+
+    KB-35AA6EDC  KB-483988CE  KB-6AA0D7FB  KB-70A93C03  KB-746B7535
+    KB-7C35392D  KB-A54C919F  KB-AFB2D3C5  KB-EB228603  KB-EE71E538
+
+`KB-A646D086` is not among them. It was served to the **aborted** first attempt, which produced no
+gradable result and is written up separately in `ARM-C-ABORTED.md`. I read that log, attributed it to
+the completed run, and built this page's headline on it.
+
+## And the completed arm did worse than "could not settle it"
+
+Its own report, `_comparison-logs/arm-C/report.md`, Findings item 1:
+
+> a REST-internal inconsistency in the discount record ... with tax at zero the with-tax figure
+> **should equal** the without-tax one
+
+That is exactly the false coupling — zero because tax is zero — that round two later disproved with a
+cross-store control, and that `KB-A646D086` itself carried until it was superseded. **The arm holding
+the base reached the corpus's error without the corpus's help.** Four arms met the anomaly; four
+failed to resolve it; one of them stated a wrong mechanism with no hedge.
+
+## What is left of round one
+
+Nothing qualitative. The call counts were already reported as meaningless — 194 / 211 / 232 inside a
+known 83–319 band — and the one claim this page called "untouched by every caveat" does not survive
+its own log. **Round one produced no evidence for the base.**
+
+The `KB-A646D086` story is real, but it belongs to **round two**, where arm C was served the entry
+twice (`round2/arm-C/kb-log-070b9e3f.jsonl`) and refuted it with an order from a store where tax is
+active. `RESULT-EXPLAIN.md` tells that correctly. This page told it about the wrong round.
+
+## Why it was not caught here
+
+Three write-ups repeated it and none of them re-opened the log. The check that would have caught it —
+"does the kb journal actually contain the id you are citing" — did not exist, because the person who
+would have written it is the person who made the error.

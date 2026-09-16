@@ -61,13 +61,16 @@ storefront v2.39.0, extracted the compiled query and the status switch out of it
 answer to that build — noting that master already selects `isLockedInOrganization` and this build
 does not. That is the difference between "the source says" and "your deployment does".
 
-**And it refuted the corpus for the second round running.** The dispute note on `KB-4D082C89` states
+**And it produced the observation that refuted the corpus for the second round running** — a human
+wrote the dispute, as below. The dispute note on `KB-4D082C89` states
 the invited account "still has passwordHash null". Arm C read it as set and wrote: *"That is wrong on
 the current deployment — I read it as set. Direct observation outranks the KB."*
 
 Round two: it refuted `KB-A646D086` with a cross-store control. Round three: it refuted a dispute
-note with a second endpoint. **Twice out of two, the arm holding the corpus is the one that corrected
-it.** No arm without a corpus can do that, because there is nothing to correct.
+note with a second endpoint. **Twice out of two, the arm holding the corpus is the one that produced the observation that
+corrected it** — and twice out of two, a human wrote the correction. No arm without a corpus can
+produce such an observation, because there is nothing to contradict; but the loop does not close by
+itself, and this page originally implied it did.
 
 ## The predictions, unsealed
 
@@ -101,10 +104,11 @@ it. The prediction is technically confirmed and measures nothing.
 
 ## What goes on the demo page
 
-1. **The corpus corrected itself twice, by being wrong out loud.** Round two: an entry's mechanism
-   disproved by a cross-store control. Round three: a dispute note's claim disproved by a second
-   endpoint. That is the only capability in three rounds that belongs to the arm with the base and to
-   no other arm.
+1. **The corpus was corrected twice, because it was wrong out loud and an arm noticed.** Round two:
+   an entry's mechanism disproved by a cross-store control. Round three: a dispute note's claim
+   disproved by a second endpoint. Producing that observation is the only capability in three rounds
+   that belongs to the arm with the base and to no other arm — **but the arm never wrote anything.**
+   A human wrote every dispute and every supersede. Say it that way or not at all.
 2. **7.0 / 7.0 / 7.0, published as a tie**, alongside round one's 194/211/232 and round two's
    7.5/7.5/8.0. Three rounds, three null results on capability. Anyone who asks "does it make the
    agent better at the task" gets: measured three times, no.
@@ -112,3 +116,39 @@ it. The prediction is technically confirmed and measures nothing.
    partial answer key sat in `test-data/`.
 4. **The password hash.** Found because three agents were pointed at the same deployment and one of
    them read a field the other two believed was redacted.
+
+
+---
+
+# CORRECTION, 2026-09-16 — four defects found by the independent review
+
+The review commissioned on 2026-09-15 (`measurements/REVIEW-BRIEF.md`) returned four instrument
+defects. All four were verified against the logs before being accepted. Two of them correct claims
+this project made and repeated.
+
+**D1 — a recorded arm folder was still being written to.** `vc-mcp-testing-module`'s
+`settings.local.json` still pointed `VC_MEASURE_OUT` at `round3/arm-B` after round three, so the
+reviewer's own session logged 30 calls into arm B's folder; its first line is
+`cat REVIEW-BRIEF.md`. The restore step existed in `RUNNING.md` and was not run — and the backup it
+names was itself taken from an already-instrumented file, so running it would not have helped.
+**Fixed:** the repository now logs to `C:/_VIRTO/_agent-logs/`, the stray log is quarantined in
+`round3/CONTAMINATION/` as evidence rather than deleted, and `preflight.mjs` now fails when any
+working directory other than the current arm's points `VC_MEASURE_OUT` at an arm folder.
+
+**D2 — round one's central qualitative claim was false.** The completed arm C was never served
+`KB-A646D086`; it was served to the aborted attempt. The completed arm called the zero field a
+"REST-internal inconsistency" and wrote that the two figures "should equal" — the same false coupling
+the entry carried. **`RESULT.md` is corrected in place and its headline withdrawn.** The
+`KB-A646D086` story belongs to round two, where it is true and logged.
+
+**D3 — "the corpus corrected itself" was never true.** Across every arm kb-log in all three rounds:
+19 `ask`, 4 `how`, and **zero** writing verbs. An arm produced each observation; a human wrote each
+dispute and supersede, minutes later. Corrected on this page and on `RESULT-EXPLAIN.md`.
+
+**D4 — the MISS contract drifts as the corpus grows.** A question that returned an honest MISS in
+round one now returns adjacent entries; `kb how "cancel an order"` returns the order-placement flow.
+Not yet fixed; it belongs with the retrieval work.
+
+**The pattern, for the third time:** every one of these is a check that existed or could have existed
+and was not run, and none was found by the person who built the instrument. The review was worth
+more than the round it reviewed.

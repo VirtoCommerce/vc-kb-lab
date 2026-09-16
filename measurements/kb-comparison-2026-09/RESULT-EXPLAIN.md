@@ -52,7 +52,11 @@ because the arm trusted a broken screen.
 
 ## What arm C did that nothing else in this project has done
 
-**It refuted an entry in the corpus, and the corpus was wrong.**
+**It produced the observation that refuted an entry in the corpus, and the corpus was wrong.**
+
+*(Corrected 2026-09-16: the arm observed. **A human wrote the correction.** No arm kb-log in any
+round contains a single writing verb — 19 `ask` and 4 `how`, and nothing else. See the correction at
+the end of `RESULT-MEMBERS.md`.)*
 
 `KB-A646D086` — written 2026-09-10 by a different run, the entry that carried the entire qualitative
 claim of round one — attributes the zero `discountAmountWithTax` to the store having no tax provider.
