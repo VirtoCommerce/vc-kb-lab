@@ -134,3 +134,40 @@ test('the contract plane still powers the source door on a MISS', () => {
     + 'measured to be good for, on the same day it stopped being an answer');
   drop(dir);
 });
+
+// `kb show` — the verb the catalog needs. Without it, handing a reader a list of ids and no way to
+// open one is a refusal that names a remedy which does not exist, which this codebase already has a
+// comment about elsewhere.
+test('an entry can be opened by id, and an unknown id says so', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const dir = baseWith({ written: [{ id: 'KB-E0000009', subject: 'a fact worth opening', coordinate: 'GET /api/taxes', body: 'The body of it.' }] });
+  const run = (args) => {
+    try {
+      return { out: execFileSync(process.execPath, ['bin/kb.mjs', ...args, '--base', dir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }), code: 0 };
+    } catch (e) { return { out: String(e.stdout ?? '') + String(e.stderr ?? ''), code: e.status }; }
+  };
+  const ok = run(['show', 'KB-E0000009']);
+  assert.match(ok.out, /a fact worth opening/);
+  assert.match(ok.out, /The body of it\./, 'opening an entry means reading its claim, not its metadata');
+  const miss = run(['show', 'KB-00000000']);
+  assert.equal(miss.code, 1);
+  assert.match(miss.out, /not in/);
+  drop(dir);
+});
+
+// The treatment of round four. Retrieval off is set by the arm's settings file; writing is untouched.
+test('KB_RETRIEVAL_OFF refuses the reading verbs and names what to do instead', async () => {
+  const { execFileSync } = await import('node:child_process');
+  for (const verb of ['ask', 'how', 'deliver']) {
+    let code = 0; let err = '';
+    try {
+      execFileSync(process.execPath, ['bin/kb.mjs', verb, 'anything'], {
+        encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, KB_RETRIEVAL_OFF: '1' },
+      });
+    } catch (e) { code = e.status; err = String(e.stderr ?? ''); }
+    assert.equal(code, 2, `${verb} must be refused`);
+    assert.match(err, /catalog is in your brief/);
+    assert.match(err, /kb\.mjs show/, 'a refusal that names no remedy is a wall');
+    assert.match(err, /capture.*still work/, 'the loop must stay open or the run cannot write back');
+  }
+});

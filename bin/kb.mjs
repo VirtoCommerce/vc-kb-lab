@@ -11,7 +11,7 @@ import { validate } from '../src/validate.mjs';
 import {
   capture, supersede, confirm, dispute, retire,
   reanchor, amend, addArrival, CaptureRefused, rebuildCapturedArtifacts,
-  readCaptured, confirmationsOf, evidenceKinds, disputesOf, isDisputed, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
+  readCaptured, confirmationsOf, evidenceKinds, disputesOf, isDisputed, loadEntry, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
 } from '../src/capture.mjs';
 import { consolidate, renderConsolidation, MergeRefused } from '../src/consolidate.mjs';
 import { plan, renderPlan } from '../src/todo.mjs';
@@ -67,6 +67,9 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
                                               — add --flow to record a PROCEDURE instead of a fact:
                                                 --subject becomes the goal and alone decides identity,
                                                 --claim becomes the steps. Served by kb how only.
+  kb show        <id>                         open ONE entry by id. What the catalog needs: when the
+                                              written register is handed over whole, a reader picks a
+                                              line and opens it.
   kb consolidate [--merge <id>,<id>]          group entries by shared coordinate; merge a named group
   kb dispute     <id> --deployment … --note … record an observation that contradicts an entry
   kb retire      <id> --reason …              withdraw an entry; the id stays, the entry leaves the index
@@ -302,6 +305,52 @@ async function main() {
     console.log(`VALIDATE OK — ${r.entries} derived, ${r.captured} captured, ${r.flows ?? 0} flow(s), at ${base}`);
     printNotices((m) => console.log(m));
     return { code: 0, outcome: { detail: { ok: true, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
+  }
+
+  // OPEN AN ENTRY BY ID. The verb the catalog needs: when the written register is handed over whole
+  // in the prompt, a reader picks a line and opens it, and there was no way to do that except
+  // `cat`ting a path. It also gives the measurement an exact open event in the journal rather than
+  // a guess parsed out of shell commands.
+  if (cmd === 'show') {
+    const id = (a._[0] ?? '').toUpperCase();
+    if (!id) {
+      console.error('kb show <id> — open one entry from the catalog by its id');
+      return 2;
+    }
+    let entry;
+    try {
+      entry = loadEntry(base, id);
+    } catch { entry = null; }
+    if (!entry) {
+      console.error(`kb show: ${id} is not in ${base}. Ids in the catalog are exact; check the line you read it from.`);
+      return 1;
+    }
+    const d = entry.data;
+    console.log(`${d.id}  ${d.subject}   [${d.plane ?? 'experiential'}]`);
+    console.log(`  question   : ${d.question ?? '—'}`);
+    console.log(`  trust      : ${confirmationsOf(d)} confirmation(s)${isDisputed(d) ? `, DISPUTED (${disputesOf(d)})` : ''}`);
+    console.log(`  appliesTo  : ${(d.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`).join(' ') || '—'}`);
+    console.log(`  refutableBy: ${d.refutableBy ?? '—'}`);
+    console.log(`  path       : ${entry.rel}`);
+    console.log('');
+    console.log(entry.body.trim());
+    return { code: 0, outcome: { served: [{ id, plane: entry.data.plane ?? 'experiential' }], detail: { verb: 'show' } } };
+  }
+
+  // RETRIEVAL OFF — the treatment of round four, set by the arm's settings file and nowhere else.
+  //
+  // The catalog of written entries goes into the agent's prompt instead, and it is meant to REPLACE
+  // the search rather than sit beside it: a reader who can fall back to a query never has to read
+  // the list, and the run would measure a mixture. Fourteen ranking rules failed on vocabulary that
+  // a reader crosses without noticing, so the thing being tested is the reader's judgement over a
+  // list they can see in full.
+  //
+  // Writing verbs are untouched. The loop still closes.
+  if (process.env.KB_RETRIEVAL_OFF === '1' && ['ask', 'how', 'deliver'].includes(cmd)) {
+    console.error(`kb ${cmd} is off in this session. The written catalog is in your brief — read it and open an entry by id.`);
+    console.error('  node bin/kb.mjs show <id>, or open captured/<id>.md directly.');
+    console.error('  This is the treatment being measured, not a fault. `capture`, `confirm` and `dispute` still work.');
+    return 2;
   }
 
   if (cmd === 'ask') {
