@@ -4,6 +4,7 @@
  *
  *   node preflight.mjs B      the QA repository arm
  *   node preflight.mjs A|C    the arena arms
+ *   node preflight.mjs C4     round four: the register in the session's context, retrieval off
  *
  * Written after two launches in a row died on configuration I had hand-written and never run:
  * a brief naming one identity where the task needs two, and an .mcp.json whose backslashes a
@@ -14,12 +15,12 @@
  * cannot run reports SKIPPED and the whole run reports NOT READY, because an unrun check is not
  * a passed one — the same rule the extractor has lived under since step 1.
  */
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const arm = (process.argv[2] ?? '').toUpperCase();
-if (!['A', 'B', 'C'].includes(arm)) {
-  console.error('usage: preflight.mjs A|B|C');
+if (!['A', 'B', 'C', 'C4'].includes(arm)) {
+  console.error('usage: preflight.mjs A|B|C|C4   (C4 = round four, the register in the prompt)');
   process.exit(2);
 }
 
@@ -76,7 +77,7 @@ if (arm === 'B') {
     if (!hook.includes('tool-log.mjs')) return fail('no PostToolUse logging hook — the run would not be counted');
     const out = s.env?.VC_MEASURE_OUT;
     if (!out) return fail('VC_MEASURE_OUT unset — the log has nowhere to go');
-    const wantBase = arm === 'C';
+    const wantBase = arm === 'C' || arm === 'C4';
     const hasBase = Boolean(s.env?.KB_BASE);
     if (wantBase !== hasBase) return fail(`arm ${arm} ${wantBase ? 'needs' : 'must not have'} KB_BASE, and ${hasBase ? 'has' : 'has not'} got it`);
     if (!s.permissions?.deny?.some((d) => d.includes('browser_evaluate')))
@@ -111,12 +112,83 @@ if (arm === 'B') {
     diffs.length ? fail(diffs.join('; ')) : pass('KB_BASE and VC_MEASURE_OUT, and nothing else');
   });
 
+  // ROUND FOUR PUTS A CLAUDE.md IN THE ARENA ON PURPOSE, and that is its whole treatment: the
+  // register has to be in the session's context rather than on its disk, because a file somebody
+  // must decide to open is what arm B had and never opened.
+  //
+  // So the check cannot stay "no CLAUDE.md" — it would fail for a legitimate reason and be learned
+  // around, which is worse than no check. For C4 it becomes stronger instead: a CLAUDE.md must be
+  // present and must be EXACTLY what `make-brief.mjs` generates from the corpus this minute. Hand
+  // edits, staleness against a corpus that moved, and anything else somebody dropped in all fail.
   check('no project context leaked into the arena', (pass, fail) => {
-    const bad = ['CLAUDE.md', '.git', '.claude/skills', '.claude/knowledge', '.claude/rules']
+    const others = ['.git', '.claude/skills', '.claude/knowledge', '.claude/rules']
       .filter((f) => existsSync(`${ARENA}/${f}`));
-    bad.length ? fail(`present: ${bad.join(', ')}`) : pass('no CLAUDE.md, no skills, no rules, not a git repo');
+    if (others.length) return fail(`present: ${others.join(', ')}`);
+
+    const claudeMd = `${ARENA}/CLAUDE.md`;
+    if (arm !== 'C4') {
+      return existsSync(claudeMd)
+        ? fail('present: CLAUDE.md')
+        : pass('no CLAUDE.md, no skills, no rules, not a git repo');
+    }
+    if (!existsSync(claudeMd)) return fail('CLAUDE.md is ABSENT, and it is the treatment of this round');
+
+    const tmp = `${ARENA}/.preflight-brief.md`;
+    const gen = spawnSync(process.execPath, [`${LAB}/measurements/kb-run4-2026-09/make-brief.mjs`, '--out', tmp], { encoding: 'utf8' });
+    if (gen.status !== 0) return fail(`make-brief.mjs failed: ${(gen.stderr ?? '').trim().slice(0, 120)}`);
+    const same = readFileSync(claudeMd, 'utf8') === readFileSync(tmp, 'utf8');
+    rmSync(tmp, { force: true });
+    same
+      ? pass('CLAUDE.md is byte-identical to what make-brief.mjs generates from the corpus right now')
+      : fail('CLAUDE.md differs from the generated brief — regenerate it, do not edit it');
+  });
+}
+
+// THE TREATMENT, EXERCISED RATHER THAN READ. Round four's arm differs from arm C by one env var and
+// a log path; the settings file says so in a comment, and a comment in this very directory has been
+// false for two rounds before. This runs the diff and then runs the verb.
+if (arm === 'C4') {
+  check('round four differs from arm C by KB_RETRIEVAL_OFF and the log path only', (pass, fail) => {
+    const dir = `${LAB}/measurements/kb-comparison-2026-09/arena-settings`;
+    const c = readJson(`${dir}/settings.arm-c.json`);
+    const c4 = readJson(`${dir}/settings.arm-c-catalog.json`);
+    const strip = (x) => {
+      const j = JSON.parse(JSON.stringify(x));
+      delete j._comment;
+      delete j.env.VC_MEASURE_OUT;
+      delete j.env.KB_RETRIEVAL_OFF;
+      return JSON.stringify(j);
+    };
+    if (c4.env?.KB_RETRIEVAL_OFF !== '1') return fail('KB_RETRIEVAL_OFF is not set in the round-four file');
+    if (strip(c) !== strip(c4)) return fail('the two files differ by more than KB_RETRIEVAL_OFF and the log path');
+    pass('KB_RETRIEVAL_OFF and VC_MEASURE_OUT, and nothing else');
   });
 
+  check('retrieval is actually off, and writing is not', (pass, fail) => {
+    const env = { ...process.env, KB_RETRIEVAL_OFF: '1' };
+    for (const verb of ['ask', 'how', 'deliver']) {
+      const r = spawnSync(process.execPath, [KB, verb, 'anything'], { encoding: 'utf8', env });
+      if (r.status !== 2) return fail(`kb ${verb} exited ${r.status}, not 2 — the treatment is not in force`);
+      if (!/catalog is in your brief/.test(r.stderr ?? '')) return fail(`kb ${verb} refused without naming the catalog`);
+    }
+    const help = spawnSync(process.execPath, [KB, 'capture', '--help'], { encoding: 'utf8', env });
+    if (help.status !== 0) return fail('kb capture --help fails with the treatment on — the loop would be shut too');
+    pass('ask, how and deliver refuse with exit 2; capture still answers');
+  });
+
+  check('the arm can open an entry by id from the arena', (pass, fail) => {
+    const r = spawnSync(process.execPath, [KB, 'show', 'KB-5ADBFB34'], { encoding: 'utf8', cwd: ARENA });
+    if (r.status !== 0) return fail(`kb show exited ${r.status} from ${ARENA}: ${(r.stderr ?? '').trim().slice(0, 120)}`);
+    if (!/only the largest cart-subtotal promotion/.test(r.stdout ?? '')) return fail('kb show printed no claim');
+    pass('served KB-5ADBFB34 from the arena, with the absolute path the brief gives');
+  });
+
+  check('the log directory exists and is empty', (pass, fail) => {
+    const out = readJson(`${LAB}/measurements/kb-comparison-2026-09/arena-settings/settings.arm-c-catalog.json`).env.VC_MEASURE_OUT;
+    if (!existsSync(out)) return fail(`${out} does not exist — the hook would drop the run on the floor`);
+    const left = readdirSync(out);
+    left.length ? fail(`${out} already holds ${left.length} file(s) from an earlier attempt`) : pass(`${out} is ready`);
+  });
 }
 
 // A WORKING DIRECTORY IS READABLE, and an earlier arm's material holds every answer this one is
@@ -241,7 +313,7 @@ const admin = await reach('https://vcptcore-stable.govirto.com/');
 (typeof admin === 'number' ? ok : bad)('platform answers', `HTTP ${admin}`);
 
 // ---- the base, for arm C --------------------------------------------------------------------
-if (arm === 'C') {
+if (arm === 'C' || arm === 'C4') {
   check('the base is where KB_BASE says, and is clean', (pass, fail) => {
     if (!existsSync(`${BASE}/kb.json`)) return fail(`${BASE} carries no kb.json — it is not a base`);
     const st = spawnSync('git', ['-C', BASE, 'status', '--porcelain'], { encoding: 'utf8' });
