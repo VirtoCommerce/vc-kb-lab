@@ -1,96 +1,137 @@
-# kb-arrival-2026-09 — would a coordinate hook have helped, and by how much
+# kb-arrival-2026-09 — would the base have arrived before the agent went to source?
 
 Reproduce:
 
 ```
-node measurements/kb-arrival-2026-09/replay-logs.mjs
+node measurements/kb-arrival-2026-09/replay-logs.mjs --detail
 ```
 
-## The problem it addresses
+Read-only against the corpus; safe on the live base.
 
-Three runs consulted the base in their opening minutes and never again. Run 03 in full:
+## The question, and why "fires" was the wrong answer to it
 
-```
-call    5   kb capture --help
-calls 7–10  kb deliver ×4          ← every question it ever asked
-calls 11–265                       ← 255 calls of work, no contact either way
-calls 266–269 kb capture ×4        ← four entries in 39 seconds, KB_PHASE=report
-call  312     kb capture ×1
-```
+Three runs consulted the base in their opening minutes and never again. Round three's arm holding
+the corpus asked it **two questions in 84 calls**. It is not consulted because nothing prompts it.
 
-Consulting is a place you go, and once work starts the page already open answers faster than
-anything you have to fetch. Runs 01 and 02 were both **told** to consult the base and front-loaded
-anyway, so this is not a wording problem in a brief.
+`hooks/arrive.mjs` is the mechanism built for that: a PostToolUse hook that looks at the coordinate
+an agent just touched — a URL, a route in a `curl`, a GraphQL field — and hands back what the base
+holds about it, unasked. It was **enabled in no arm of any round.** Every comparison so far measured
+unprompted recall of a tool, which is near zero for everything.
 
-The idea under test: stop making the agent go, and make the base arrive. Every entry in both planes
-is anchored on coordinates — `/company/members`, `POST /api/members/search`,
-`Mutations.lockOrganizationContact` — and a tool call is made of coordinates. So a PostToolUse hook
-can look at what the agent just touched and hand back what the base holds about it. No question is
-asked and nothing has to be remembered.
+The first version of this page counted *fires* over three runs. A fire is a coordinate the base knew
+something about; it says nothing about whether the agent needed it. The metric that can say
+something is the **order of two events in one run**:
 
-## What it would actually have done
+* **arrival-call** — the first call at which an entry that *already existed before the run began*
+  would have been handed over, because the call touched its coordinate;
+* **source-call** — the first call at which the arm went to platform source for an answer:
+  `raw.githubusercontent.com` in a Bash target, or the source MCP (server id `da5c9759…`). The two
+  channels every arm of rounds two and three used. The twelve runs and round one used neither.
 
-Replayed over the three archived tool logs. The second column counts only entries that **existed
-before that run started** — without that restriction a run appears to be helped by its own answers.
+## What was replayed
 
-| run | calls | fires | fires on entries that already existed | what the work was |
+All twenty-two archived logs, **4,038 calls**: runs 01–12 and the ten completed arms of rounds
+one to three. Round one's aborted arm-B attempt and round three's quarantined contamination log are
+excluded and named.
+
+Three honesty rules, two of them new:
+
+1. **An entry counts only if it existed before the run started**, read off its first evidence row.
+   Derived entries count as pre-existing — the coordinates were the deployment's own — and the
+   restructure of 2026-09-12 (287 → 590 entries) is stated rather than hidden.
+2. **A call to the base is not an arrival at a coordinate.** `kb capture --anchors /company/members`
+   names the coordinate to write about it. Every `bin/kb.mjs` call is excluded and counted apart.
+3. **Arrival is by coordinate, the fetch is by subject, and the two are judged side by side by a
+   person.** The judgement is data in the script (`SOURCE_SUBJECTS`), so the number is reproducible
+   and any row can be disputed by editing it.
+
+Limit of the logs: `target` is cut at 200 characters (669 of 4,038 calls). Coordinates past the cut
+are invisible, so arrivals are under-counted, if anything.
+
+## The result
+
+| | |
+|---|---|
+| arms that ever went to platform source | **6 of 22** — every arm of rounds two and three; nobody else, ever |
+| of those, *some* pre-existing entry would have arrived before the first fetch | **6 of 6** — true, and meaningless: see next row |
+| source subjects, judged by a person | **9** (round two: C# arithmetic ×3; round three: the Active column ×3, the sign-in mechanism ×3) |
+| a pre-existing entry **on the same subject** would have arrived before the fetch for it | **3 of 9 subjects, in 3 of 6 arms** |
+| distinct entries doing that work | **1 — `KB-27B4CD10`**, "storefront members Active column reads contact status not account state", anchored on `GET /company/members` |
+| of the 3, arms that had not already asked the base for it | **2 of 3** — arms A and B of round three, which had no base and never asked one |
+| first in time, about something else | **6 of 9** — the whole of round two, and the sign-in mechanism in round three |
+
+Per arm, the three same-subject cases:
+
+| arm | arrival | fetch | gap | what the arm went to source for |
 |---|---|---|---|---|
-| 01 | 83 | 9 | **9** (11%) | promotions, REST driven by `curl` |
-| 02 | 172 | 2 | **1** | discount → checkout, browser against GraphQL |
-| 03 | 319 | 11 | **2** | organization roles, browser UI |
+| r3 A (nothing) | call 8, `/company/members` | call 13, `FrontendSourceCode` for Members.vue | **5 calls** | what the Active column reads |
+| r3 B (QA repo) | call 9 | call 15 | **6 calls** | same |
+| r3 C (the base) | call 11 | call 56 | 45 calls — but it had **asked** at call 2 and been served this entry; the arrival duplicates its own question | same |
 
-**The honest headline: once or twice per run, except where the work touches routes directly.**
-Run 01 drove REST with `curl`, so the routes it called were literally the coordinates the derived
-plane is anchored on, and 11% of its calls were met with something. Runs 02 and 03 clicked through a
-browser, where a URL is a storefront path and the derived plane's 590 entries — anchored on GraphQL
-type and field names — have nothing to say.
+Round three's oracle item 6 is "the Active column reports contact status"; every arm scored it 1.0,
+and arms A and B got there by reading `Members.vue` from source at call 13 and 15. `KB-27B4CD10` is
+that answer, written by run 05 on 2026-09-12. It would have been in front of both arms five and six
+calls earlier, at the moment they opened the page, from a base neither of them had.
 
-## The number that says where the value is
+**The six that were not.** Round two fetched C# — `CustomerOrderService`, `DiscountEntity`,
+`RewardExtensions`, `CartAggregate`, `BestReward`. What arrived before those fetches was REST route
+tables and a promotion flow. Round three's second subject, the sign-in mechanism (`PendingApproval`,
+`Locked`, `RequireConfirmedEmail`), has no entry in the corpus at all; `KB-4D082C89` arrives on the
+same page and is adjacent, not the mechanism. The corpus carries mechanism only where it was visible
+from outside a running deployment — which the review brief already said — so nothing on those
+subjects *could* arrive.
 
-Run 03's own two entries, anchored on `/company/members`, match **nine** of its calls. Those nine
-are worthless to run 03, which wrote them. They are exactly what the *next* UI run gets, at the
-moment it lands on that page, without asking.
+## What this does and does not establish
 
-So the mechanism pays in proportion to how many entries are anchored on **routes agents actually
-travel**, and there are currently two. It is not a fix for front-loading today; it is a fix that
-grows one entry at a time, and the thing that grows it is agents anchoring on where they were.
+**Established:** the first non-null signal in the base's favour, in three rounds. Not a speed-up
+and not a score: a moment. On the one subject the corpus held the answer to, it would have handed
+that answer to two agents that had no base, before either went to source for it. The bar set for
+this measurement — arrival lands first in at least half the cases — is met at exactly half of the
+arms (3 of 6) and one third of the subjects (3 of 9), on one entry. Say it that way.
 
-## Three bugs the measurement caught, all in the matcher
+**Not established:** whether an arm *reads* what arrives. This is a replay of logs, not a run.
+Every number above is "would have"; the next run's question is whether the injection changes what
+the agent does, and that is measured by nothing here.
 
-The number read "2 hits in 319 calls" three times, for three different reasons, and every one was
-in the matching rather than in the idea. They are worth listing because each would have shipped as
-"the hook does not help" if the number had been taken at face value.
+**Also not established:** anything about round one or the twelve runs. None of them went to source
+through either channel, so the metric has no second event to compare against there. Their arrival
+columns are printed for completeness and mean only what the first version of this page said they
+meant: the hook pays where work touches routes.
 
-1. **A crude first probe over-reported**, not under-reported: 19 hits on the bare coordinate
-   `organization`, every one of them a URL carrying `organizationId`. Substring matching is useless
-   here.
-2. **Word boundaries were applied to coordinates that carry their own.** `/company/members` was
-   rejected nine times because the character in front of it was the `m` of `.com`. A boundary is
-   only needed on an edge that is itself a word character.
-3. **Routes were compared in the wrong case.** `normalizeAnchor` lowercases a dotted coordinate and
-   leaves a route alone, so the index holds `POST /api/members/search` beside
-   `mutations.lockorganizationcontact`. A lowered haystack matched none of the routes — half the
-   corpus, silently.
+## Two matcher defects the replay caught, added to the three the first version caught
 
-And one more that is a property of real text rather than a bug: `POST /api/members/search` never
-appears verbatim in anything an agent writes, because `curl -X POST https://host/api/...` puts the
-host between the verb and the path. The path is now tried on its own, which costs the verb
-distinction — a GET to that route will offer an entry about the POST. That is the right trade: the
-entry is about the route.
+1. **A namespace is not a place.** The derived plane's root entry is anchored on `POST /api`, whose
+   path is a prefix of 675 of the 700 route coordinates. It "arrived" on every REST call any agent
+   made and was the commonest arrival in eleven of twenty-two logs. A route whose path prefixes most
+   of the index is now skipped (`src/arrive.mjs`); `/cart` and `/search`, one segment each and
+   prefixing nothing, still fire.
+2. **Writing about a coordinate looks like touching one.** Already named in the first version;
+   quantified here as the `kb-calls` column (311 of 4,038 calls) and excluded. The same class fired
+   this hook on every edit of this page while it was written.
 
-## It does run, and that was worth checking
+## The rehearsed moment (Task 3)
 
-Wiring it up produced an unplanned live test: writing this page fired the hook, because the prose
-above names `Mutations.lockOrganizationContact` and `POST /api/members/search`, and the hook duly
-offered three entries about them. So `hookSpecificOutput.additionalContext` on `PostToolUse` does
-reach the agent in this harness — that had been an assumption, and it is now an observation.
+Offline, against a copy of the corpus, the hook was fed a PostToolUse payload for a browser
+navigation to `/company/members`:
 
-It also names the false-positive class this design has: **writing about a coordinate looks exactly
-like touching one.** Editing a file that mentions a route gets the same injection as calling it.
-Cheap enough to live with at 3% of calls, and worth watching if that rate rises.
+```
+echo '{"hook_event_name":"PostToolUse","tool_name":"mcp__playwright-chrome__browser_navigate","tool_input":{"url":"https://<storefront>/company/members"}}' | KB_BASE=<copy> node hooks/arrive.mjs
+```
 
-## What this does not establish
+It returns, as `additionalContext`:
 
-Three runs, one deployment, one corpus. Whether the injected context is *read*, acted on, or
-ignored is measured by none of this — it is the next run's question, and the one worth asking
-before anyone builds more of this.
+```
+The knowledge base holds entries anchored on a coordinate you just touched:
+  @kb(KB-27B4CD10)  storefront members Active column reads contact status not account state  [written by an agent]  — anchored on GET /company/members
+  @kb(KB-4A8606CA)  an abandoned invitation can leave an account nothing can delete  [written by an agent]  — anchored on GET /company/members
+  @kb(KB-4D082C89)  a pending invitation is a locked account with no status  [written by an agent]  — anchored on GET /company/members
+Read one with `node bin/kb.mjs deliver "<your question>"` — or `kb how "<what you are trying to do>"`
+for a procedure, which `deliver` deliberately cannot reach. You can also open the file directly.
+An agent-written entry is one observation until someone else confirms it. If it holds, `kb confirm <id> --deployment <name>`; if it does not, `kb dispute`.
+```
+
+The first line is the answer to round three's item 6, before any question is asked. The hook is
+enabled in this repository's own `.claude/settings.json`, and for an arena session in
+`measurements/kb-comparison-2026-09/arena-settings/settings.arm-c-arrival.json` — arm C's file plus
+this one hook, logging to its own folder, **not a comparison arm and not used for any number on any
+RESULT page.**

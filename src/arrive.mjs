@@ -28,6 +28,32 @@ import { coordinateIndex } from './coordinates.mjs';
 // query string.
 const isStructured = (coordinate) => /[/.]/.test(coordinate) || coordinate.includes(' ');
 
+// A NAMESPACE IS NOT A PLACE. `POST /api` is a real coordinate -- the derived plane's root entry
+// for the REST contract is anchored on it -- and its path form `/api` is a prefix of 675 of the 700
+// route coordinates in the index, so it fired on every REST call any agent ever made: 4,038 calls
+// replayed on 2026-09-16, and the root entry was the commonest thing "arriving" in eleven of the
+// twenty-two logs, saying nothing each time. A route whose path is a proper prefix of most of the
+// routes in the index is the index's namespace; standing anywhere in it is not arriving at it.
+// `/cart` and `/search` are one segment too and prefix nothing, so they still fire -- they are
+// pages, and three flows and five facts are anchored on them.
+const routePath = (coordinate) => {
+  const lower = coordinate.toLowerCase();
+  const m = lower.match(/^[a-z]+ (\/.+)$/);
+  return m ? m[1] : lower.startsWith('/') ? lower : null;
+};
+const namespaces = new WeakMap();
+function namespacesOf(index) {
+  if (namespaces.has(index)) return namespaces.get(index);
+  const paths = [...index.keys()].map(routePath).filter(Boolean);
+  const out = new Set();
+  for (const p of new Set(paths)) {
+    const under = paths.filter((q) => q !== p && q.startsWith(`${p}/`)).length;
+    if (under > paths.length / 2) out.add(p);
+  }
+  namespaces.set(index, out);
+  return out;
+}
+
 // Word-boundary match, not substring. `organization` must not fire on `organizationId`; the
 // boundary after it is `i`, a word character, so it does not.
 //
@@ -95,8 +121,11 @@ export function arrivalsFor(text, index, { limit = 3 } = {}) {
   const hay = String(text ?? '').toLowerCase();
   if (!hay) return [];
   const hits = [];
+  const skip = namespacesOf(index);
   for (const [coordinate, entries] of index) {
     if (!isStructured(coordinate)) continue;
+    const path = routePath(coordinate);
+    if (path && skip.has(path)) continue;
     if (!forms(coordinate).some((f) => mentions(hay, f))) continue;
     hits.push({ coordinate, entries });
   }
