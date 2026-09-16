@@ -15,7 +15,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadIndex, tokenize, SEARCH_OPTIONS } from './index-build.mjs';
 import { parseEntry } from './frontmatter.mjs';
-import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin } from './capture.mjs';
+import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin, evidenceKinds } from './capture.mjs';
 import { DERIVED_INDEX } from './planes.mjs';
 import { sourceDoor, renderSourceDoor } from './source-door.mjs';
 
@@ -159,22 +159,41 @@ function experientialTrust(data) {
   const axes = (data.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`);
   const confirmations = confirmationsOf(data);
   const disputes = disputesOf(data);
+  const kinds = evidenceKinds(data);
   if (disputes > 0) {
     return {
       level: 'disputed',
       confirmations,
       disputes,
+      kinds,
       axes,
       reasons: [`${disputes} observation(s) contradict this entry; read them before relying on it`],
     };
   }
+  // A SOURCE READING DOES NOT CONFIRM AN OBSERVATION, or the reverse, so `confirmed` needs two of
+  // one kind and never one of each. Source says what the code does; an observation says what this
+  // deployment did. They can agree while the deployment runs a different build -- which is not a
+  // hypothetical here: two of round two's three arms read `dev` rather than the installed tag. The
+  // two counts are reported side by side rather than blended, because a blended number would be a
+  // weight nobody has measured, and this base has been wrong before about a constant that felt
+  // obviously right. VCST-5975's fourth acceptance is this rule.
+  const repeated = Math.max(kinds.observation, kinds.source) > 1;
+  const both = kinds.observation > 0 && kinds.source > 0;
   return {
-    level: confirmations > 1 ? 'confirmed' : 'single-observation',
+    level: repeated ? 'confirmed' : 'single-observation',
     confirmations,
     disputes: 0,
+    kinds,
     axes,
     reasons: [
-      `${confirmations} independent observation(s)`,
+      [
+        kinds.observation ? `${kinds.observation} observation(s)` : null,
+        kinds.source ? `${kinds.source} reading(s) of source at a named tag` : null,
+      ].filter(Boolean).join(' and ') || 'no evidence rows',
+      ...(both && !repeated
+        ? ['an observation and a source reading agree here; that is NOT counted as confirmation — '
+          + 'code says what should happen, an observation says what did, and a second of EITHER kind is what confirms']
+        : []),
       axes.length ? `scoped to ${axes.join(', ')}` : 'no scope axis recorded',
     ],
   };
@@ -217,8 +236,18 @@ function answerFor(base, hit, reference = null) {
       ? { lastConfirmed: confirming.at(-1) ?? null, verificationDue: null }
       // The derived plane has no re-verification clock: it does not go stale, it goes regenerated.
       : { lastConfirmed: null, verificationDue: null },
+    // Provenance names the CHANNEL as well as the place. A row read out of code has no deployment
+    // and no pin, so `observedOn` reports it as `?@?` -- which reads like a missing stamp rather
+    // than a different kind of evidence, and the whole reason `method: source` exists is that the
+    // two must not be indistinguishable.
     provenance: experiential
-      ? `observed @ ${observedOn(data).map((o) => `${o.deployment}${o.platformVersion ? `:${o.platformVersion}` : ''}`).join(', ')}`
+      ? [
+        observedOn(data).some((o) => o.deployment)
+          ? `observed @ ${observedOn(data).filter((o) => o.deployment).map((o) => `${o.deployment}${o.platformVersion ? `:${o.platformVersion}` : ''}`).join(', ')}`
+          : null,
+        ...(data.evidence ?? []).filter((e) => e.method === 'source')
+          .map((e) => `read from source @ ${e.module}:${e.version} ${e.path}`),
+      ].filter(Boolean).join(' · ')
       : `derived @ ${data.evidence?.[0]?.deployment ?? '?'}:${data.evidence?.[0]?.pin ?? '?'}`,
     disputed: disputes.length
       ? { count: disputes.length, notes: disputes.map((d) => ({ note: d.note ?? null, deployment: d.deployment ?? null, at: d.at ?? null })) }

@@ -26,6 +26,7 @@ import { join } from 'node:path';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { hash, mintId } from './canonical.mjs';
 import { buildIndex } from './index-build.mjs';
+import { locate, installedVersionOf, knownModules } from './source-door.mjs';
 import { derivedFacts, unreachableAnchors } from './coordinates.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, WRITTEN_STORES } from './planes.mjs';
 // Re-exported: normalizeAnchor is half of the identity rule and callers have always found it
@@ -62,6 +63,10 @@ export function fingerprint({ subject, anchors, appliesTo, plane }) {
 }
 
 // --- computed, never declared -----------------------------------------------------------------
+
+// Injected into `sourceRef` rather than reached for inside it, so a test can drive it with a base
+// that has no derived plane at all.
+const sourceTools = { locate, installedVersionOf, knownModules };
 
 export const confirmationsOf = (data) => (data.evidence ?? []).filter((e) => !e.contradicts).length;
 export const disputesOf = (data) => (data.evidence ?? []).filter((e) => e.contradicts).length;
@@ -270,6 +275,16 @@ Seven inputs, none of them defaulted. Run "kb capture" with none of them and it 
   --anchor         a coordinate the claim is about -- a route, a Type.field, a file. Repeatable.
   --scope          axis=value. Repeatable. This is what decides whether two records are one fact.
   --deployment     where you observed it
+  --source         <Module.Id>:<path/in/repo>, INSTEAD of --deployment, when you read the claim out
+                   of code rather than off a running system. The version is not part of it: this
+                   base already records which version of each module the deployment runs, and that
+                   tag is what gets stamped and turned into a fetchable URL. A module this base
+                   does not record as installed is refused rather than guessed at.
+
+READ FROM CODE IS NOT OBSERVED, and the corpus keeps them apart. Source says what the code does; an
+observation says what this deployment did. They can agree while the deployment runs a different
+build -- in round two, two of three arms read \`dev\` instead of the installed tag -- so a source
+reading and an observation never confirm each other. A second reading of the SAME kind does.
 
 The VERSION is not an eighth input. When --deployment is the deployment this corpus was projected
 from, the door stamps the pin and the platform version out of derived/pin.json, because they are
@@ -427,7 +442,36 @@ export function stampNotice(stamp) {
   return null;
 }
 
-export function evidenceRow({ deployment, pin, platformVersion, by, at, contradicts, note }) {
+export function evidenceRow({ deployment, pin, platformVersion, by, at, contradicts, note, source }) {
+  // A CLAIM READ OUT OF CODE IS NOT A CLAIM READ OFF A RUNNING DEPLOYMENT, and the corpus must be
+  // able to tell them apart. Every one of the 124 evidence rows in this base said
+  // `method: observation`, because that was the only method the door could write -- so a corpus
+  // whose whole contract is that every claim is dated, placed and refutable could not say where
+  // half of what it will hold next came from.
+  //
+  // The two are not interchangeable and must not confirm each other: source says what the code
+  // does, an observation says what this deployment did, and they can agree while the deployment
+  // runs a different build. `evidenceKinds` below is what keeps the counts apart; VCST-5975's
+  // fourth acceptance is exactly that.
+  //
+  // A source row carries a module, the version INSTALLED HERE, and a path. The version is resolved
+  // from the derived plane rather than typed, for the same reason `stampOf` resolves the pin: two
+  // of round two's three arms read `dev`, and a value the base already holds should never be
+  // retyped by hand.
+  if (source) {
+    const row = {
+      method: 'source',
+      module: source.module,
+      version: source.version,
+      path: source.path,
+    };
+    if (source.url) row.url = source.url;
+    row.at = at;
+    if (by) row.by = by;
+    if (contradicts) row.contradicts = true;
+    if (note) row.note = note;
+    return row;
+  }
   const row = { method: 'observation', deployment };
   if (pin) row.pin = pin;
   if (platformVersion) row.platformVersion = platformVersion;
@@ -436,6 +480,56 @@ export function evidenceRow({ deployment, pin, platformVersion, by, at, contradi
   if (contradicts) row.contradicts = true;
   if (note) row.note = note;
   return row;
+}
+
+/**
+ * How many rows of each KIND back an entry, and how many contradict it.
+ *
+ * Counted apart rather than summed, because two readings of the same code are a repetition and an
+ * observation beside a source reading is a different kind of support. Nothing here decides what
+ * that is worth -- `experientialTrust` does, and it reports both numbers rather than blending them
+ * into a score nobody has measured.
+ */
+export function evidenceKinds(data) {
+  const out = { observation: 0, source: 0, disputes: 0 };
+  for (const e of data.evidence ?? []) {
+    if (e.contradicts) { out.disputes += 1; continue; }
+    if (e.method === 'source') out.source += 1;
+    else out.observation += 1;
+  }
+  return out;
+}
+
+/**
+ * Parse `--source VirtoCommerce.Orders:src/.../Handler.cs` and resolve the installed version.
+ *
+ * Refuses a module the base does not say is installed. That refusal is the point: a claim about
+ * code the deployment is not running is not evidence about this deployment, and the corpus has no
+ * way to notice later.
+ */
+export function sourceRef(base, raw, { locate, installedVersionOf, knownModules }) {
+  const at = String(raw ?? '').indexOf(':');
+  if (at < 1 || at === String(raw).length - 1) {
+    throw new CaptureRefused(
+      'capture refused: --source must be <Module.Id>:<path/in/repo>, for example '
+        + '`--source VirtoCommerce.Orders:src/VirtoCommerce.OrdersModule.Data/Handlers/'
+        + 'CancelPaymentOrderChangedEventHandler.cs`. The version is not part of it: this base '
+        + 'already knows which version it runs.',
+    );
+  }
+  const module = String(raw).slice(0, at).trim();
+  const path = String(raw).slice(at + 1).trim();
+  const version = installedVersionOf(base, module);
+  if (!version) {
+    const known = knownModules(base);
+    throw new CaptureRefused(
+      `capture refused: this base does not record \`${module}\` as installed, so there is no version `
+        + 'to stamp and the claim would be about code that may not be running here. '
+        + `${known.length} modules are recorded${known.length ? `; the nearest by name: ${known.filter((k) => k.toLowerCase().includes(module.toLowerCase().split('.').pop() ?? '')).slice(0, 3).join(', ') || known.slice(0, 3).join(', ')}` : ''}.`,
+    );
+  }
+  const where = locate(module, version);
+  return { module, version, path, url: where.raw ? `${where.raw}${path}` : null };
 }
 
 /**
@@ -453,7 +547,14 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
   // differently -- `subject` is the goal, and it alone decides identity -- so it goes through every
   // refusal here rather than round a second door that would drift from this one.
   const plane = input.flow ? 'flow' : 'experiential';
+  // `deployment` answers "where did you see this". A claim read out of code was not seen ANYWHERE
+  // -- it was read at a tag -- and `--source` answers the same question better, because a module
+  // and a path at an installed version is a coordinate anybody can return to, while a deployment
+  // name is the thing the README already says is not evidence of anything on its own. So one of
+  // the two is required and neither defaults; asking for both would make a writer name a
+  // deployment they did not look at, which is how a plausible value enters a corpus.
   const missing = Object.keys(REQUIRED_INPUT).filter((k) => {
+    if (k === 'deployment' && input.source) return false;
     const v = input[k];
     return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
   });
@@ -553,7 +654,8 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     );
   }
 
-  const stamp = stampOf(base, input);
+  const source = input.source ? sourceRef(base, input.source, sourceTools) : null;
+  const stamp = source ? { pin: null, platformVersion: null, source: 'read-from-source' } : stampOf(base, input);
   const data = {
     id,
     subject: input.subject,
@@ -569,6 +671,7 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
       platformVersion: stamp.platformVersion,
       by: input.by,
       at: input.at ?? now(),
+      source,
     })],
   };
   const body = `\n${String(input.claim).trim()}\n`;

@@ -11,7 +11,7 @@ import { validate } from '../src/validate.mjs';
 import {
   capture, supersede, confirm, dispute, retire,
   reanchor, amend, CaptureRefused, rebuildCapturedArtifacts,
-  readCaptured, confirmationsOf, disputesOf, isDisputed, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
+  readCaptured, confirmationsOf, evidenceKinds, disputesOf, isDisputed, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
 } from '../src/capture.mjs';
 import { consolidate, renderConsolidation, MergeRefused } from '../src/consolidate.mjs';
 import { experientialNeighbours } from '../src/coordinates.mjs';
@@ -104,6 +104,7 @@ const FLAGS = {
   '--subject': 'subject', '--question': 'question', '--claim': 'claim',
   '--anchor': 'anchor', '--scope': 'scope', '--refutable-by': 'refutableBy',
   '--deployment': 'deployment', '--pin': 'pin', '--platform-version': 'platformVersion',
+  '--source': 'source',
   '--by': 'by', '--at': 'at', '--note': 'note', '--reason': 'reason',
   '--superseded-by': 'supersededBy',
   // reanchor. `--now` is the corrected coordinate and never a timestamp: nothing in this CLI takes
@@ -421,7 +422,7 @@ async function main() {
       const r = capture(base, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
         anchors: a.anchor, appliesTo: a.scope, flow: a.flow,
-        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at,
+        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
       });
       console.log(`${a.flow ? 'FLOW ' : ''}CAPTURED ${r.id}`);
       for (const d of closeQuestions(base, { question: a.question, id: r.id })) {
@@ -511,7 +512,7 @@ async function main() {
       const r = supersede(base, oldId, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
         anchors: a.anchor, appliesTo: a.scope, reason: a.reason,
-        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at,
+        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
       });
       console.log(`SUPERSEDED ${r.superseded} -> ${r.id}`);
       console.log(`  path        : ${r.path}`);
@@ -601,7 +602,7 @@ async function main() {
     try {
       const r = amend(base, id, {
         step: a.step, note: a.note,
-        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at,
+        deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, by: a.by, at: a.at, source: a.source,
       });
       console.log(`AMENDED ${r.id}  step ${r.step}`);
       console.log(`  flows       : ${r.artifacts.active} active, ${r.artifacts.retired} retired`);
@@ -664,6 +665,11 @@ async function main() {
     const active = captured.filter((e) => e.data.status === 'active');
     console.log(`${derived} derived entries, ${anchors} anchors, at ${base}`);
     console.log(`${active.length} captured entries active (${captured.length - active.length} retired) in ${CAPTURED_DIR}/`);
+    // The two kinds of evidence, counted apart. A corpus that cannot say how much of itself was
+    // read off a running system and how much out of code cannot answer the question the review
+    // asked: 124 rows, every one `method: observation`, and every arm going to source anyway.
+    const kinds = active.reduce((acc, e) => { const k = evidenceKinds(e.data); acc.observation += k.observation; acc.source += k.source; acc.disputes += k.disputes; return acc; }, { observation: 0, source: 0, disputes: 0 });
+    console.log(`  evidence rows: ${kinds.observation} observed, ${kinds.source} read from source, ${kinds.disputes} contradicting`);
     for (const e of active) {
       console.log(`  ${e.data.id}  ${e.data.subject}  — ${confirmationsOf(e.data)} confirmation(s)` +
         `${isDisputed(e.data) ? `, DISPUTED (${disputesOf(e.data)})` : ''}` +

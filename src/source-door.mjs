@@ -36,10 +36,11 @@
 // registry is used for exactly one thing: which repository a module lives in, which is a property
 // of the ecosystem rather than of this deployment.
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEntry } from './frontmatter.mjs';
+import { DERIVED_ENTRIES } from './planes.mjs';
 
 const MAP_PATH = fileURLToPath(new URL('./data/module-repos.json', import.meta.url));
 
@@ -102,6 +103,45 @@ export function modulesNamedBy(base, entries) {
     }
   }
   return [...out.values()];
+}
+
+/**
+ * Which version of a module this deployment runs, read out of the derived plane.
+ *
+ * The same principle as `stampOf` in capture.mjs: a writer is never asked to retype a value the
+ * base already holds. A claim read from source has to say WHICH source, and the tag is the half of
+ * that coordinate the writer is most likely to get wrong -- round two's arms got it wrong two
+ * times in three, by reading `dev`.
+ *
+ * This walks the whole derived plane, unlike `modulesNamedBy`, because there is no ranked list to
+ * start from and the caller is `kb capture`, which is not on any hot path.
+ */
+export function installedVersionOf(base, moduleId) {
+  const dir = join(base, DERIVED_ENTRIES);
+  if (!existsSync(dir)) return null;
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.md')) continue;
+    let data;
+    try { ({ data } = parseEntry(readFileSync(join(dir, f), 'utf8'), f)); } catch { continue; }
+    for (const a of data.appliesTo ?? []) {
+      if (a.module === moduleId && a.version) return a.version;
+    }
+  }
+  return null;
+}
+
+/** Every module id the derived plane names, for an error message that can be acted on. */
+export function knownModules(base) {
+  const dir = join(base, DERIVED_ENTRIES);
+  if (!existsSync(dir)) return [];
+  const out = new Set();
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.md')) continue;
+    let data;
+    try { ({ data } = parseEntry(readFileSync(join(dir, f), 'utf8'), f)); } catch { continue; }
+    for (const a of data.appliesTo ?? []) if (a.module) out.add(a.module);
+  }
+  return [...out].sort();
 }
 
 /**

@@ -7,6 +7,7 @@
 // experiential plane is a legitimate state, not a fault.
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { installedVersionOf } from './source-door.mjs';
 import { join } from 'node:path';
 import { parseEntry, FIELD_ORDER } from './frontmatter.mjs';
 import { mintId } from './canonical.mjs';
@@ -168,6 +169,23 @@ export function validate(base) {
       } else derivedCoordinates.add(key);
     }
     if (!(d.evidence?.length > 0)) note(`${rel}: carries no evidence`);
+    // A CLAIM READ OUT OF CODE HAS TO SAY WHICH CODE. `method: source` without a module, a version
+    // and a path is the same failure as an observation without a deployment: unrefutable, because
+    // nobody can go back to where it came from. The version must be one the base records as
+    // installed -- `kb capture` resolves it rather than accepting it, so a row that disagrees with
+    // the derived plane was either hand-edited or survived a re-extract, and both are worth a flag.
+    for (const e of d.evidence ?? []) {
+      if (e.method !== 'source') continue;
+      const missing = ['module', 'version', 'path'].filter((k) => !e[k]);
+      if (missing.length) note(`${rel}: a source-backed evidence row names no ${missing.join(', ')}`);
+      if (e.deployment) note(`${rel}: a source-backed evidence row carries a deployment (${e.deployment}); source is read from a tag, not from a deployment`);
+      if (e.module && e.version) {
+        const installed = installedVersionOf(base, e.module);
+        if (installed && installed !== e.version) {
+          note(`${rel}: source row cites ${e.module}:${e.version} while this base records ${installed} as installed`);
+        }
+      }
+    }
     if ('costIfMissing' in d) note(`${rel}: costIfMissing must be asked or omitted, never defaulted`);
 
     if (d.plane === 'experiential' || d.plane === 'flow') {
