@@ -18,7 +18,7 @@ import { plan, renderPlan } from '../src/todo.mjs';
 import { experientialNeighbours } from '../src/coordinates.mjs';
 import { record } from '../src/journal.mjs';
 import {
-  recordAsk, recordUses, recordSettled, closeQuestions, openQuestions, dropQuestion,
+  recordAsk, recordUses, recordSettled, closeQuestions, openQuestions, buriedQuestion, dropQuestion,
   unconfirmedUses, loopBanner,
 } from '../src/demand.mjs';
 import { OWNED_ROOTS, OWNED_FILES, DERIVED_ENTRIES } from '../src/planes.mjs';
@@ -106,6 +106,8 @@ const FLAGS = {
   '--anchor': 'anchor', '--scope': 'scope', '--refutable-by': 'refutableBy',
   '--deployment': 'deployment', '--pin': 'pin', '--platform-version': 'platformVersion',
   '--source': 'source',
+  // `kb demand buried --entry <id>`: the entry that should have been served and was not.
+  '--entry': 'entry',
   '--by': 'by', '--at': 'at', '--note': 'note', '--reason': 'reason',
   '--superseded-by': 'supersededBy',
   // reanchor. `--now` is the corrected coordinate and never a timestamp: nothing in this CLI takes
@@ -699,6 +701,21 @@ async function main() {
   }
 
   if (cmd === 'demand') {
+    if (a._[0] === 'buried') {
+      const key = a._[1];
+      if (!key || !a.entry) {
+        console.error('kb demand buried <key> --entry <KB-ID> [--reason "..."]');
+        console.error('  For a question whose answer the base ALREADY HELD and did not serve. Not `drop`:');
+        console.error('  dropping says the question was not worth answering, which is false and deletes the');
+        console.error('  signal. Every row recorded here is one more labelled case for the ranking problem.');
+        return 2;
+      }
+      const r = buriedQuestion(base, key, { id: a.entry, reason: a.reason ?? null });
+      if (!r) { console.error(`no open question matches ${key}`); return 2; }
+      console.log(`BURIED ${r.key} — "${r.question}"`);
+      console.log(`  ${r.id} answers it and was not served. The row is settled; the retrieval defect is now on record.`);
+      return { code: 0, outcome: { detail: { buried: r.key, want: r.id } } };
+    }
     if (a._[0] === 'drop' || a.reason !== undefined) {
       const key = a._[a._[0] === 'drop' ? 1 : 0];
       if (!key) {
