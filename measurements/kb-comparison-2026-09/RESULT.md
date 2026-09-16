@@ -162,3 +162,10 @@ active. `RESULT-EXPLAIN.md` tells that correctly. This page told it about the wr
 Three write-ups repeated it and none of them re-opened the log. The check that would have caught it —
 "does the kb journal actually contain the id you are citing" — did not exist, because the person who
 would have written it is the person who made the error.
+
+## Filed, 2026-09-16
+
+The deployment-state residue this page records -- four cancelled orders each leaving a `New`
+shipment -- is filed as **VCST-5984** (cancel cascades to payments, never to shipments). The
+"orders cannot be deleted" premise in `TASK.md` is filed as **VCST-5985**. The members-endpoint
+password hash from round three is **VCST-5983**. Details in `RESULT-MEMBERS.md`.

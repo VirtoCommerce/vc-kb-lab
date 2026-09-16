@@ -152,3 +152,19 @@ Not yet fixed; it belongs with the retrieval work.
 **The pattern, for the third time:** every one of these is a check that existed or could have existed
 and was not run, and none was found by the person who built the instrument. The review was worth
 more than the round it reviewed.
+
+---
+
+# FILED, 2026-09-16 -- the three platform findings, as issues
+
+The findings that came out of the rounds and not out of the scoreboard now have issue numbers.
+Internal tracker, VCST project.
+
+| | finding | issue | type |
+|---|---|---|---|
+| a | `GET /api/members/{id}` returns `securityAccounts[].passwordHash` populated while `GET /api/platform/security/users/{userName}` strips it via `ReduceUserDetails` | **VCST-5983** | Bug, labelled security. No value quoted, no artefact linked |
+| b | an order CAN be deleted -- `DELETE /api/order/customerOrders`, `OrderModule_DeleteOrdersByIds`, Delete in the Admin toolbar and every row menu -- while three corpus entries and every run brief since 07 said it cannot | **VCST-5985** | Task: confirm the intended semantics and align the guidance. Whether the endpoint deletes is stated as untested |
+| c | cancelling an order cascades to its payments and never to its shipments: `CancelPaymentOrderChangedEventHandler` collects `InPayments` only, no shipment handler exists, cancelled orders leave live `New` shipments | **VCST-5984** | Bug |
+
+Filed from the write-ups on this page, `RESULT.md`, `FINDING-orders-are-deletable.md` and the
+corpus entry `KB-0C102D97`; nothing was re-run against the deployment to file them.
