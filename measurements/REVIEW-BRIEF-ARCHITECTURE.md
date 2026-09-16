@@ -14,7 +14,7 @@ marked as such. If the honest answer is that this architecture cannot work, say 
 
 | | |
 |---|---|
-| the tool | `C:/_VIRTO/vc-kb-lab` — `src/` (18 modules), `bin/kb.mjs`, 222 tests |
+| the tool | `C:/_VIRTO/vc-kb-lab` — `src/` (19 modules), `bin/kb.mjs`, 232 tests |
 | the corpus | `C:/_VIRTO/vc-knowledge` — 590 derived, 78 captured, 3 flows, 127 evidence rows |
 | the measurements | `measurements/` — nine directories, each a README plus a runnable script |
 | every archived run | `MEASUREMENT-archive/` (12 runs) and `C:/_VIRTO/_comparison-logs/` (10 arms) |
@@ -61,7 +61,7 @@ project had published. Since then, in one working day:
 | the demand loop had two outcomes and needed three | fixed: `kb demand buried` records "the answer existed and retrieval did not serve it" |
 | nothing turned the loop into work | new: `kb todo` sorts open questions by what closing each would cost |
 
-Tests 173 → 222. The corpus grew 67 → 78 active entries, and its evidence rows went from
+Tests 173 → 232. The corpus grew 67 → 78 active entries, and its evidence rows went from
 **98 observed / 0 from source** to **113 observed / 8 from source**.
 
 ---
@@ -131,9 +131,12 @@ invented for a unit test. That ratio is better than any of the fourteen rules ac
    today — two unrelated facts about the Admin order screen collided because both were anchored on
    the order route with the same scope. We worked around it by re-anchoring one. A workaround that
    moves a coordinate to dodge an identity rule is how a guess enters a corpus.
-3. **Anchors serve two masters.** They are both "what this fact is about" and "where it should
-   arrive", and those are different places. `/api/members/{id}` is where the password-hash finding
-   belongs by subject; `/sign-in` is where somebody needs it.
+3. **Anchors served two masters** — "what this fact is about" and "where it should arrive" — and
+   that is now split: `arrivesAt` is a delivery address, outside the fingerprint and outside the
+   cross-plane index, retrofitted onto existing entries by `kb arrives`. Nine were applied and
+   arrivals over the 22 archived logs went 295 → 316. **We are not confident this is the right
+   shape**: it adds a field to a schema whose closedness is load-bearing, and the alternative — that
+   arrival should not match coordinates at all — is question 3 below.
 4. **Confirmation has no notion of independence beyond an author string.** We added one today after
    an entry confirmed itself: two files read minutes apart by one author had raised it to
    `confirmed`. The fix counts distinct `by` values, and 121 of 127 evidence rows carry no author at
