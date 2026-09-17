@@ -305,3 +305,150 @@ Not a survey, not an impression: **do agents stop reading whole files?** The dis
 premise is that they read 386 KB to use three invariants. Count the whole-file reads before and
 after. If the number does not fall, the pack is selecting badly and no amount of ranking will fix
 it — and that will be visible rather than arguable.
+
+---
+
+## 10. Where the base lives while agents work, and who writes to it
+
+Two questions that decide whether any of the above can actually run.
+
+### 10.1 Not inside the plugin — and this is provable, not a preference
+
+`plugins/vc-perf/knowledge/plugin-root.md` records the two facts that settle it:
+
+> `$CLAUDE_PLUGIN_ROOT` is exported by Claude Code **only to hook / MCP / LSP subprocesses**, not
+> into the Bash/PowerShell tool shell […] The marketplace installs the plugin into a
+> **version-stamped** cache dir (`…/vc-tools/vc-perf/<version>/`); a NEW sibling appears on every
+> upgrade and old versions are not pruned.
+
+A corpus written into that directory is **orphaned by the next plugin upgrade** — not deleted, which
+would at least be noticed, but left behind in a directory nothing reads any more. That is the
+silent-write failure this project already hit once with `MSYS_NO_PATHCONV`, with an upgrade cycle
+instead of a shell quirk as the cause.
+
+`${CLAUDE_PLUGIN_DATA}` survives upgrades and is therefore not wrong in that specific way, but it is
+per-machine and is not a git checkout: nothing there can be reviewed, shared, or pulled by the next
+agent on another laptop. A knowledge base that one machine can read is a cache, not a base.
+
+### 10.2 A git checkout, resolved once by `/project-init`
+
+Decision 5, unchanged and now with its reason written down:
+
+```
+KB_BASE set?                      → use it
+else a sibling ./vc-knowledge?    → use it
+else                              → git clone --depth 1 https://github.com/VirtoCommerce/vc-knowledge
+                                     into <project>/.vc-knowledge
+```
+
+recorded in `project-profile.json` as `knowledgeBase: { repo, path, ref }`, with a readiness row in
+`verify-access` and `--check` adding the field to profiles written before it existed.
+
+**This is the pattern the repository already uses between plugins.** `vc-perf` depends on `vc-fix`
+and reuses its onboarding, routing and agents — and it does so by reading `project-profile.json`,
+never by resolving a path into `vc-fix`'s directory. Plugins share through the project's own files.
+The base is that same handshake, one level up.
+
+The read path each session: a `SessionStart` hook does `git pull` and nothing else `[to build]`. It
+never writes, so a session that starts offline works against the last pull and says so.
+
+### 10.3 Writing — the defect the new design makes live
+
+**Measured, today, in `src/capture.mjs`: there is no lock and no atomic write.** `writeEntry` writes
+the entry file, then `rebuildCapturedArtifacts` reads the whole store and rewrites the index and the
+catalog. Two writers at the same instant both land their `.md` file and the second one's index
+rewrite **drops the first one's row**. The entry survives on disk and is invisible to every reader.
+
+This has never happened because the base has only ever had one writer at a time. The operating model
+above dispatches **three agents in parallel**, so it is live from the first run.
+
+**The fix is not a lock.** It is to stop agents writing entries at all:
+
+| | | |
+|---|---|---|
+| during the run | `kb note …` `[to build]` | appends ONE line to `pending.jsonl`. An append of a short line is atomic on both platforms, and the file is the same shape as `demand.jsonl`, which has taken concurrent appends since it shipped |
+| at close-out | `kb drain` `[to build]` | one writer, single-threaded: replays the queue through `capture` / `dispute` / `confirm`, so every door refusal still fires, then `kb validate`, then one commit |
+
+Four reasons, and the first is not the important one:
+
+1. The race disappears, because there is one writer by construction rather than by locking.
+2. It is the pattern the base already has for concurrent appends.
+3. **The write happens when the run knows its verdict.** An observation captured mid-run may turn
+   out to be an artefact of a broken fixture, a stale cache or a seeding failure; at close-out the
+   run knows whether the thing it saw was the platform or its own mess.
+4. A crashed agent leaves a queue line, not a half-written index.
+
+### 10.4 Git — one commit per run
+
+Decision 6 said agents push to `main` and CI rebuilds the generated artefacts. Concretely:
+
+* **one commit per run**, message carrying the ticket key, drained at close-out after `kb validate`
+  passes. A run whose gate fails commits nothing and says so in its report.
+* `git pull --rebase` before push. **Entry files almost never conflict** — separate files, ids
+  minted from the subject.
+* **The index and catalog files always will.** They are 445 KB of generated JSON that every write
+  rewrites. Two runs finishing within a minute conflict on them every time. The resolution is
+  mechanical and must be written down rather than left to judgement: take either side and
+  regenerate — `git checkout --ours <index> && kb reindex` — because the index is a function of the
+  entries and never carries information of its own.
+* `.gitattributes` gains `*.jsonl merge=union` `[to build]` for the append-only files. The existing
+  `* -text` stays: the corpus is byte-gated and any line-ending conversion would fail `kb check` for
+  a reason that has nothing to do with the contract.
+* A **document** (`reference/**`) appended to by `5h-map` rides the same commit. A full `--refresh`
+  of a document is a human's act and goes through a pull request, because it rewrites claims other
+  tickets cite.
+
+### 10.5 The question this raises, and it is the owner's
+
+**A customer cannot push to `VirtoCommerce/vc-knowledge`.** Virto's own agents can; a customer
+running this plugin on their own deployment cannot, and most of what their agents observe is about
+*their* stand rather than about the platform.
+
+The shape that fits what the corpus already is — 59 of 91 entries universal at a module version,
+10 genuinely stand-specific — is **a read-only upstream plus a local overlay**: the customer clones
+Virto's base, writes only into their own, and reads both with the local one winning on a coordinate
+clash. Contributing an observation upstream is then a deliberate pull request, not a side effect of
+a test run.
+
+That is a design, not a decision. It needs the owner, and it should be settled before the demo says
+anything about customers.
+
+---
+
+## 11. Where the tool ships
+
+`plugins/vc-kb` **already exists** in the repository as the stale port the review's D1 names, and it
+is **not listed in `.claude-plugin/marketplace.json`** — so it is present and unpublished.
+
+**It becomes its own published plugin, and the others depend on it.** The mechanism exists and is
+already in use: `plugins/vc-perf/.claude-plugin/plugin.json` carries
+
+```json
+"dependencies": [ { "name": "vc-fix", "version": ">=0.7.0" } ]
+```
+
+so `vc-fix` and `vc-perf` each gain `{ "name": "vc-kb", "version": ">=0.2.0" }` and none of them
+carries a copy of the tool.
+
+**The tool ships; the data never does.** That is the whole rule, and it is the answer to the mirror
+defect: `mirror-check.mjs` exists because two copies of the knowledge diverged on 64 of 92 paths.
+Three copies across three plugins would be worse, and there is no gate that would catch it, because
+a plugin published to a marketplace is not diffed against anything.
+
+**How an agent invokes it.** The convention both existing plugins already document, because
+`$CLAUDE_PLUGIN_ROOT` is not available in the tool shell:
+
+```bash
+PLUGIN_ROOT="$(claude plugin list --json | node -e "…find the enabled vc-kb@vc-tools…")"
+node "$PLUGIN_ROOT/bin/kb.mjs" brief --domain cart --rules BL-CART-003 …
+```
+
+resolved once per task and reused. Always the active version, so a plugin upgrade needs no
+re-pointing anywhere.
+
+**CLI rather than MCP, and the reason is their own budget.** An MCP server would make `kb brief` a
+tool call instead of a shell command, which reads better — but every MCP tool's schema sits in the
+context window on every turn, whether or not it is used, and this repository enforces 80,000
+always-loaded characters with a ratchet that has a burn-down list. A CLI costs nothing until it is
+called. If MCP is ever worth it, that is a measurement — schema cost against call ergonomics — and
+not a preference.
