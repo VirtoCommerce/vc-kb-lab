@@ -1,5 +1,18 @@
 # vc-kb-lab — the workbench for the knowledge base
 
+> **THE TOOL IS NOT EDITED HERE ANY MORE.** `kb` was built and measured in this repository and
+> ported on 2026-09-17 to `vc-mcp-testing-module/plugins/vc-kb`, which is now the canonical copy
+> (migration decision 9). `bin/`, `src/` and `test/` here are a frozen reference: the plugin is
+> deliberately AHEAD of them — the port fixed machine paths, cwd-dependence and base resolution, and
+> phase 3 added `kb sync`.
+>
+> What lives here is the MEASUREMENT record — `measurements/`, `MEASUREMENT-archive/`, the arm
+> reports — which is the evidence behind every constant in the tool and belongs beside the thing it
+> measured. That is still edited here.
+>
+> `npm run frozen:check` says whether anybody edited the tool here anyway; add
+> `-- --against <plugin-dir>` to see how far the plugin has moved ahead.
+
 This directory holds the **tool**. The base itself — the entries — lives in a separate
 repository, `vc-knowledge`. Code here, data there.
 
