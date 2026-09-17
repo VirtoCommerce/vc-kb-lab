@@ -378,9 +378,19 @@ for (const e of entries) {
 
 const duplicates = plan.map((r) => r.ruleId).filter((v, i, a) => a.indexOf(v) !== i);
 if (duplicates.length) die(`refusing: the page carries the same rule id twice: ${duplicates.join(', ')}`);
-if (plan.length !== 216) {
-  console.error(`note: the page parsed to ${plan.length} rules, not the 216 this import was written against.`);
-  console.error('      The skeleton has changed. Read the diff before passing --write.');
+// A GUARD AGAINST THE SKELETON MOVING UNDER THE IMPORT, and it used to be a transcribed count --
+// which is the one thing this repository's own rules forbid, and it was wrong the day it was
+// written: it said 216 against a page that has held 217 in every copy checked (the root's, vc-fix's
+// and the base's, with identical id sets). The guard then fired on its own error and refused a
+// correct import, which is the failure mode of a number nobody can re-derive.
+//
+// So it compares the parse against the ids the page ACTUALLY carries, counted by a second and
+// independent regex. What it is really asking is "did I parse everything I can see?" -- and that
+// question answers itself on any page, in any year, with no number to keep in step.
+const visible = (readFileSync(src, 'utf8').match(/^### (BL-[A-Z0-9]+-[0-9]+)/gm) ?? []).length;
+if (plan.length !== visible) {
+  console.error(`note: the page shows ${visible} rule headings and the import planned ${plan.length}.`);
+  console.error('      Something in the skeleton does not parse. Read the diff before passing --write.');
   if (write) process.exit(4);
 }
 
