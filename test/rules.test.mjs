@@ -316,3 +316,83 @@ test('the rules index carries the active rules and the gate notices it going sta
     assert.match(validate(dir).problems.join('\n'), new RegExp(`${RULES_INDEX} is not what the rules on disk build`));
   } finally { drop(dir); }
 });
+
+// --- a rule may name no coordinate -------------------------------------------------------------
+//
+// Measured on the document this plane exists for, not assumed: of the 216 BL-* invariants in
+// `business-logic.md`, 143 name no coordinate in their Rule, Verify or Violation signal, and only
+// 41 name one this base projects. "Money rounds half-up to two decimals" is about the platform, not
+// about a place in it. An importer forced to fill this field would have invented 143 coordinates.
+
+test('a rule may name no coordinate, and the gate agrees with the door', () => {
+  const dir = makeBase();
+  const from = withPage(dir);
+  try {
+    const r = capture(dir, RULE({
+      subject: 'BL-PRICE-003 price rounding',
+      claim: '[P0-revenue] All monetary amounts round half-up to 2 decimal places in the display currency.',
+      anchors: undefined,
+      from,
+    }));
+    assert.deepEqual(loadEntry(dir, r.id).data.anchors, []);
+
+    // The gate must not report it. A notice here would fire on two thirds of the imported plane and
+    // bury the 39 the corpus actually carries.
+    const problems = validate(dir).problems.join('\n');
+    assert.doesNotMatch(problems, /carries no anchors/);
+
+    // And the exemption is NARROW: a fact with no anchor is still unreachable and still reported.
+    assert.throws(
+      () => capture(dir, {
+        subject: 'cart totals', question: 'what?', claim: 'x', refutableBy: 'observation',
+        appliesTo: ['surface=xapi'], deployment: 'vcst-qa', anchors: [],
+      }),
+      (e) => e instanceof CaptureRefused && /anchors/.test(e.message),
+    );
+  } finally { drop(dir); }
+});
+
+test('a rule that does name a coordinate still records it, and still arrives beside an observation', () => {
+  const dir = makeBase();
+  const from = withPage(dir);
+  try {
+    const rule = capture(dir, RULE({ from, anchors: ['CartType.discounts'] }));
+    const fact = capture(dir, {
+      subject: 'coupon discount on a sale line',
+      question: 'what does the coupon apply to?',
+      claim: 'Observed: the coupon came off the list price.',
+      refutableBy: 'observation',
+      anchors: ['CartType.discounts'],
+      appliesTo: ['surface=xapi'],
+      deployment: 'vcst-qa',
+    });
+    const seen = writtenNeighbours(dir, [{ coordinate: 'CartType.discounts' }], { exclude: fact.id });
+    assert.deepEqual(seen.map((n) => n.id), [rule.id]);
+  } finally { drop(dir); }
+});
+
+// --- where a transcription points --------------------------------------------------------------
+//
+// A row that names the page it was read out of is auditable only if the reader can open that page.
+// The rows already in this corpus name absolute paths on one machine, which nobody cloning the base
+// can follow. An import of 216 rules makes that the common case rather than the exception, so a
+// relative `--from` resolves against the BASE -- the thing the row travels inside -- and not
+// against whatever directory the CLI happened to be run from.
+
+test('a relative --from resolves against the base, so the stored path travels with the corpus', () => {
+  const dir = makeBase();
+  try {
+    withPage(dir, 'sources-business-logic.md');
+    const r = capture(dir, RULE({ from: 'sources-business-logic.md' }));
+    const row = loadEntry(dir, r.id).data.evidence[0];
+    assert.equal(row.from, 'sources-business-logic.md');
+    assert.equal(row.attested, false);
+
+    // A path that resolves against neither is still refused: the point of naming an artefact is
+    // that somebody else can open it.
+    assert.throws(
+      () => capture(dir, RULE({ subject: 'BL-CART-004 x', from: 'nowhere-at-all.md' })),
+      /does not exist/,
+    );
+  } finally { drop(dir); }
+});

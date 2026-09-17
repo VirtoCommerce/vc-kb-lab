@@ -747,7 +747,17 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
   //   deployment a rule was not observed anywhere -- it was READ. `--from <the page it was read out
   //              of>` answers the same question better, and `--source` answers it better still.
   //              One of the three is required; none defaults.
-  const NORMATIVE_EXEMPT = new Set(['question', 'appliesTo']);
+  //   anchors    a rule is reached by its ID and by its domain, not by a coordinate. Measured on
+  //              the document this plane exists for: of the 216 BL-* invariants in
+  //              `business-logic.md`, 143 name no coordinate anywhere in their Rule, Verify or
+  //              Violation signal, and only 41 name one this base projects. They are not badly
+  //              written -- "money rounds half-up to two decimals" and "the search index lags an
+  //              admin change by 30-60 seconds" are about the platform, not about a place in it.
+  //              An importer made to satisfy this field would have invented 143 coordinates, and a
+  //              gate made to report them would have raised the corpus from 39 notices to 182.
+  //              Where a rule DOES name one it is recorded, because that anchor is what puts the
+  //              rule beside an observation in `writtenNeighbours` and what `kb refute` can check.
+  const NORMATIVE_EXEMPT = new Set(['question', 'appliesTo', 'anchors']);
   const missing = Object.keys(REQUIRED_INPUT).filter((k) => {
     if (plane === 'normative' && NORMATIVE_EXEMPT.has(k)) return false;
     if (k === 'deployment' && (input.source || (plane === 'normative' && input.from))) return false;
@@ -769,7 +779,9 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     );
   }
 
-  const anchors = input.anchors.map((a) => (typeof a === 'string' ? { coordinate: a } : a));
+  // `?? []` for the same reason as `appliesTo` below: a rule may legitimately name no coordinate
+  // (see NORMATIVE_EXEMPT). Every other plane has already been refused above if this is empty.
+  const anchors = (input.anchors ?? []).map((a) => (typeof a === 'string' ? { coordinate: a } : a));
   // REFUSED, not warned. Everything else the door dislikes about an anchor is a judgement the
   // writer is better placed to make than the tool -- a menu path is honest about where somebody
   // stood, an unprojected surface is not their problem. This one is not a judgement: a path into
@@ -877,7 +889,7 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
     by: input.by ?? sessionParty(),
-    from: transcriptionSource(input.from),
+    from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
     source,
   });
@@ -1031,7 +1043,7 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
     by: input.by ?? sessionParty(),
-    from: transcriptionSource(input.from),
+    from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
     note: input.note,
     source,
@@ -1069,7 +1081,7 @@ export function dispute(base, id, input, { now = () => new Date().toISOString() 
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
     by: input.by ?? sessionParty(),
-    from: transcriptionSource(input.from),
+    from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
     contradicts: true,
     note: input.note,

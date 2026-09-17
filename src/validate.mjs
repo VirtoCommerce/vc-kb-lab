@@ -172,7 +172,13 @@ export function validate(base) {
 
     // An entry that names no anchor cannot be reached by a coordinate, which is how BOTH planes
     // find things: regeneration diffs the derived plane, consolidation groups the experiential one.
-    if (!(d.anchors?.length > 0)) note(`${rel}: carries no anchors`);
+    //
+    // A RULE IS EXEMPT, and this is the gate half of the door's NORMATIVE_EXEMPT -- the two must
+    // agree or a rule the door admits fails the gate that ships it. A rule is reached by its id and
+    // by its domain: `kb rules BL-CART`, `kb show BL-CART-003`, and the domain index the session
+    // hook injects. 143 of the 216 invariants being imported name no coordinate at all, so this
+    // notice would have tripled the corpus's notice count while reporting the design.
+    if (d.plane !== 'normative' && !(d.anchors?.length > 0)) note(`${rel}: carries no anchors`);
     for (const anchor of d.anchors ?? []) {
       const coordinate = String(anchor?.coordinate ?? '');
       if (LOOKS_LIKE_A_LOCAL_PATH.test(coordinate)) {
