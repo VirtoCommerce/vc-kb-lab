@@ -221,3 +221,152 @@ both by the same date.**
 4. **The 63 dangling `BL-*` ids.** 279 cited, 216 exist. They are pure demand — test cases citing
    rules nobody has written. That is the best candidate list this project has for what to write
    next, and nothing currently reads it.
+
+---
+
+## 6. Can the two bases coexist?
+
+**Yes — but only under a rule that makes it not-duplication, and the rule has to be mechanical.**
+
+That is not a theoretical worry in this repository. `mirror-check.mjs` exists because the last time
+two copies of this corpus were kept side by side, **64 of 92 shared paths diverged** with no record
+anywhere of which divergences were meant. Coexistence with prose governing it produced exactly the
+defect it was supposed to prevent. Two bases governed by prose would reproduce it one level up, and
+the symptom would be the same 13 contradictions the overlap annex already found.
+
+The rule that works is **one home per unit, and a reference from the other side**:
+
+| unit | one home | the other side holds |
+|---|---|---|
+| a rule (`BL-*`, `ECL-*`, `VC-*`, `BL-UI-*`) | **the base** | nothing — it cites the id |
+| a document (domain map, surface inventory) | **the base, as a file** | nothing — it cites the path |
+| an observation | **the base** | nothing; the repo has no structure for one today |
+| a contract coordinate | **the base's derived plane** | nothing; `api/graphql-schema.md` is deleted (decision 10) |
+| how to run the suite | **the repo, with the skills** | nothing — the base never holds it (decision 3) |
+| **which test case cites which rule** | **the repo** | the base never holds it; it is a fact about the suites |
+
+The last row is the one that makes coexistence honest rather than a slow merge: **the base owns what
+is true, the consumer owns what is wanted.** Severity, text and identity live in the base; the 5,890
+citations that measure demand live where the suites live and are read across, never copied.
+
+---
+
+## 7. The defects in `.claude/knowledge`
+
+Measured 2026-09-17. **Start with what is not wrong**, because it is the part I got wrong first:
+
+* Its own gates pass. `bl:lint` reports **72 findings, 0 blocking**; `ecl:lint` **0 at or above
+  High**; `domain:check` **OK, every map fresh**; `releases:check` **OK, matches upstream**.
+* **53 of 56 files are cited by path from outside the directory** — `business-logic.md` 98 times,
+  `graphql-schema.md` 63, `quality-gates.md` 45. The three that are not are the two newest domain
+  maps, written a week ago, and one generated snapshot. This corpus is **connected**. Ours was not:
+  78.5% of our entries had never been served and never arrived.
+
+The defects are specific and structural, and every one of them is a thing its gates cannot see.
+
+**D1 — 82% of the corpus is in files too big to hand an agent whole.** 23 of 54 markdown files
+exceed the repo's own 19,000-char prompt budget, and those 23 hold **1,399,643 of 1,706,974 bytes**.
+Exactly two of them have a slicer (`bl:extract`, `ecl:extract`). The other 21 — including
+`critical-ui-scope.md` at 96 KB, the three domain maps at 51–68 KB, and `test-data-authoring.md` at
+51 KB — are read whole or not at all. The corpus has already proved this matters: `bl:extract` was
+written because agents were reading 386 KB to use three invariants, and it was measured at 7.5%.
+Nothing generalised that fix.
+
+**D2 — 50 of 54 files carry no freshness contract.** `stale_after_days` covers the three domain maps
+and the release ledger. The two files with the most authority in the whole repository — the 389 KB
+BL oracle and the 121 KB edge-case library — have none, and neither does the 96 KB UI matrix. A
+stale domain map fails CI; a stale invariant does not exist as a concept.
+
+**D3 — evidence is prose, in nine spellings.** Counted across the corpus: `triangulated` 105,
+`[OBSERVED]` 183, `UNVERIFIED` 53, `live-confirmed` 33, `{OBSERVED}` 29, assumed/unconfirmed 24,
+`CONFIRMED n/n` 12, `source-read` 4, `NOT VERIFIED` 4. There is no vocabulary, nothing is countable,
+and no gate reads any of it. "CONFIRMED 3/3" cannot be told apart from one person writing it three
+times — which is the exact failure this project fixed in its own corpus on 2026-09-16, when fifteen
+rows naming an arm as their author turned out to be one author transcribing reports.
+
+**D4 — 699 dates typed into prose.** Every one is a value copied onto a page: 238 in 2026-08, 177 in
+2026-09. Nothing can say which are still true. This project's first rule is *pin the source, not the
+value*, and here it is broken 699 times by hand.
+
+**D5 — no claim can be re-checked.** A claim carries no deployment, no module version, no pin. So
+when one goes wrong, the only instrument is a re-audit of the whole file — which is what
+`/qa-review-bl` is, and why it is expensive. Per-claim provenance is the thing that turns a re-audit
+into a re-check.
+
+**D6 — disagreement has nowhere to live.** When a rule and a sighting disagree, one overwrites the
+other or the pair ends up in a review document. Concretely, still true in the root tree today:
+`api/api-auth.md:87` says GraphiQL needs "no token needed (uses session cookies from Admin SPA
+login)", while `api/graphiql-interaction.md:32` says queries execute as **Anonymous** unless the JWT
+is inserted with `execCommand`. Both files are current, both are cited, and no gate can see it
+because a contradiction between two files is not a check anybody wrote.
+
+**D7 — nothing is checked against the live contract.** `api/graphql-schema.md` is generated from
+introspection and then gated against nothing. The base's derived plane is 590 entries regenerated
+from the same deployment and **byte-compared** by `kb check`; a field that disappears is a failure,
+not a surprise six weeks later.
+
+**D8 — the biggest coverage hole is reported as noise.** 50 `BLC-002` findings are not scattered
+mistakes; they are **whole missing domains**. The suites cite `BL-SEC-*`, `BL-CFG-*`, `BL-GA4-*`,
+`BL-L10N-*`, `BL-CMS-*`, `BL-STORE-002..004` and `BL-PAY-002/005/006` — security, configuration,
+analytics, localisation, CMS — and the oracle has no chapter for any of them. That is the clearest
+"what to write next" list this project has, and it is currently printed at severity Medium in a list
+of 72.
+
+**D9 — the hand-maintained index rots.** `.claude/knowledge/README.md` opens "Cross-agent reference
+files **(32)**". There are 56. The file that tells a reader what is in the directory is 24 files out
+of date.
+
+**D10 — three forks are declared `undecided`.** `agents/developers/shared-instructions.md`,
+`architecture/vc-module-architecture.md`, `execution/tracker-ops.md`. The registry itself calls this
+the burn-down list: "Nobody has decided which side wins or why."
+
+---
+
+## 8. How to do it right
+
+Five moves, in order. Each one is reversible and each one leaves the repository working.
+
+**1. The base becomes the single WRITER of rules; the file stays as generated output.**
+`business-logic.md` is cited by path 98 times and sliced by two scripts. Do not break that. Instead:
+the rules plane becomes the source, and `kb rules --render` regenerates `business-logic.md`
+byte-for-byte, gated the way `kb check` gates the derived plane. Then 98 citations keep working,
+`bl:extract` keeps working, CI keeps passing, and there is exactly one writer. When the consumers
+have moved to `kb rules <domain> --text`, the generated file is deleted and nothing notices.
+
+*This is the move that makes everything else safe, and it is the one I would do first.*
+
+**2. The documents move as FILES, not as entries.** `vc-knowledge` is a git repository. A domain map
+becomes `reference/domain/b2b-organizations.md` — the same bytes, the same frontmatter — plus one
+index row carrying `(domain_slug, section headings, coordinates named inside)`. `domain:check` moves
+into `kb validate` with its asymmetry intact: stale fails, absent passes. Nothing is atomized.
+Chopping a 66 KB map into 400 entries would destroy the one thing it is for, and would hand the
+arrival hook 400 more reasons to fire.
+
+**3. Nine spellings of evidence become one column.** Every `[OBSERVED]`, `{OBSERVED}`, `UNVERIFIED`,
+`triangulated` and `CONFIRMED n/n` maps onto the evidence row the base already has — a party, an
+artefact or a deployment, a date the tool wrote. The 183 `[OBSERVED]` rows in the edge-case library
+are the largest single block of real evidence in the corpus and they become 183 attested rows. The
+105 `triangulated` mentions become **unattested** rows, because a page asserting its own
+confirmation is not a confirmation — the same rule B2 already applies to all 216 imported invariants.
+
+**4. Demand is imported, never copied.** 5,890 citations across 279 ids, refreshed from the suites,
+attached to each rule as a read-only count. It answers what our own arrival replay could not: which
+rules are worth verifying. And the 63 dangling ids stop being Medium noise and become the written
+backlog — D8 is the single most valuable thing in this whole analysis.
+
+**5. Slicing generalises.** `kb domain <slug>` returns the map, the rules, the observations on
+coordinates the map names, and the contract behind them. That is `bl:extract` extended to all 23
+oversized files instead of two, and it is the reason to have a base at all: not that the prose is
+bad, but that **82% of it cannot be handed to anybody whole.**
+
+### What this is worth saying plainly
+
+The corpus is not the problem. It is better maintained than our base on every axis its authors chose
+to measure — connectedness, citation integrity, freshness of what it decided to make fresh, context
+budget. What it cannot do is per-claim: it cannot say who saw a thing, cannot re-check one claim
+without re-auditing a file, cannot hold a disagreement, and cannot hand a reader the 7% of a file
+they need unless somebody wrote a slicer for that particular file.
+
+Those four are exactly what the base was built for. That is the argument for joining them, and it is
+a better argument than "there should be one place", which is the argument I would have made before
+measuring.
