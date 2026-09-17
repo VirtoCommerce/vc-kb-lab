@@ -70,16 +70,16 @@ Full record in `PHASE-1-BASE-TIDY-2026-09-17.md`. In short:
   an absent **derived** index is still a problem
 * catalogs stay tracked
 
-**Not yet applied to `vc-knowledge`.** Patch in the session scratchpad; the hold that produced that
-is now lifted by decision A, so it can go in.
+**Applied and pushed 2026-09-17** (`vc-knowledge` `7f2f5e2`), together with the README section
+describing which of the stores git carries and why the asymmetry is deliberate.
 
-Also outstanding: `git -C C:/_VIRTO/vc-knowledge push origin main` — a clean fast-forward that
-publishes nothing new (all 18 commits are already on origin under
-`migration/knowledge-2026-09`; `origin/main` is an ancestor of `main`).
+The fast-forward listed here as outstanding turned out to be already done: `main`,
+`migration/knowledge-2026-09` and both their remotes were all at `8ec66de` when checked. Nothing was
+pushed for it, because a push that changes nothing is noise in the history.
 
 ---
 
-## Phase 2 — the tool becomes the plugin · ~4 h · FIRST
+## Phase 2 — the tool becomes the plugin · DONE 2026-09-17 (`06d3fe39`)
 
 `plugins/vc-kb` is 23 modules / 4 686 lines / 14 test files against the lab's 31 / 6 763 / 27.
 Missing: `rules`, `source-door`, `refute`, `contradiction`, `provenance`, `todo`, `topics`,
@@ -112,7 +112,7 @@ Branch: `claude/kb-tool` in `vc-mcp-testing-module` — 2 ahead of `origin/main`
 
 ---
 
-## Phase 3 — connect the base through `/project-init` · ~3 h
+## Phase 3 — getting the base onto a machine · DONE 2026-09-17 (`4b6a9faa`) — NOT through `/project-init`
 
 ```
 /project-init
@@ -139,7 +139,7 @@ Branch: `claude/kb-tool` in `vc-mcp-testing-module` — 2 ahead of `origin/main`
 
 ---
 
-## Phase 4 — move the knowledge · ~5 h
+## Phase 4 — move the knowledge · DONE 2026-09-17 (`ef164bf3`, `a48cae01`, `afc32364`)
 
 ### 4.1 To the base, as files
 
@@ -313,28 +313,54 @@ plane.
 
 ---
 
-## Estimate
+## Estimate, against what happened
 
-| phase | | was | now |
-|---|---|---|---|
-| 1 | base in order | 4 h | **done** |
-| 2 | tool → plugin | 8 h | 4 h |
-| 3 | base via `/project-init` | (inside 11 h) | 3 h |
-| 4 | move the knowledge | 18 h | 5 h |
-| | remainder of dismantling the project | 11 h | 6 h |
-| | **total** | **41 h** | **18 h** |
+| phase | | was | planned | actual |
+|---|---|---|---|---|
+| 1 | base in order | 4 h | done | done |
+| 2 | tool → plugin | 8 h | 4 h | done |
+| 3 | base onto a machine | (inside 11 h) | 3 h | done, and **smaller** — see below |
+| 4 | move the knowledge | 18 h | 5 h | done |
+| | remainder of dismantling | 11 h | 6 h | **there was none** |
+| | **total** | **41 h** | **18 h** | |
 
-The reduction is decision A and decision C, not optimism: 13 hours of new commands are deferred,
-and the consumers are repointed instead of rewritten.
+### Where the plan was wrong, recorded rather than quietly fixed
 
----
+**"Remainder of dismantling the project" never had a section.** It appears once, in the estimate
+table, and nothing in this document says what it is. Measured against the finished state it
+dissolves: §4.3 had nothing to move (below), §4.5's first clause is wrong (below), and its third
+clause is somebody else's burn-down.
 
-## What is blocked right now
+**Phase 3 was not `/project-init` work.** The plan had the wizard clone the base into each project.
+It does not: `kb sync` fetches ONE checkout per machine into `~/.claude/vc-knowledge`, and every
+project on that machine reads it. Claude Code has no install event — the hook surface is
+SessionStart, UserPromptSubmit, Pre/PostToolUse, Stop and SubagentStop — so "the plugin fetches the
+base when installed" was never available. `knowledgeBase.path` survives as an OVERRIDE for a base of
+one's own. The phase came in under an hour rather than three, and `/project-init` was not touched.
 
-Two actions this session could not perform — the auto-mode classifier refused them, and neither was
-worked around:
+**That required breaking this file's own rule about a fallback constant.** `src/base.mjs` said there
+is none and the prohibition was written after a measured loss. A managed default is admitted because
+it cannot be the wrong corpus the way the old constant could — it names the tool's own pocket, is the
+same on every machine, and is CHECKED like any other candidate. The guarantee moved from structural
+to disciplinary, so the discipline shipped WITH it: staged clone, refusal to replace a checkout that
+holds uncaptured work, and content age in the readiness line.
 
-1. `git -C C:/_VIRTO/vc-knowledge push origin main` — the fast-forward
-2. any write into `vc-mcp-testing-module`, which is all of phase 2
+**§4.3 "to the plugin, as instructions" had nothing to move.** Measured: files vc-fix references and
+does not carry — **zero**. It already shipped its own copies of `tracker-ops.md`, `live-discovery.md`,
+`module-suite-map.md`, `agents/*` and `diagnostics/*`.
 
-Both need either a permission rule or a session started in that repository.
+**§4.5 "`.claude/knowledge/` disappears" is wrong by this plan's own criterion.** Twenty-seven files
+stay, and they should: `execution/` (20 — how WE run), `agents/` (4), `diagnostics/`, and the GraphQL
+runner's grammar. What makes each untrue is a change to OUR code. `quality-gates.md` alone is cited
+31 times.
+
+**The phase-4 order in §4.1–4.5 was unsafe as written.** Removing vc-fix's duplicate knowledge before
+the base could be read by a client would have handed clients the unscrubbed pages — which is exactly
+what those copies existed to prevent (`mirror-check.mjs`'s `plugin-scope`: "the plugin copy omits or
+annotates [references] a client cannot follow"). The base had to be annotated and gated FIRST. It was,
+and then the twenty copies came out.
+
+**Two counts in §4.1's table were already stale** when checked: `api/` was 5, not 4 (after routing
+`graphql-test-cases-runner.md` to the plugin by the criterion), and `reports/ba/` was 65 `.md`, not 56.
+The plan's own instruction — apply the criterion file by file rather than copying a number — is the
+one that held.
