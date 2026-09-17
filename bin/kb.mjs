@@ -11,11 +11,12 @@ import { validate } from '../src/validate.mjs';
 import {
   capture, supersede, confirm, dispute, retire,
   reanchor, amend, addArrival, CaptureRefused, rebuildCapturedArtifacts,
-  readCaptured, confirmationsOf, evidenceKinds, disputesOf, isDisputed, loadEntry, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
+  readCaptured, readRules, confirmationsOf, evidenceKinds, disputesOf, isDisputed, loadEntry, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
 } from '../src/capture.mjs';
 import { consolidate, renderConsolidation, MergeRefused } from '../src/consolidate.mjs';
 import { plan, renderPlan } from '../src/todo.mjs';
-import { experientialNeighbours } from '../src/coordinates.mjs';
+import { writtenNeighbours } from '../src/coordinates.mjs';
+import { ruleIdOf, ruleDomainOf, severityOf, byDomain } from '../src/rules.mjs';
 import { record } from '../src/journal.mjs';
 import {
   recordAsk, recordUses, recordSettled, closeQuestions, openQuestions, buriedQuestion, dropQuestion,
@@ -69,7 +70,13 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
                                                 --claim becomes the steps. Served by kb how only.
   kb show        <id>                         open ONE entry by id. What the catalog needs: when the
                                               written register is handed over whole, a reader picks a
-                                              line and opens it.
+                                              line and opens it. A rule opens by the id its author
+                                              gave it: kb show BL-CART-003.
+  kb rules       [<domain>]                   the NORMATIVE plane: what must hold, as opposed to what
+                                              was seen. No argument lists the domains; a domain prints
+                                              its rules. A rule is written with
+                                              kb capture --rule --subject "<ID> <title>", and is
+                                              identified by that ID and nothing else.
   kb consolidate [--merge <id>,<id>]          group entries by shared coordinate; merge a named group
   kb dispute     <id> --deployment … --note … record an observation that contradicts an entry
   kb retire      <id> --reason …              withdraw an entry; the id stays, the entry leaves the index
@@ -139,6 +146,7 @@ function args(argv) {
     const a = argv[i];
     if (a === '--json') out.json = true;
     else if (a === '--flow') out.flow = true;
+    else if (a === '--rule') out.rule = true;
     else if (a === '--baseline') out.baseline = true;
     else if (a === '--merge') out.merge = String(argv[++i]).split(/[,\s]+/).filter(Boolean);
     else if (FLAGS[a]) {
@@ -298,13 +306,13 @@ async function main() {
       if (r.notices.length > 20) write(`  … +${r.notices.length - 20}`);
     };
     if (!r.ok) {
-      console.error(`VALIDATE FAILED — ${r.problems.length} problem(s) over ${r.entries} derived and ${r.captured} captured entries`);
+      console.error(`VALIDATE FAILED — ${r.problems.length} problem(s) over ${r.entries} derived, ${r.captured} captured and ${r.rules ?? 0} rule entries`);
       for (const p of r.problems.slice(0, 40)) console.error(`  ${p}`);
       if (r.problems.length > 40) console.error(`  … +${r.problems.length - 40}`);
       printNotices((m) => console.error(m));
       return { code: 1, outcome: { detail: { ok: false, problems: r.problems.length, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
     }
-    console.log(`VALIDATE OK — ${r.entries} derived, ${r.captured} captured, ${r.flows ?? 0} flow(s), at ${base}`);
+    console.log(`VALIDATE OK — ${r.entries} derived, ${r.captured} captured, ${r.flows ?? 0} flow(s), ${r.rules ?? 0} rule(s), at ${base}`);
     printNotices((m) => console.log(m));
     return { code: 0, outcome: { detail: { ok: true, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
   }
@@ -323,6 +331,17 @@ async function main() {
     try {
       entry = loadEntry(base, id);
     } catch { entry = null; }
+    // A RULE IS REACHED BY THE ID ITS AUTHOR GAVE IT. `BL-CART-003` is what 23 places in the
+    // consuming plugin's prompts and a column in every regression suite cite, and the point of
+    // keeping that string in the subject rather than renaming 216 rules is that those citations
+    // keep resolving. The base's own id is still `KB-<hex>`; this is a lookup, not a second
+    // namespace. Exact match on the leading id, never a prefix search over subjects, so
+    // `BL-CART-01` cannot quietly open `BL-CART-010`.
+    if (!entry && ruleIdOf(id)) {
+      const wanted = ruleIdOf(id);
+      const hit = readRules(base).find((e) => ruleIdOf(e.data.subject) === wanted);
+      if (hit) entry = hit;
+    }
     if (!entry) {
       console.error(`kb show: ${id} is not in ${base}. Ids in the catalog are exact; check the line you read it from.`);
       return 1;
@@ -486,28 +505,45 @@ async function main() {
     //
     // The near-question check above would not have fired on that pair. Their wordings are nothing
     // alike; only the coordinate is shared, which is exactly what an anchor is for.
-    const neighbours = experientialNeighbours(base, a.anchor);
+    // BOTH claim-bearing planes, since the rules arrived. What somebody RULED about this coordinate
+    // is at least as worth seeing before you write as what somebody observed there -- and where the
+    // two disagree, that disagreement is the most valuable thing the corpus can produce. Thirteen
+    // such pairs were found the day the rules were inventoried, every one of them invisible while
+    // the rules lived in another repository.
+    const neighbours = writtenNeighbours(base, a.anchor);
     if (neighbours.length) {
       console.log(`${neighbours.length} entr${neighbours.length === 1 ? 'y' : 'ies'} already written about a coordinate you are anchoring on:`);
-      for (const n of neighbours) console.log(`  @kb(${n.id})  ${n.subject}   — on ${n.coordinate}`);
+      for (const n of neighbours) console.log(`  @kb(${n.id})  ${n.subject}   — on ${n.coordinate}${n.plane === 'normative' ? '  [RULE]' : ''}`);
       console.log('  Two entries on one coordinate are usually two honest facts, and that is fine.');
       console.log('  But if your new fact makes one of them wrong, fix it now rather than leaving');
       console.log('  both served: `kb supersede <id> --subject … --claim …` replaces it and keeps the trail.');
+      // A RULE IS NOT SUPERSEDED BY AN OBSERVATION, and pointing a writer at `supersede` for one
+      // would let a single sighting quietly rewrite a constraint somebody reasoned out. What an
+      // observation can do to a rule is contradict it, on the record, with both sides kept.
+      if (neighbours.some((n) => n.plane === 'normative') && !a.rule) {
+        console.log('  One of those is a RULE — what must hold, not what somebody saw. If what you');
+        console.log('  observed contradicts it, that is `kb dispute <id> --deployment … --note …`, not');
+        console.log('  a supersede: a rule and an observation disagreeing is a finding, and both sides stay.');
+      }
       console.log('');
     }
     try {
       const r = capture(base, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
-        anchors: a.anchor, arrivesAt: a.arrivesAt, appliesTo: a.scope, flow: a.flow,
+        anchors: a.anchor, arrivesAt: a.arrivesAt, appliesTo: a.scope, flow: a.flow, rule: a.rule,
         deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, from: a.from, source: a.source,
       });
-      console.log(`${a.flow ? 'FLOW ' : ''}CAPTURED ${r.id}`);
+      console.log(`${a.rule ? 'RULE ' : a.flow ? 'FLOW ' : ''}CAPTURED ${r.id}`);
       for (const d of closeQuestions(base, { question: a.question, id: r.id })) {
         console.log(`  closed      : an open question asked ${d.asked} time(s) — "${d.question}"`);
       }
       console.log(`  path        : ${r.path}`);
-      console.log(`  fingerprint : ${r.fingerprint}  (coordinates + scope; the claim's wording is deliberately not in it)`);
-      console.log(`  ${a.flow ? 'flows       ' : 'captured    '}: ${r.artifacts.active} active, ${r.artifacts.retired} retired`);
+      console.log(`  fingerprint : ${r.fingerprint}  ${a.rule
+        ? '(the rule ID + scope; two rules about one coordinate are the normal case)'
+        : a.flow
+          ? '(the goal + scope; the steps are not its identity)'
+          : "(coordinates + scope; the claim's wording is deliberately not in it)"}`);
+      console.log(`  ${a.rule ? 'rules       ' : a.flow ? 'flows       ' : 'captured    '}: ${r.artifacts.active} active, ${r.artifacts.retired} retired`);
       printStamp(r.stamp);
       // The derived plane already describes some of these coordinates. Shown after the write, not
       // before it: the observation is recorded either way, and what the writer does next -- confirm
@@ -589,6 +625,7 @@ async function main() {
       const r = supersede(base, oldId, {
         subject: a.subject, question: a.question, claim: a.claim, refutableBy: a.refutableBy,
         anchors: a.anchor, arrivesAt: a.arrivesAt, appliesTo: a.scope, reason: a.reason,
+        flow: a.flow, rule: a.rule,
         deployment: a.deployment, pin: a.pin, platformVersion: a.platformVersion, from: a.from, source: a.source,
       });
       console.log(`SUPERSEDED ${r.superseded} -> ${r.id}`);
@@ -747,11 +784,15 @@ async function main() {
   if (cmd === 'reindex') {
     const r = rebuildCapturedArtifacts(base);
     console.log(`REINDEXED — ${r.active} active, ${r.retired} retired, from the entries on disk`);
-    // Both written planes, because a verb that rebuilds "the index" and silently means one of two
-    // is how the other one goes stale with the gate telling you to run exactly this.
+    // EVERY written plane, because a verb that rebuilds "the index" and silently means one of three
+    // is how the others go stale with the gate telling you to run exactly this. It said "both" and
+    // meant two until the normative plane existed; the loop is over WRITTEN_STORES now, so a fourth
+    // store cannot be forgotten here the way the flow store nearly was.
     const f = rebuildCapturedArtifacts(base, 'flow');
     console.log(`             ${f.active} active flow(s), ${f.retired} retired`);
-    return { code: 0, outcome: { detail: { active: r.active, retired: r.retired, flows: f.active } } };
+    const n = rebuildCapturedArtifacts(base, 'normative');
+    console.log(`             ${n.active} active rule(s), ${n.retired} retired`);
+    return { code: 0, outcome: { detail: { active: r.active, retired: r.retired, flows: f.active, rules: n.active } } };
   }
 
   // TIER ONE OF EXECUTABLE REFUTATION: does the ground a licensed claim stands on still exist?
@@ -801,6 +842,70 @@ async function main() {
     return { code: rotted ? 1 : 0, outcome: { detail: r.counts } };
   }
 
+  // THE RULES, BY DOMAIN — the normative plane's reading door.
+  //
+  // It is a listing and not a search, for the same reason the written catalog is handed over whole:
+  // fourteen ranking rules were swept over this corpus and none of them separated a good answer
+  // from an adjacent one, while a reader picking from a list they can see makes that judgement in a
+  // second. A rule is reached the way a reference is reached -- you already know you are working on
+  // carts -- so the argument is a DOMAIN, and the whole domain is printed.
+  //
+  // With no argument it prints the domains and their counts, which is the 24-line index the session
+  // hook injects. That index is level one of the three-level read: the domain list is always in
+  // context, a domain is printed on demand, and a rule's body is opened by id.
+  if (cmd === 'rules') {
+    const all = readRules(base).filter((e) => e.data.status === 'active');
+    if (!all.length) {
+      console.log('The normative plane holds no rules yet.');
+      console.log('  Rules are written with `kb capture --rule --subject "<ID> <title>" …` and read here by domain.');
+      return { code: 0, outcome: { detail: { rules: 0 } } };
+    }
+    const groups = byDomain(all);
+    const wanted = (a._[0] ?? '').toUpperCase();
+
+    if (!wanted) {
+      if (a.json) console.log(JSON.stringify(groups.map(([domain, rows]) => ({ domain, rules: rows.length })), null, 2));
+      else {
+        console.log(`${all.length} rule(s) in ${groups.length} domain(s). \`kb rules <domain>\` prints one; \`kb show <ID>\` opens one.`);
+        console.log('');
+        for (const [domain, rows] of groups) {
+          const disputed = rows.filter((e) => isDisputed(e.data)).length;
+          console.log(`  ${domain.padEnd(14)} ${String(rows.length).padStart(3)} rule(s)${disputed ? `, ${disputed} DISPUTED` : ''}`);
+        }
+      }
+      return { code: 0, outcome: { detail: { domains: groups.length, rules: all.length } } };
+    }
+
+    // `cart`, `CART`, `BL-CART` and `bl-cart` all reach the same domain: a reader types the word
+    // they are working on, not the prefix the corpus files it under.
+    const match = groups.filter(([domain]) => domain.toUpperCase() === wanted || domain.toUpperCase().endsWith(`-${wanted}`));
+    if (!match.length) {
+      console.error(`kb rules: no domain matches "${a._[0]}". Domains: ${groups.map(([d]) => d).join(', ')}`);
+      return 1;
+    }
+    const served = [];
+    for (const [domain, rows] of match) {
+      console.log(`${domain} — ${rows.length} rule(s)`);
+      console.log('');
+      for (const e of rows) {
+        const id = ruleIdOf(e.data.subject);
+        const title = String(e.data.subject).slice(String(id ?? '').length).trim();
+        const sev = severityOf(e.body);
+        const trust = isDisputed(e.data)
+          ? `DISPUTED (${disputesOf(e.data)})`
+          : `${confirmationsOf(e.data)} party(ies)`;
+        console.log(`  ${id}${sev ? `  [${sev}]` : ''}`);
+        console.log(`      ${title}`);
+        console.log(`      ${trust} · ${e.data.anchors?.length ?? 0} anchor(s) · kb show ${id}`);
+        served.push({ id: e.data.id, plane: 'normative' });
+      }
+      console.log('');
+    }
+    console.log('A rule says what MUST hold. What was SEEN to hold here is on the written plane, and');
+    console.log('where a rule and an observation disagree, the disagreement is the finding — `kb dispute`.');
+    return { code: 0, outcome: { served, detail: { domains: match.map(([d]) => d) } } };
+  }
+
   if (cmd === 'stat') {
     const dir = join(base, DERIVED_ENTRIES);
     let derived = 0;
@@ -814,8 +919,15 @@ async function main() {
     }
     const captured = readCaptured(base);
     const active = captured.filter((e) => e.data.status === 'active');
+    const rules = readRules(base);
+    const activeRules = rules.filter((e) => e.data.status === 'active');
     console.log(`${derived} derived entries, ${anchors} anchors, at ${base}`);
     console.log(`${active.length} captured entries active (${captured.length - active.length} retired) in ${CAPTURED_DIR}/`);
+    if (rules.length) {
+      const disputedRules = activeRules.filter((e) => isDisputed(e.data)).length;
+      console.log(`${activeRules.length} rules active (${rules.length - activeRules.length} retired) in rules/`
+        + `${disputedRules ? `, ${disputedRules} DISPUTED by an observation here` : ''}`);
+    }
     // The two kinds of evidence, counted apart. A corpus that cannot say how much of itself was
     // read off a running system and how much out of code cannot answer the question the review
     // asked: 124 rows, every one `method: observation`, and every arm going to source anyway.

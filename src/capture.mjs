@@ -33,8 +33,9 @@ import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX,
 // here. Its home moved to break an import cycle, not its meaning.
 export { normalizeAnchor } from './anchors.mjs';
 import { normalizeAnchor, LOOKS_LIKE_A_LOCAL_PATH, MSYS_REMEDY } from './anchors.mjs';
-import { sessionParty, transcriptionSource, partiesOf } from './provenance.mjs';
+import { sessionParty, transcriptionSource, partiesOf, isAttested } from './provenance.mjs';
 import { sectioned } from './topics.mjs';
+import { ruleIdOf, ruleDomainOf, severityOf, byDomain } from './rules.mjs';
 
 // Re-exported: callers have always found these here, and their home moved to planes.mjs so that
 // both planes are named in one place rather than as literals scattered across six modules.
@@ -59,6 +60,14 @@ export function fingerprint({ subject, anchors, appliesTo, plane }) {
   const scope = [...new Set((appliesTo ?? []).map((s) => `${s.axis}=${s.value}`))].sort();
   if (plane === 'flow') {
     return hash({ goal: String(subject ?? '').trim().toLowerCase().replace(/\s+/g, ' '), scope }, 16);
+  }
+  // A RULE IS ITS ID, and the anchors play no part. Two rules constrain one coordinate routinely --
+  // BL-PRICE-002 and BL-PRICE-003 are both about money on an order -- so hashing coordinates here
+  // would refuse the second rule of every such pair as a duplicate of the first. Scope stays in the
+  // hash, unused today and there for the day somebody records one rule holding differently on two
+  // module versions; with no scope axes it degenerates to the id, which is what identity means here.
+  if (plane === 'normative') {
+    return hash({ rule: ruleIdOf(subject), scope }, 16);
   }
   const coordinates = [...new Set((anchors ?? []).map((a) => normalizeAnchor(a.coordinate)).filter(Boolean))].sort();
   return hash({ coordinates, scope }, 16);
@@ -95,7 +104,7 @@ export const confirmationsOf = (data) =>
 // Three shapes count: a note on the row, a `from` naming a report a reader can open, or a source
 // reading, which names module, installed version and path and is self-describing.
 export const attestedOf = (data) =>
-  (data.evidence ?? []).some((e) => !e.contradicts && (e.note || e.from || e.method === 'source'));
+  (data.evidence ?? []).some((e) => !e.contradicts && isAttested(e) && (e.note || e.from || e.method === 'source'));
 export const disputesOf = (data) => (data.evidence ?? []).filter((e) => e.contradicts).length;
 export const isDisputed = (data) => disputesOf(data) > 0;
 
@@ -146,6 +155,10 @@ export function readCaptured(base) {
 
 export function readFlows(base) {
   return readStore(base, 'flow');
+}
+
+export function readRules(base) {
+  return readStore(base, 'normative');
 }
 
 // ACTIVE FIRST. A retired entry keeps its fingerprint -- ids are eternal and so are the files --
@@ -219,6 +232,57 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
   const index = JSON.stringify(buildIndex(docs), null, 2) + '\n';
 
   const flow = plane === 'flow';
+  const normative = plane === 'normative';
+
+  // THE RULES CATALOG IS A REFERENCE, NOT A LIST TO SCAN, and that is the whole difference from the
+  // captured one above. A reader reaches it already knowing they are working on carts, so it is
+  // ordered like an index -- domains alphabetical, rules by id inside one -- rather than
+  // biggest-section-first. It carries the severity the rule's own author assigned, because that is
+  // what decides whether an agent stops the work or files a note, and it carries the same two trust
+  // columns as every other written plane: a rule transcribed off a page has been seen by one party,
+  // and the register must not let a page's own "CONFIRMED 3/3" read as three.
+  if (normative) {
+    const retiredRules = all.filter((e) => e.data.status !== 'active');
+    const HEAD = ['| id | rule | severity | confirmations | attested | disputed |', '|---|---|---|---|---|---|'];
+    const ruleRow = (e) => {
+      const id = ruleIdOf(e.data.subject);
+      const title = String(e.data.subject).slice(String(id ?? '').length).trim() || '—';
+      return `| [\`${id ?? e.data.id}\`](${e.rel}) | ${title}${e.data.status === 'active' ? '' : ' _(retired)_'} `
+        + `| ${severityOf(e.body) ?? '—'} | ${confirmationsOf(e.data)} | ${attestedOf(e.data) ? 'yes' : 'no'} `
+        + `| ${isDisputed(e.data) ? `yes (${disputesOf(e.data)})` : 'no'} |`;
+    };
+    const out = [
+      '# Rules',
+      '',
+      `Constraints written down by people, not observations made by agents. ${live.length} active rule`
+        + `${live.length === 1 ? '' : 's'}${all.length - live.length ? `, ${all.length - live.length} retired` : ''}, `
+        + `in ${byDomain(live).length} domain${byDomain(live).length === 1 ? '' : 's'}.`,
+      '',
+      'A rule is identified by its ID and by nothing else. Two rules about one coordinate are the',
+      'normal case, so the coordinate rule that identifies a fact would refuse half of these.',
+      '',
+      'READ THE TRUST COLUMNS. `confirmations` counts parties that have SEEN this rule hold on a',
+      'deployment, and a rule carried over from a page starts at zero however confident the page was.',
+      '`disputed` means somebody observed the opposite here; those are the rules to read first, and',
+      'a disagreement between a rule and an observation is a finding rather than a mistake.',
+      '',
+      'This catalog is a reference. It is ordered by domain and by id so it can be looked up in, not',
+      'scanned top to bottom: read the domain you are working in, with `kb rules <domain>`.',
+    ];
+    for (const [domain, rows] of byDomain(live)) {
+      out.push('', `## ${domain} — ${rows.length}`, '', ...HEAD);
+      for (const e of rows) out.push(ruleRow(e));
+    }
+    if (retiredRules.length) {
+      out.push('', `## retired — ${retiredRules.length}`, '',
+        'Withdrawn or superseded. Kept so a citation that still names one leads somewhere true.',
+        '', ...HEAD);
+      for (const e of retiredRules.sort((a, b) => a.data.id.localeCompare(b.data.id))) out.push(ruleRow(e));
+    }
+    out.push('');
+    return { index, catalog: out.join('\n'), active: live.length, retired: all.length - live.length };
+  }
+
   const lines = flow
     ? [
       '# Flows',
@@ -298,6 +362,16 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
 export function rebuildCapturedArtifacts(base, plane = 'experiential') {
   const built = buildCapturedArtifacts(base, plane);
   const store = storeOf(plane);
+  // AN EMPTY STORE HAS NO INDEX AND NO CATALOG, and writing one is how `kb reindex` came to produce
+  // a corpus its own gate then failed. `validate` says "rules-index.json exists while rules/ holds
+  // no rules" -- correctly, because an index for a store that does not exist is a claim about
+  // nothing -- and `reindex` was creating exactly that on any base without the plane. Latent for
+  // the flow store since the day it shipped; live the moment a third store existed.
+  //
+  // It skips rather than deleting: a store that once held entries and now holds none cannot happen
+  // here (retirement keeps the file), and a verb that removes a file because a directory looks
+  // empty is a worse failure than a stale one the gate already reports.
+  if (!readStore(base, plane).length) return { active: 0, retired: 0, skipped: true };
   writeFileSync(join(base, store.index), built.index);
   writeFileSync(join(base, store.catalog), built.catalog);
   return { active: built.active, retired: built.retired };
@@ -640,15 +714,43 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     );
   }
 
-  const plane = input.flow ? 'flow' : 'experiential';
+  const plane = input.rule ? 'normative' : input.flow ? 'flow' : 'experiential';
+
+  // A RULE THAT DOES NOT NAME ITSELF CANNOT BE FILED. Identity on this plane IS the id, so a rule
+  // written without one is indistinguishable from the next rule on the same subject -- and an
+  // import of 216 of them would collapse pairs silently, which is the one failure a bulk write can
+  // produce that nobody would ever notice.
+  if (plane === 'normative' && !ruleIdOf(input.subject)) {
+    throw new CaptureRefused(
+      'capture refused: a rule must lead with its ID. `--subject "BL-CART-003 coupon + sale '
+        + 'interaction"`, not `--subject "coupon + sale interaction"`.\n'
+        + '  The id is what identifies a rule here, what `kb show BL-CART-003` resolves, and what the '
+        + 'citations already in agent prompts and regression suites point at. If this claim has no id '
+        + 'because nobody wrote it as a rule, it is an observation: capture it without --rule.',
+    );
+  }
   // `deployment` answers "where did you see this". A claim read out of code was not seen ANYWHERE
   // -- it was read at a tag -- and `--source` answers the same question better, because a module
   // and a path at an installed version is a coordinate anybody can return to, while a deployment
   // name is the thing the README already says is not evidence of anything on its own. So one of
   // the two is required and neither defaults; asking for both would make a writer name a
   // deployment they did not look at, which is how a plausible value enters a corpus.
+  // WHAT A RULE IS NOT ASKED FOR, and why each one is a decision rather than a relaxation.
+  //
+  //   question   a fact is an answer and a rule is a constraint. The seven-field door asks for the
+  //              question "in the words an asker would use" because that is how a fact is found;
+  //              a rule is found by working in its domain, and the rules catalog carries no
+  //              question column. Asking for one would make every importer invent 216 of them.
+  //   appliesTo  scope is what separates two records of one fact. A rule is separated by its id, so
+  //              scope here is optional and empty is honest: `BL-PRICE-003` holds for the platform,
+  //              and inventing `surface=rest` for it would be a value nobody observed.
+  //   deployment a rule was not observed anywhere -- it was READ. `--from <the page it was read out
+  //              of>` answers the same question better, and `--source` answers it better still.
+  //              One of the three is required; none defaults.
+  const NORMATIVE_EXEMPT = new Set(['question', 'appliesTo']);
   const missing = Object.keys(REQUIRED_INPUT).filter((k) => {
-    if (k === 'deployment' && input.source) return false;
+    if (plane === 'normative' && NORMATIVE_EXEMPT.has(k)) return false;
+    if (k === 'deployment' && (input.source || (plane === 'normative' && input.from))) return false;
     const v = input[k];
     return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
   });
@@ -682,7 +784,9 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
       );
     }
   }
-  const appliesTo = input.appliesTo.map((s) => (typeof s === 'string'
+  // `?? []` because a rule may legitimately carry no scope (see NORMATIVE_EXEMPT); every other
+  // plane has already been refused above if this is empty.
+  const appliesTo = (input.appliesTo ?? []).map((s) => (typeof s === 'string'
     ? { axis: s.split('=')[0], value: s.split('=').slice(1).join('=') }
     : s));
   for (const s of appliesTo) {
@@ -739,9 +843,12 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     // agrees with it is not something the text can be asked -- so the writer is.
     throw new CaptureRefused(
       `capture refused: ${existing.data.id} already ${plane === 'flow'
-        ? 'reaches this goal at this scope' : 'holds a fact about these coordinates under this scope'}.\n` +
+        ? 'reaches this goal at this scope'
+        : plane === 'normative'
+          ? `carries the rule ${ruleIdOf(input.subject)}`
+          : 'holds a fact about these coordinates under this scope'}.\n` +
         `  existing subject : ${existing.data.subject}\n` +
-        `  existing question: ${existing.data.question}\n` +
+        (existing.data.question === undefined ? '' : `  existing question: ${existing.data.question}\n`) +
         `  confirmations    : ${confirmationsOf(existing.data)}${isDisputed(existing.data) ? `, disputed (${disputesOf(existing.data)})` : ''}\n` +
         `  Read ${existing.rel}, then say which this is:\n` +
         `    kb confirm ${existing.data.id} --deployment <env> --note "<what you saw>"   (your observation agrees)\n` +
@@ -765,6 +872,36 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
 
   const source = input.source ? sourceRef(base, input.source, sourceTools) : null;
   const stamp = source ? { pin: null, platformVersion: null, source: 'read-from-source' } : stampOf(base, input);
+  const firstRow = evidenceRow({
+    deployment: input.deployment,
+    pin: stamp.pin,
+    platformVersion: stamp.platformVersion,
+    by: input.by ?? sessionParty(),
+    from: transcriptionSource(input.from),
+    at: input.at ?? now(),
+    source,
+  });
+
+  // A TRANSCRIBED RULE HAS BEEN SEEN BY NOBODY, and its first row must not say otherwise.
+  //
+  // `partiesOf` counts a `from` artefact as a party, and it is right to: an arm's report IS an
+  // observation, badly recorded. A page of rules is not. `business-logic.md` asserts that tax is
+  // computed after discounts; nobody watched that happen on this deployment by writing the page,
+  // and 216 rules arriving at one party each would put the whole imported plane one confirmation
+  // away from a licence to act on it unverified.
+  //
+  // So the row is kept in full -- it says which page, which commit, which session -- and marked
+  // `attested: false`, which is the flag this base already has for a row that records something
+  // nobody described. It does not vote. The rule reads 0 parties until somebody watches it hold
+  // and says what they saw, which is exactly the bar every other entry here clears.
+  //
+  // Passing `--deployment` or `--source` opts out: then the writer did watch it, or did read the
+  // code that decides it, and the row is evidence of the ordinary kind.
+  if (plane === 'normative' && !input.deployment && !source) {
+    firstRow.attested = false;
+    firstRow.whyNot = `transcribed from ${input.from ?? 'a page'}; nobody has yet watched this rule hold on a deployment`;
+  }
+
   const data = {
     id,
     subject: input.subject,
@@ -775,15 +912,7 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     appliesTo,
     anchors,
     ...(arrivesAt.length ? { arrivesAt } : {}),
-    evidence: [evidenceRow({
-      deployment: input.deployment,
-      pin: stamp.pin,
-      platformVersion: stamp.platformVersion,
-      by: input.by ?? sessionParty(),
-      from: transcriptionSource(input.from),
-      at: input.at ?? now(),
-      source,
-    })],
+    evidence: [firstRow],
   };
   const body = `\n${String(input.claim).trim()}\n`;
   writeEntry(base, data, body);

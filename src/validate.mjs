@@ -14,6 +14,8 @@ import { parseEntry, FIELD_ORDER } from './frontmatter.mjs';
 import { mintId } from './canonical.mjs';
 import { normalizeAnchor, namespaceOf, LOOKS_LIKE_A_MENU_PATH, LOOKS_LIKE_A_LOCAL_PATH } from './anchors.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, fingerprint, buildCapturedArtifacts } from './capture.mjs';
+import { RULES_DIR, RULES_INDEX, RULES_CATALOG } from './planes.mjs';
+import { ruleIdOf } from './rules.mjs';
 import { DERIVED_ENTRIES, DERIVED_INDEX, DERIVED_CATALOG } from './planes.mjs';
 import { catalogBudgetNotice } from './catalog-budget.mjs';
 
@@ -96,6 +98,7 @@ export function validate(base) {
   const derivedFiles = readPlane(base, DERIVED_ENTRIES);
   const capturedFiles = readPlane(base, CAPTURED_DIR);
   const flowFiles = readPlane(base, FLOWS_DIR);
+  const ruleFiles = readPlane(base, RULES_DIR);
 
   const byId = new Map();
   const statusById = new Map();
@@ -109,10 +112,11 @@ export function validate(base) {
   const anchorsByEntry = new Map();
   const supersededPointers = [];
 
-  for (const { file, rel, abs } of [...derivedFiles, ...capturedFiles, ...flowFiles]) {
+  for (const { file, rel, abs } of [...derivedFiles, ...capturedFiles, ...flowFiles, ...ruleFiles]) {
     const experientialFile = rel.startsWith(`${CAPTURED_DIR}/`);
     const flowFile = rel.startsWith(`${FLOWS_DIR}/`);
-    const writtenFile = experientialFile || flowFile;
+    const ruleFile = rel.startsWith(`${RULES_DIR}/`);
+    const writtenFile = experientialFile || flowFile || ruleFile;
     let parsed;
     try {
       parsed = parseEntry(readFileSync(abs, 'utf8'), rel);
@@ -122,7 +126,14 @@ export function validate(base) {
     }
     const d = parsed.data;
 
-    for (const k of REQUIRED) if (d[k] === undefined) note(`${rel}: missing required field ${k}`);
+    // `question` is exempt on the normative plane, and the gate has to agree with the door or the
+    // corpus fails its own check the moment a rule is written. A fact is an ANSWER and is found by
+    // the question somebody would ask; a rule is a CONSTRAINT and is found by the domain it governs.
+    // See NORMATIVE_EXEMPT in capture.mjs for the whole argument.
+    for (const k of REQUIRED) {
+      if (k === 'question' && d.plane === 'normative') continue;
+      if (d[k] === undefined) note(`${rel}: missing required field ${k}`);
+    }
     for (const k of Object.keys(d)) if (!FIELD_ORDER.includes(k)) note(`${rel}: unknown field ${k}`);
 
     // The namespace check is a PARSE, never a prefix compare: "KB-C-3F9A2C1D".startsWith("KB")
@@ -150,7 +161,14 @@ export function validate(base) {
     // must agree, or the extractor's wipe and the capture door disagree about who owns a file.
     if (experientialFile && d.plane !== 'experiential') note(`${rel}: lives in ${CAPTURED_DIR}/ but declares plane "${d.plane}"`);
     if (flowFile && d.plane !== 'flow') note(`${rel}: lives in ${FLOWS_DIR}/ but declares plane "${d.plane}"`);
-    if (!writtenFile && (d.plane === 'experiential' || d.plane === 'flow')) note(`${rel}: declares a written plane but lives where the extractor wipes`);
+    if (ruleFile && d.plane !== 'normative') note(`${rel}: lives in ${RULES_DIR}/ but declares plane "${d.plane}"`);
+    if (!writtenFile && (d.plane === 'experiential' || d.plane === 'flow' || d.plane === 'normative')) note(`${rel}: declares a written plane but lives where the extractor wipes`);
+    // A rule's ID is its identity, so a rule that has lost it from its subject is unfindable by the
+    // citations that point at it and indistinguishable from the next rule on the same subject. The
+    // door refuses this; the gate catches a file edited by hand afterwards.
+    if (ruleFile && d.subject !== undefined && !ruleIdOf(d.subject)) {
+      note(`${rel}: a rule's subject must lead with its ID (e.g. "BL-CART-003 …"); this one reads "${d.subject}"`);
+    }
 
     // An entry that names no anchor cannot be reached by a coordinate, which is how BOTH planes
     // find things: regeneration diffs the derived plane, consolidation groups the experiential one.
@@ -165,7 +183,7 @@ export function validate(base) {
     for (const anchor of d.anchors ?? []) {
       const key = normalizeAnchor(anchor?.coordinate);
       if (!key) continue;
-      if (d.plane === 'experiential' || d.plane === 'flow') {
+      if (d.plane === 'experiential' || d.plane === 'flow' || d.plane === 'normative') {
         if (!anchorsByEntry.has(rel)) anchorsByEntry.set(rel, { id: d.id, anchors: [] });
         anchorsByEntry.get(rel).anchors.push({ raw: String(anchor.coordinate), key });
       } else derivedCoordinates.add(key);
@@ -196,11 +214,16 @@ export function validate(base) {
     }
     if ('costIfMissing' in d) note(`${rel}: costIfMissing must be asked or omitted, never defaulted`);
 
-    if (d.plane === 'experiential' || d.plane === 'flow') {
+    if (d.plane === 'experiential' || d.plane === 'flow' || d.plane === 'normative') {
       // Scope is what decides whether two records are one fact. An entry without it claims to hold
       // everywhere, which is almost never what was observed and is exactly the shape that makes a
       // wrong merge possible.
-      if (!(d.appliesTo?.length > 0)) note(`${rel}: experiential entry records no scope axis`);
+      //
+      // A RULE IS EXEMPT, because for a rule "everywhere" is usually the truth and its identity is
+      // its id rather than its scope. `BL-PRICE-003` says money rounds to two decimals on this
+      // platform; there is no axis that narrows it, and making an importer invent one would put 216
+      // unobserved values into the corpus to satisfy a check.
+      if (d.plane !== 'normative' && !(d.appliesTo?.length > 0)) note(`${rel}: experiential entry records no scope axis`);
       for (const s of d.appliesTo ?? []) {
         if (!s.axis || s.value === undefined || s.value === '') note(`${rel}: appliesTo row is not axis=value: ${JSON.stringify(s)}`);
         else {
@@ -438,6 +461,32 @@ export function validate(base) {
     note(`${FLOWS_INDEX} exists while ${FLOWS_DIR}/ holds no flows`);
   }
 
+  // THE RULES STORE GETS THE SAME ARTIFACT CHECKS, written as the flow block's sibling rather than
+  // as a third copy of it: rebuild the index and the catalog from the files on disk and byte-compare.
+  // An index that merely MENTIONS the right ids is what a stale one looks like, and the normative
+  // plane is the one most likely to be edited by hand -- 216 entries arriving from a migration is
+  // exactly the situation where somebody fixes a typo in a file and nothing rebuilds.
+  if (ruleFiles.length) {
+    const built = buildCapturedArtifacts(base, 'normative');
+    const indexPath = join(base, RULES_INDEX);
+    const catalogPath = join(base, RULES_CATALOG);
+    if (!existsSync(indexPath)) note(`${RULES_INDEX} is missing while rules exist`);
+    else if (readFileSync(indexPath, 'utf8') !== built.index) {
+      note(`${RULES_INDEX} is not what the rules on disk build — it is stale; run \`kb reindex\``);
+    }
+    if (!existsSync(catalogPath)) note(`${RULES_CATALOG} is missing while rules exist`);
+    else {
+      const text = readFileSync(catalogPath, 'utf8');
+      if (text !== built.catalog) note(`${RULES_CATALOG} is not what the rules on disk build — it is stale; run \`kb reindex\``);
+      for (const { file } of ruleFiles) {
+        const id = file.replace(/\.md$/, '');
+        if (!text.includes(id)) note(`${RULES_CATALOG} does not list ${id}`);
+      }
+    }
+  } else if (existsSync(join(base, RULES_INDEX))) {
+    note(`${RULES_INDEX} exists while ${RULES_DIR}/ holds no rules`);
+  }
+
   // THE PLANES, COMPARED. Everything above checks that entries are well-formed and that indexes
   // match their contents. Nothing checked that a WRITTEN claim survives the contract sitting beside
   // it, and the cost of that gap is on the record: "an order cannot be deleted on this platform"
@@ -474,5 +523,5 @@ export function validate(base) {
     if (n) notice(n);
   }
 
-  return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, flows: flowFiles.length, problems, notices };
+  return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, flows: flowFiles.length, rules: ruleFiles.length, problems, notices };
 }

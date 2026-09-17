@@ -22,7 +22,7 @@ import { join } from 'node:path';
 
 import { parseEntry } from './frontmatter.mjs';
 import { normalizeAnchor, namespaceOf, LOOKS_LIKE_A_MENU_PATH } from './anchors.mjs';
-import { DERIVED_ENTRIES, CAPTURED_DIR, FLOWS_DIR } from './planes.mjs';
+import { DERIVED_ENTRIES, CAPTURED_DIR, FLOWS_DIR, RULES_DIR } from './planes.mjs';
 
 // planes.mjs and not capture.mjs: this module must not depend on the door at all, which is what
 // the import cycle above was about.
@@ -30,7 +30,12 @@ import { DERIVED_ENTRIES, CAPTURED_DIR, FLOWS_DIR } from './planes.mjs';
 // COORDINATE -- an agent standing on /cart -- and a flow anchored on /cart is the most useful thing
 // the base can hand it at that moment. Retrieval is by WORDS, and by words a procedure drowns
 // facts. Separating the two questions is what lets a flow arrive without competing.
-const PLANE_DIRS = [[DERIVED_ENTRIES, 'derived-first'], [CAPTURED_DIR, 'experiential'], [FLOWS_DIR, 'flow']];
+// The normative plane is HERE, and that is the whole point of importing rules into this base rather
+// than leaving them in a file beside it. A rule and an observation about one coordinate are the two
+// halves nothing has ever held together: with rules in this index, `kb capture` shows the writer the
+// rule that already constrains the coordinate they are recording against, and the thirteen places
+// where a shipped rule and a walked observation disagree stop being invisible.
+const PLANE_DIRS = [[DERIVED_ENTRIES, 'derived-first'], [CAPTURED_DIR, 'experiential'], [FLOWS_DIR, 'flow'], [RULES_DIR, 'normative']];
 
 /**
  * Map of normalized coordinate -> the entries that name it.
@@ -184,21 +189,38 @@ export function derivedFacts(base, anchors) {
  * Shown, never enforced. Two entries sharing a coordinate are usually two honest facts about one
  * place, and that is the normal state of a working corpus.
  */
-export function experientialNeighbours(base, anchors, { exclude = null } = {}) {
+export function experientialNeighbours(base, anchors, { exclude = null, planes = ['experiential'] } = {}) {
   const index = coordinateIndex(base);
+  const want = new Set(planes);
   const out = [];
   const seen = new Set();
   for (const anchor of anchors ?? []) {
     const key = normalizeAnchor(typeof anchor === 'string' ? anchor : anchor?.coordinate);
     if (!key) continue;
     for (const hit of index.get(key) ?? []) {
-      if (hit.plane !== 'experiential' || hit.id === exclude || seen.has(hit.id)) continue;
+      if (!want.has(hit.plane) || hit.id === exclude || seen.has(hit.id)) continue;
       seen.add(hit.id);
       out.push({ ...hit, coordinate: key });
     }
   }
   return out;
 }
+
+/**
+ * Written neighbours of a coordinate across BOTH claim-bearing planes -- what somebody OBSERVED
+ * there and what somebody RULED about it.
+ *
+ * The default above stays `experiential` so every existing caller and test keeps its meaning. This
+ * is what the door uses, and the difference is the point: a writer recording that a cart-subtotal
+ * reward never reaches the line items should be shown `BL-PRICE-001`, which says discounts land on
+ * `cart.items[].placedPrice`. One of those two is wrong about this deployment, and neither file
+ * could say so while they lived in different repositories.
+ *
+ * Flows are excluded. A procedure that travels through a coordinate is not a claim about it, and
+ * showing three flows on every capture is how a useful warning becomes wallpaper.
+ */
+export const writtenNeighbours = (base, anchors, opts = {}) =>
+  experientialNeighbours(base, anchors, { ...opts, planes: ['experiential', 'normative'] });
 
 /**
  * Which of these anchors nothing will be able to raise, and why.
