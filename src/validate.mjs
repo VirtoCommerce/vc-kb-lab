@@ -404,7 +404,22 @@ export function validate(base) {
       else if (!activeCapturedIds.has(id)) note(`${CAPTURED_INDEX} carries ${id}, which is retired`);
     }
   } else if (capturedFiles.length) {
-    note(`${CAPTURED_INDEX} is missing while captured entries exist`);
+    // ABSENT IS A NOTICE; STALE IS STILL A PROBLEM. The written stores' indexes are rebuilt from
+    // the entries on disk by `kb reindex`, and from 2026-09-17 they are untracked — so the normal
+    // state of a fresh clone is "entries, no index", and a gate that failed there would be red on
+    // every checkout and in CI before anybody had done anything wrong. That is the shape of gate
+    // people learn to ignore.
+    //
+    // Nothing is lost by demoting it, because the RETRIEVAL path already refuses: `openBase` and
+    // `openFlows` return `degraded` — "captured-index.json is missing while its corpus holds
+    // entries" — so `kb ask` and `kb how` answer with an infrastructure miss rather than out of
+    // half a corpus. The gate was the second statement of that, and the louder one was the wrong
+    // one to keep.
+    //
+    // The derived index above keeps FAILING, and the asymmetry is the point: nothing rebuilds it
+    // from disk. `kb extract` writes it from a running deployment, so an absent one is damage a
+    // clone cannot repair, not a step somebody has not run yet.
+    notice(`${CAPTURED_INDEX} is absent — rebuilt from the entries on disk by \`kb reindex\`; it is untracked on purpose`);
   }
 
   // REGENERATE AND BYTE-COMPARE, the check `kb check` gives the derived plane and the experiential
@@ -437,7 +452,8 @@ export function validate(base) {
     const built = buildCapturedArtifacts(base, 'flow');
     const indexPath = join(base, FLOWS_INDEX);
     const catalogPath = join(base, FLOWS_CATALOG);
-    if (!existsSync(indexPath)) note(`${FLOWS_INDEX} is missing while flows exist`);
+    // Absent is a notice, stale is a problem — see the captured store above for why.
+    if (!existsSync(indexPath)) notice(`${FLOWS_INDEX} is absent — rebuilt from the files on disk by \`kb reindex\`; it is untracked on purpose`);
     else if (readFileSync(indexPath, 'utf8') !== built.index) {
       note(`${FLOWS_INDEX} is not what the flows on disk build — it is stale; run \`kb reindex\``);
     }
@@ -476,7 +492,8 @@ export function validate(base) {
     const built = buildCapturedArtifacts(base, 'normative');
     const indexPath = join(base, RULES_INDEX);
     const catalogPath = join(base, RULES_CATALOG);
-    if (!existsSync(indexPath)) note(`${RULES_INDEX} is missing while rules exist`);
+    // Absent is a notice, stale is a problem — see the captured store above for why.
+    if (!existsSync(indexPath)) notice(`${RULES_INDEX} is absent — rebuilt from the files on disk by \`kb reindex\`; it is untracked on purpose`);
     else if (readFileSync(indexPath, 'utf8') !== built.index) {
       note(`${RULES_INDEX} is not what the rules on disk build — it is stale; run \`kb reindex\``);
     }

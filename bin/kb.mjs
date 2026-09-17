@@ -301,7 +301,7 @@ async function main() {
     // must not be invisible on the green run, which is every run.
     const printNotices = (write) => {
       if (!r.notices?.length) return;
-      write(`${r.notices.length} notice(s) — nothing failed; these are anchors nothing can raise:`);
+      write(`${r.notices.length} notice(s) — nothing failed; a corpus working as intended with something worth a second look:`);
       for (const n of r.notices.slice(0, 20)) write(`  · ${n}`);
       if (r.notices.length > 20) write(`  … +${r.notices.length - 20}`);
     };
